@@ -1,11 +1,11 @@
-# 腕上导航 · 小米手环 9 Pro
+# 腕上导航 · 小米手环 10 Pro
 本项目仅供学习、研究与技术交流。如有问题，请联系邮箱 2858005527@qq.com
 
-把 Android 高德地图的导航通知同步到小米手环 9 Pro，在手腕上查看转向和完整指引。
+把 Android 高德地图的导航通知同步到小米手环 10 Pro，在手腕上查看转向和完整指引。
 
-个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。当前配套版本：**手机 0.2.1 / 手环 0.3.2**；手环侧适配小米手环 9 Pro 与 10 Pro，两者共用 336 × 480 面板。
+个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。当前配套版本：**手机 0.2.5 / 手环 0.3.3**，目标设备为**小米手环 10 Pro**。9 Pro 与 10 Pro 共用 336 × 480 面板、布局代码相同，但自 0.3.3 起未再回归测试，**9 Pro 是否仍可用未经确认**。
 
-[下载安装包](https://github.com/Gu-Mie/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [通知监听与重连](docs/listener-recovery.md) · [隐私说明](PRIVACY.md)
+[下载安装包](https://github.com/worlt/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [通知监听与重连](docs/listener-recovery.md) · [隐私说明](PRIVACY.md)
 
 ![手环导航、等待与设置页面的浏览器源码预览](docs/images/wearable-native-024.png)
 
@@ -21,12 +21,12 @@
 
 ## 下载与安装
 
-从 [GitHub Releases](https://github.com/Gu-Mie/wrist-navigation/releases) 获取已发布的配套文件（手机 `NAV-PHONE-021.apk`、手环 `NAV-BAND-024.rpk`）；10 Pro 移植版 0.3.2 尚未发布：
+从 [GitHub Releases](https://github.com/worlt/wrist-navigation/releases) 获取同一次发布的配套文件（当前为 [`v0.2.5`](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5)）：
 
 | 文件 | 用途 |
 | --- | --- |
-| `NAV-PHONE-021.apk` | 安装到 Android 手机 |
-| `NAV-BAND-024.rpk` | 通过 AstroBox「快应用」安装到小米手环 9 Pro |
+| `NAV-PHONE-025-local-0B6ED811.apk` | 安装到 Android 手机（0.2.5 / code 10） |
+| `io.github.mi9pro.navigation.debug.0.3.3.rpk` | 通过 AstroBox「快应用」安装到小米手环 10 Pro（0.3.3 / code 13） |
 | `SHA256SUMS.txt` | 下载文件完整性校验 |
 | `THIRD_PARTY_NOTICES.txt` | 第三方组件及字体许可说明 |
 
@@ -35,10 +35,10 @@
 ## 适用范围与测试状态
 
 - 手机最低 Android 8.0（API 26），需要高德地图及小米运动健康；实际联调手机为小米 15，其他手机兼容性待验证。
-- 手环按小米手环 9 Pro / 10 Pro 共用的 336 × 480 屏幕适配；10 Pro 的改动与真机验证项见 [10 Pro 移植说明](docs/port-10pro.md)，尚未真机验收。其他穿戴设备未验证。
+- 目标设备为小米手环 10 Pro（336 × 480 面板），当前版本在 10 Pro 上实际使用。9 Pro 与 10 Pro 面板相同、布局代码共用，但自 0.3.3 起未再在 9 Pro 上测试，**是否仍可用未经确认**。其他穿戴设备未验证。
 - 需要手机保持导航与连接，不支持独立定位、路线规划或脱离手机导航。常亮仅用于导航页前台，不是系统 AOD。
-- 用户于 2026-09-22 确认手环 0.2.4 安装使用正常；字体实际加载、所有显示设置、长时间锁屏、重启恢复、ACK 回程及耗电尚未逐项验收。手环 0.3.2 为 10 Pro 移植版本，已用本地自签 fork 证书构建并通过内容/签名校验，尚未安装或真机验证。
-- 手机 APK 为原有已签名调试构建。安装包已核对匹配签名及 SHA-256，本地检查不能替代真机验收，见 [验证摘要](docs/navigation-verification.md)。
+- 当前手环 0.3.3 已安装于小米手环 10 Pro 并作为日常使用版本；0.2.4 是此前在 9 Pro 上确认可用的版本，此后未再在 9 Pro 上回归测试。字体实际加载、所有显示设置、长时间锁屏、重启恢复、ACK 回程及耗电尚未逐项验收。
+- 手机 APK 0.2.5 由本仓库自建，与手环 RPK 使用同一签名证书（`0B:6E:D8…:94`），Release 附件附带 SHA-256 可核对；本地检查不能替代真机验收，见 [验证摘要](docs/navigation-verification.md)。
 
 ## 本地开发
 
@@ -64,4 +64,4 @@ licenses/      第三方许可文本
 
 ## 反馈与许可
 
-欢迎提交 [Issue](https://github.com/Gu-Mie/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。联系邮箱：[2858005527@qq.com](mailto:2858005527@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。
+欢迎提交 [Issue](https://github.com/worlt/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。联系邮箱：[2858005527@qq.com](mailto:2858005527@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。

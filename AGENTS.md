@@ -1,6 +1,6 @@
 # 项目开发约定
 
-本项目把 Android 高德地图导航通知同步到小米手环 9 Pro。与用户使用中文沟通。
+本项目把 Android 高德地图导航通知同步到小米手环 10 Pro。9 Pro 与 10 Pro 共用 336 × 480 面板和同一套布局代码，但自手环 0.3.3 起未再在 9 Pro 上回归测试，涉及 9 Pro 的表述不能写成已验证。与用户使用中文沟通。
 
 2026-09-22 开源准备后用户接入手机：已只读核对手机 0.2.1/code 6，恢复原签名 `outputs/releases/v0.2.4/NAV-PHONE-021.apk` 并核对手机/电脑/历史 SHA-256 一致，APK 签名与手环 0.2.4 原证书匹配。它是历史 debug 构建，不是 unsigned 或新 release 构建。随后按用户要求将 `NAV-BAND-024.rpk` 传至手机 `/sdcard/Download/` 并核对两端 SHA-256 和大小一致；没有点击安装界面。用户自行安装后反馈“已经ok”，记录为 0.2.4 已安装、基本使用正常（用户确认），不扩展为全部功能或长时稳定性验收通过。最新记录优先看 HANDOVER.md 顶部。
 
@@ -32,10 +32,10 @@
 | 文件 | 作用 |
 | --- | --- |
 | `android/app/src/main/java/io/github/mi9pro/navigation/NavigationParser.java` | 纯 Java 通知文字解析 |
-| 同目录 `NavigationNotificationListener.java` | 通知监听、350 毫秒去抖、活动心跳补读、等待 60 秒兜底 |
+| 同目录 `NavigationNotificationListener.java` | 通知监听、150 毫秒去抖、活动心跳补读、监听掉线自动重连 |
 | 同目录 `WearBridge.java`、`SendPolicy.java` | XMS 授权、连接、发送去重/节流、手动打开调试、诊断 |
 | 同目录 `MainActivity.java` | 手机设置及诊断页面 |
-| 同目录 `NavigationSyncService.java`、`SyncRestoreReceiver.java` | 后台同步、唤醒锁、停止和恢复 |
+| 同目录 `NavigationSyncService.java`、`SyncRestoreReceiver.java` | 后台同步、唤醒锁、停止和恢复、监听重连退避（`ListenerRecovery`） |
 | 同目录 `AutoLaunchPolicy.java` | 按导航控制自动打开、短暂无通知去抖、有限重试 |
 | `wearable/src/pages/index/index.ux` | 手环固定尺寸页面、互联、常亮与生命周期 |
 | `wearable/src/common/protocol.js` | 消息校验、去重、20 秒过期与显示状态 |
