@@ -29,6 +29,27 @@ npm run dev
 
 需要 JDK 17+、Android SDK Platform 35、Build Tools 34.0.0、Platform Tools。Gradle Wrapper 固定为 8.9（带下载校验），AGP 8.7.3，不需要全局 Gradle。通过 JAVA_HOME 选择 JDK，通过 ANDROID_HOME 或被 Git 忽略的 android/local.properties 配置 SDK。
 
+本机（Windows）工具链装在 `C:\E\dev-tools`，不依赖系统安装：
+
+| 组件 | 位置 |
+| --- | --- |
+| JDK 17（Temurin 17.0.20.1） | `C:\E\dev-tools\jdk-17` |
+| Android SDK（platform-35、build-tools 35.0.0、platform-tools） | `C:\E\dev-tools\android-sdk` |
+| Gradle 用户目录（Wrapper 8.9 分发与依赖缓存） | `C:\E\dev-tools\gradle-home` |
+| 小米互联示例包与 JDK/SDK 安装包备份 | `C:\E\dev-tools\dl` |
+
+`JAVA_HOME`、`ANDROID_HOME`、`ANDROID_SDK_ROOT` 已写入用户环境变量，`android/local.properties` 也已指向该 SDK（该文件被 Git 忽略），新开终端直接执行 `.\android\gradlew.bat -p android :app:assembleDebug --console=plain` 即可。注意本机 Git Bash 没有 `/e` 挂载点，这里所说的「E 盘」实际是 `C:\E`。
+
+手机端已签名构建（2026-10-28）：
+
+~~~powershell
+.\android\gradlew.bat -p android :app:testDebugUnitTest :app:assembleDebug --console=plain
+~~~
+
+产物 `android/app/build/outputs/apk/debug/app-debug.apk`（0.2.1，versionCode 6），包名 `io.github.mi9pro.navigation`、标签「腕上导航」；3 个单元测试类共 29 项通过。`apksigner verify --print-certs` 的签名证书 SHA-256 为 `0B:6E:D8:11:58:19:85:B3:38:93:7A:4E:07:EC:31:7E:0B:EF:54:25:67:8F:CD:50:AE:63:89:6A:39:13:A3:94`，与手环 0.3.2 RPK 是同一张证书，双端互联身份一致。产物副本为 `outputs/NAV-PHONE-021-local-0B6ED811.apk`。
+
+`signing/development.p12` 由 `wearable/sign/debug/` 的 PEM 导入而来（`tools/ImportSigning.java`，导入前后都会校验私钥与证书配对）。`tools/prepare-signing.ps1` 现在只会在缺少 p12 时导入现有身份，不再生成第二套证书、也不再覆盖手环 PEM。
+
 小米互联 SDK AAR 不在仓库中。Windows 从项目根目录运行 tools/fetch-xiaomi-sdk.ps1，从官方示例包下载并核对 SHA-256。macOS/Linux 可下载相同的 [官方 ZIP](https://cdn.cnbj3-fusion.fds.api.mi-img.com/quickapp-vela/interconnect_dev_test_demo.zip)，提取 interconnect_dev_test_demo/libs/xms-wearable-lib_1.4_release.aar 至 android/app/libs/，核对 SHA-256 为 9c40fd1c5409bb948523d503af71e2978ae522c35636afe7d64f474c0f6bc195。
 
 没有原签名也能检查和编译，显式使用 -Punsigned：
@@ -62,7 +83,7 @@ node tools/check-wearable-package.cjs
 
 依赖由 wearable/package-lock.json 锁定（aiot-toolkit 2.0.5）。prebuild 在缺少原手环证书时停止，避免 toolkit 回退到自带证书；start 和 release 也有签名前置检查。检查确认文件完整和密钥配对，不代替 APK/RPK 身份一致性及真机验证。发布包需另按 toolkit 约定恢复原发布签名，并与 debug 证书保持同一身份。
 
-RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.2.4.rpk。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.2.4.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
+RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.3.2.rpk（当前源码版本；已发布的是 0.2.4）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.3.2.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
 
 0.2.4 附加字体 TTF、许可和字符覆盖信息已经放入 wearable/src/common/，普通开发与打包仍只需 Node.js，不读取电脑安装字体。只有重新制作字体子集才需要 Python/fontTools 和原字体文件；来源、哈希及重建方式见 [显示设置记录](display-settings-024.md)。
 

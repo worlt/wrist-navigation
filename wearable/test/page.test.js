@@ -21,6 +21,7 @@ function launch(options = {}) {
   const stored = [];
   let storageRead;
   const connection = {
+    getApkStatus: options.apkStatus ? () => options.apkStatus : undefined,
     getReadyState(callbacks) {
       if (options.stateThrows) throw new Error('state unavailable');
       if (options.pending) pending.push(callbacks);
@@ -28,7 +29,13 @@ function launch(options = {}) {
     },
     send(callbacks) {
       if (options.sendThrows) throw new Error('transport unavailable');
-      sent.push(JSON.parse(callbacks.data));
+      const wrapped = callbacks.data && typeof callbacks.data === 'object';
+      if (options.rejectString && !wrapped) {
+        if (callbacks.fail) callbacks.fail('invalid args', 202);
+        return;
+      }
+      sent.push(JSON.parse(wrapped ? callbacks.data.data : callbacks.data));
+      if (callbacks.success) callbacks.success();
     }
   };
   const context = {
@@ -84,6 +91,28 @@ test('page creates visible initial data before loading interconnect', () => {
   assert.doesNotThrow(() => app.page.onReady());
   assert.equal(app.page.status, '连接不可用');
   assert.match(app.page.rawLines.join(''), /API missing/);
+});
+
+test('firmware that rejects the string payload switches to the nested envelope', () => {
+  const app = launch({ connected: true, rejectString: true });
+  app.page.onReady();
+  assert.equal(app.sent.length, 1, 'the rejected first frame is retried, not duplicated');
+  assert.equal(app.sent[0].type, 'ready');
+  assert.match(app.page.linkText, /嵌套/);
+  app.connection.onmessage({ data: JSON.stringify(navigation(1)) });
+  assert.deepEqual(app.sent.at(-1), { v: 1, type: 'ack', session: 'phone', seq: 1 });
+});
+
+test('waiting screen reports whether the phone APK is attached', () => {
+  for (const status of ['CONNECTED', 'DISCONNECTED', 'UNINSTALLED']) {
+    const app = launch({ connected: true, apkStatus: status });
+    app.page.onReady();
+    assert.match(app.page.linkText, new RegExp(status));
+    assert.match(app.page.rawLines.join(''), new RegExp('手机端APK：' + status));
+  }
+  const missing = launch({ connected: true });
+  missing.page.onReady();
+  assert.match(missing.page.linkText, /接口不可用/);
 });
 
 test('instance and state exceptions preserve a readable failure state', () => {

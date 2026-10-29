@@ -4,6 +4,7 @@
 | --- | --- |
 | 下载和首次配置 | [首次使用](getting-started.md) |
 | 安装手环 RPK、更新及排障 | [手环安装](band-install.md) |
+| 小米手环 10 Pro 适配与真机验证清单 | [10 Pro 移植](port-10pro.md) |
 | 本地预览、测试与构建 | [开发指南](development.md) |
 | 后台同步与自动打开的实现 | [后台同步](background-sync.md) |
 | 字体、显示设置与资源来源 | [显示设置](display-settings-024.md) |

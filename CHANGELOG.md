@@ -1,5 +1,18 @@
 # 更新记录
 
+## 手环 0.3.2 / 手机 0.2.1 · 小米手环 10 Pro 移植
+
+- 手环端适配小米手环 10 Pro：与 9 Pro 共用 336 × 480 面板，布局按原尺寸复用，`designWidth` 保持 336。
+- 新增 `common/geometry.js`，把页面尺寸、内容宽、齿轮位置、设置列表上下界与导航区高度上限集中到一处，替换页面与 `presentation.js` 中散落的 288 / 480 / 166 / 26 字面量。
+- 手机端协议不变：v1 导航报文、`ready` / `ack` 回程、同 `session` 递增 `seq`、20 秒过期、`keepScreenOn` 语义均保持，0.2.1 手机端可直接驱动 0.3.2 手环端。
+- 包名与签名不变，可覆盖升级；未改 `system.fetch` 或后台唤醒，10 Pro 无 fetch、快应用也不能后台常驻。
+- 修复 10 Pro（Vela 5.0）上的「发送失败 202 invalid args」：`interconnect.send` 的载荷从裸字符串改为文档要求的 `{ data: { data } }` 信封；为兼容 9 Pro，先发字符串，收到 202 再自动切信封并重发一次。
+- 设置页底部新增一行互联诊断：连接状态 · 最近一次发送结果 · 手机端 APK 绑定状态。
+- 等待页在尚未收到任何手机数据时，直接显示 `conn.getApkStatus()` 的结果（CONNECTED / DISCONNECTED / UNINSTALLED），用于区分「证书不匹配」与「权限未授予」。
+- 新增 3 项几何测试与 1 项载荷切换测试（共 49 项通过）与 [10 Pro 移植说明](docs/port-10pro.md)，后者列出 15 项真机验证项及风险等级。
+- 0.3.2 已用本地自签 fork 证书构建 `NAV-BAND-032.rpk`，包内容与签名校验通过；尚未安装、尚未真机验证。自签身份不能覆盖作者原 0.2.4，手机 0.2.1 能否识别待实测。
+- 本机安装 JDK 17 与 Android SDK（均在 `C:\E\dev-tools`）并重建手机端 APK：密钥库由 `wearable/sign/debug` 的 PEM 导入，签名证书与手环 RPK 同为 `0B:6E:D8…:94`，两端互联身份一致；产物 `outputs/NAV-PHONE-021-local-0B6ED811.apk`，3 个单元测试类与 `apksigner` 校验通过。`tools/prepare-signing.ps1` 改为只导入现有身份，不再生成第二套证书。
+
 ## 手环 0.2.4 / 手机 0.2.1 · 首次公开测试版
 
 - 手环新增系统默认、宋体、楷体、圆体选择，附加字体及许可随包提供。

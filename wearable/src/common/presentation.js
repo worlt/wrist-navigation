@@ -1,4 +1,6 @@
-// Fixed-height list rows must each fit one line on the 336px Band 9 Pro display.
+const geometry = require('./geometry')
+
+// Fixed-height list rows must each fit one line on the 336px band display.
 // Use a conservative full-width character budget, preserving surrogate pairs.
 function lines(text, budget) {
   const limit = typeof budget === 'number' && isFinite(budget) && budget > 0 ? Math.max(1, Math.floor(budget)) : 14;
@@ -90,14 +92,16 @@ function navigationText(view) {
 function navigationLayout(view, settings, warning) {
   const size = settings.fontSize;
   const rowHeight = Math.ceil(size * 1.4);
-  let text = navigationText(view);
+  const text = navigationText(view);
   if (warning) text += (text ? '\n' : '') + warning;
-  const rows = lines(text, Math.floor(288 / size));
-  const guidanceHeight = Math.min(166, 288 - settings.arrowSize - 26, rows.length * rowHeight);
-  const contentHeight = settings.arrowSize + 26 + guidanceHeight;
+  const rows = lines(text, Math.floor(geometry.CONTENT_WIDTH / size));
+  const guidanceHeight = Math.min(geometry.GUIDANCE_MAX,
+    geometry.CONTENT_WIDTH - settings.arrowSize - geometry.ARROW_GAP, rows.length * rowHeight);
+  const contentHeight = settings.arrowSize + geometry.ARROW_GAP + guidanceHeight;
   return { guidanceLines: rows, rowHeight, guidanceHeight, contentHeight,
-    contentTop: (480 - contentHeight) / 2, arrowLeft: (288 - settings.arrowSize) / 2,
-    guidanceTop: settings.arrowSize + 26 };
+    contentTop: geometry.centerTop(contentHeight),
+    arrowLeft: geometry.centerInContent(settings.arrowSize),
+    guidanceTop: settings.arrowSize + geometry.ARROW_GAP };
 }
 
 // All three screens share one type scale. Bigger settings scroll instead of
@@ -131,20 +135,20 @@ function restLayout(view, warning, settings) {
     '连接不可用': ['请在手机上', '重新连接手环'],
     '通知读取不可用': ['请检查手机的', '通知使用权']
   };
-  const hintLines = (hints[view.status] || []).reduce((all, text) => all.concat(lines(text, Math.floor(288 / type.hintSize))), []);
-  const titleLines = lines(view.status, Math.floor(288 / (settings ? settings.fontSize : 30)));
+  const hintLines = (hints[view.status] || []).reduce((all, text) => all.concat(lines(text, Math.floor(geometry.CONTENT_WIDTH / type.hintSize))), []);
+  const titleLines = lines(view.status, Math.floor(geometry.CONTENT_WIDTH / (settings ? settings.fontSize : 30)));
   const restTitleHeight = titleLines.length * type.titleHeight;
   const hintTop = restTitleHeight + 12;
   const hintsHeight = hintLines.length * type.hintHeight;
   const text = [details(view), warning].filter(Boolean).join('\n');
-  const rawLines = text ? lines(text, Math.floor(288 / type.hintSize)) : [];
+  const rawLines = text ? lines(text, Math.floor(geometry.CONTENT_WIDTH / type.hintSize)) : [];
   const detailsTop = restTitleHeight + (hintLines.length ? 12 + hintsHeight : 0) + (text ? 16 : 0);
   // Keep even the longest status/error above the bottom gear. All error rows
   // remain in a scrollable list, including at the largest global font size.
-  const detailsHeight = Math.min(84, Math.max(type.hintHeight, 288 - detailsTop), rawLines.length * type.hintHeight);
+  const detailsHeight = Math.min(84, Math.max(type.hintHeight, geometry.CONTENT_WIDTH - detailsTop), rawLines.length * type.hintHeight);
   const restHeight = detailsTop + detailsHeight;
   return { titleLines, restTitleHeight, hintTop, hintsHeight, hintLines, rawLines, hasDetails: !!text, detailsTop, detailsHeight, restHeight,
-    restTop: (480 - restHeight) / 2 };
+    restTop: geometry.centerTop(restHeight) };
 }
 
 module.exports = { lines, errorText, details, layout, navigationText, navigationLayout, restLayout, typography };

@@ -23,7 +23,7 @@
           </list-item>
         </list>
       </div>
-      <div class="settings-entry" onclick="openSettings">
+      <div class="settings-entry" onclick="openSettings" style="left: {{ gearLeft }}px; top: {{ gearTop }}px;">
         <image class="settings-icon" src="/common/settings.png"></image>
       </div>
     </div>
@@ -66,6 +66,9 @@
           <text class="save-status" style="font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">{{ saveStatus }}</text>
           <text class="version" style="top: {{ auxiliaryHeight + 4 }}px; font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">腕上导航 v{{ versionName }}</text>
         </list-item>
+        <list-item type="link" class="link-row" style="height: {{ auxiliaryHeight + 10 }}px;">
+          <text class="link-state" style="font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">{{ linkText }}</text>
+        </list-item>
         <list-item type="reset" class="reset-row" style="height: {{ buttonHeight + 16 }}px;">
           <text class="reset-defaults" onclick="resetSettings" style="font-size: {{ labelSize }}px; height: {{ buttonHeight }}px; line-height: {{ buttonHeight }}px; font-family: {{ fontFamily }};">恢复默认</text>
         </list-item>
@@ -87,6 +90,7 @@
 const protocol = require('../../common/protocol')
 const presentation = require('../../common/presentation')
 const settings = require('../../common/settings')
+const geometry = require('../../common/geometry')
 const manifest = require('../../manifest.json')
 let preferenceStore = null
 let connection = null
@@ -100,6 +104,19 @@ let visible = false
 let screenRequested = false
 let screenRevision = 0
 let screenError = ''
+// 0 = bare string payload (older firmware), 1 = documented { data: { data } } envelope.
+let sendShape = 0
+let lastSend = '尚未发送'
+// CONNECTED / DISCONNECTED / UNINSTALLED, as reported by the interconnect service.
+let apkStatus = '未检测'
+
+function readApkStatus() {
+  if (!connection) return '未检测'
+  try {
+    if (typeof connection.getApkStatus !== 'function') return '接口不可用'
+    return String(connection.getApkStatus() || '未知')
+  } catch (error) { return '读取失败' }
+}
 
 export default {
   private: {
@@ -119,9 +136,11 @@ export default {
     buttonHeight: 52, controlTop: 32, settingRowHeight: 96,
     fontSelectorHeight: 44, fontRowHeight: 56, footerHeight: 50,
     adjustSize: 35, fontChoiceHeight: 86,
-    settingsListTop: 66, settingsListHeight: 398,
+    settingsListTop: geometry.SETTINGS_TOP, settingsListHeight: geometry.settingsListHeight(42),
+    gearLeft: geometry.GEAR_LEFT, gearTop: geometry.GEAR_TOP,
     titleLines: [], restTitleHeight: 42, hintTop: 54, hintsHeight: 62,
     saveStatus: '调整后自动保存',
+    linkText: '互联未连接 · 尚未发送 · 手机端 未检测',
     versionName: manifest.versionName,
     guidanceLines: [' '],
     guidanceHeight: 48,
@@ -188,8 +207,8 @@ export default {
     this.fontFamily = settings.fontOption(checked.font).family
     const type = presentation.typography(checked.fontSize)
     for (const field of Object.keys(type)) this[field] = type[field]
-    this.settingsListTop = Math.max(66, 16 + type.titleHeight + 8)
-    this.settingsListHeight = 464 - this.settingsListTop
+    this.settingsListTop = geometry.settingsListTop(type.titleHeight)
+    this.settingsListHeight = geometry.settingsListHeight(type.titleHeight)
     this.fontSize = checked.fontSize
     this.arrowSize = checked.arrowSize
     this.arrowWeight = checked.arrowWeight
@@ -269,11 +288,27 @@ export default {
   send(message) {
     if (!connection || !alive) return
     try {
-      connection.send({
-        data: JSON.stringify(message),
-        fail: (data, code) => this.failed('发送失败', data, code)
-      })
+      const payload = JSON.stringify(message)
+      const options = sendShape === 0 ? { data: payload } : { data: { data: payload } }
+      options.success = () => {
+        lastSend = '已发送 ' + (message.type || '') + (sendShape === 0 ? '' : '（嵌套）')
+      }
+      options.fail = (data, code) => this.sendFailed(message, data, code)
+      connection.send(options)
     } catch (error) { this.failed('发送失败', error) }
+  },
+  // Vela 5.0 rejects the bare string form with 202 (invalid args) and wants the
+  // documented envelope; older firmware only accepts the string. Switch once.
+  sendFailed(message, data, code) {
+    if (!alive) return
+    if (Number(code) === 202 && sendShape === 0) {
+      sendShape = 1
+      lastSend = '字符串格式被拒，改用嵌套格式'
+      this.send(message)
+      return
+    }
+    lastSend = '发送失败 ' + (code === undefined ? '' : code)
+    this.failed('发送失败', data, code)
   },
   failed(stage, data, code) {
     if (!alive) return
@@ -355,10 +390,14 @@ export default {
     const age = now - receivedAt
     let view = protocol.present(latest, age, connected)
     this.keepScreenOn(visible && !this.settingsOpen && !!view.live && latest.keepScreenOn !== false)
+    apkStatus = readApkStatus()
     if (connectionError) {
       view.status = '连接不可用'
       view.rawText = connectionError
     }
+    // Nothing has ever arrived from the phone: say whether the peer APK is
+    // missing, installed but detached, or actually attached.
+    if (!latest && !connectionError) view.rawText = '手机端APK：' + apkStatus
     this.scheduleExpiry()
     if (this.status !== view.status) this.status = view.status
     const icon = '/common/' + view.icon + '.png'
@@ -376,6 +415,7 @@ export default {
     for (const field of ['header', 'guidance', 'statusColor', 'distanceValue', 'distanceUnit', 'distanceSize', 'hint']) {
       if (this[field] !== layout[field]) this[field] = layout[field]
     }
+    this.linkText = (connected ? '互联已连接' : '互联未连接') + ' · ' + lastSend + ' · 手机端 ' + apkStatus
     this.guidanceFontFamily = settings.fontForText(this.font, navigation.guidanceLines.join(''))
     const rest = presentation.restLayout(view, screenError, this)
     this.detailsFontFamily = settings.fontForText(this.font, rest.rawLines.join(''))
@@ -431,6 +471,8 @@ export default {
 .settings-footer { width: 288px; height: 50px; }
 .save-status { position: absolute; left: 0px; top: 0px; width: 288px; color: #95ad9f; text-align: center; }
 .version { position: absolute; left: 0px; width: 288px; color: #73857a; text-align: center; }
+.link-row { width: 288px; height: 33px; }
+.link-state { position: absolute; left: 0px; top: 0px; width: 288px; color: #73857a; text-align: center; }
 .reset-row { width: 288px; height: 68px; }
 .reset-defaults { position: absolute; left: 24px; top: 8px; width: 240px; color: #b7c9bd; background-color: #101a14; border-radius: 12px; text-align: center; }
 .font-options { position: absolute; left: 24px; top: 66px; width: 288px; height: 398px; }
