@@ -5,7 +5,7 @@
 
 个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。当前配套版本：**手机 0.2.1 / 手环 0.3.2**；手环侧适配小米手环 9 Pro 与 10 Pro，两者共用 336 × 480 面板。
 
-[下载安装包](https://github.com/Gu-Mie/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [隐私说明](PRIVACY.md)
+[下载安装包](https://github.com/Gu-Mie/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [通知监听与重连](docs/listener-recovery.md) · [隐私说明](PRIVACY.md)
 
 ![手环导航、等待与设置页面的浏览器源码预览](docs/images/wearable-native-024.png)
 
