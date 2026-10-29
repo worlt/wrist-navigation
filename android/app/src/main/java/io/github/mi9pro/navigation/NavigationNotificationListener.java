@@ -120,9 +120,13 @@ public final class NavigationNotificationListener extends NotificationListenerSe
     }
     @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) { bridge().dump(writer); }
     private void disconnect() {
-        if (instance == this) instance = null;
+        // A replaced instance may be destroyed after its successor has already connected;
+        // only the current instance may clear the shared connection state.
+        boolean current = instance == this;
+        if (current) instance = null;
         connected = false;
         handler.removeCallbacksAndMessages(null);
+        if (!current) return;
         bridge().setNotificationListenerConnected(false);
         bridge().unavailable("通知监听已断开");
     }

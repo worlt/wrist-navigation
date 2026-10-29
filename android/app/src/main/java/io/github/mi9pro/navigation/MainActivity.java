@@ -191,6 +191,10 @@ public final class MainActivity extends Activity {
                 ? "未读到通知 · 检查高德是否允许显示导航通知"
                 : "已收到通知文字但未识别 · 可查看连接与权限状态");
         }
+        if (bridge.enabled() && !bridge.listenerConnected && bridge.hasConnectedNode()
+                && NavigationSyncService.hasNotificationAccess(this)) {
+            setText(syncDetail, "通知服务未连接 · 到系统设置重新开关「通知使用权」可恢复");
+        }
         action.setVisibility(setup ? View.VISIBLE : View.GONE);
     }
 

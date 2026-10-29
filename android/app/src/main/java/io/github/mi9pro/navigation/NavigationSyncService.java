@@ -12,7 +12,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.service.notification.NotificationListenerService;
@@ -30,6 +32,11 @@ public final class NavigationSyncService extends Service {
     private boolean foreground;
     private long renewWakeAt;
     private String shownText = "";
+    // The system can drop the listener without a callback; while this relay runs it keeps
+    // asking for a rebind so a stuck "connecting" state recovers on its own.
+    private static final long REBIND_RETRY_MS = 20000;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable rebindRetry = this::retryListenerBind;
 
     static boolean hasDevicePermission(Context context) {
         return Build.VERSION.SDK_INT < 31 || context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
@@ -105,9 +112,20 @@ public final class NavigationSyncService extends Service {
         status = "后台同步已运行，可退出手机页面";
         android.util.Log.i("WristNav", "foreground relay started");
         if (!bridge().listenerConnected) NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
+        handler.removeCallbacks(rebindRetry);
+        handler.postDelayed(rebindRetry, REBIND_RETRY_MS);
         bridge().connect(false);
         update();
         return START_STICKY;
+    }
+
+    private void retryListenerBind() {
+        if (instance != this || !foreground) return;
+        if (bridge().enabled() && !bridge().listenerConnected && hasNotificationAccess(this)) {
+            NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
+            android.util.Log.i("WristNav", "notification listener rebind requested");
+        }
+        if (foreground) handler.postDelayed(rebindRetry, REBIND_RETRY_MS);
     }
 
     private void update() {
@@ -145,6 +163,7 @@ public final class NavigationSyncService extends Service {
     private void releaseWakeLock() { if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); }
     @Override public void onDestroy() {
         foreground = false;
+        handler.removeCallbacksAndMessages(null);
         releaseWakeLock();
         stopForeground(STOP_FOREGROUND_REMOVE);
         if (instance == this) instance = null;
