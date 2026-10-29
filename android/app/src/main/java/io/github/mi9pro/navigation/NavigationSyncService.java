@@ -34,9 +34,10 @@ public final class NavigationSyncService extends Service {
     private String shownText = "";
     // The system can drop the listener without a callback; while this relay runs it keeps
     // asking for a rebind so a stuck "connecting" state recovers on its own.
-    private static final long REBIND_RETRY_MS = 20000;
+    private static final long REBIND_RETRY_MS = 12000;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable rebindRetry = this::retryListenerBind;
+    private final ListenerRecovery listenerRecovery = new ListenerRecovery();
 
     static boolean hasDevicePermission(Context context) {
         return Build.VERSION.SDK_INT < 31 || context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
@@ -73,6 +74,7 @@ public final class NavigationSyncService extends Service {
     }
 
     static String status() { return status; }
+    static int listenerRecoveryAttempts() { return instance == null ? 0 : instance.listenerRecovery.attempts(); }
     static boolean running() { return instance != null && instance.foreground; }
     static void refresh() { if (running()) instance.update(); }
     private WearBridge bridge() { return ((NavigationApp) getApplication()).bridge(); }
@@ -121,11 +123,35 @@ public final class NavigationSyncService extends Service {
 
     private void retryListenerBind() {
         if (instance != this || !foreground) return;
-        if (bridge().enabled() && !bridge().listenerConnected && hasNotificationAccess(this)) {
-            NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
-            android.util.Log.i("WristNav", "notification listener rebind requested");
+        if (bridge().listenerConnected) listenerRecovery.reset();
+        else if (bridge().enabled() && hasNotificationAccess(this)) {
+            // requestRebind is ignored while the system holds no binding at all, which is the
+            // state a dropped listener leaves behind. Every third attempt toggles the component
+            // so the system re-reads this package and binds the listener again.
+            if (listenerRecovery.toggleNow()) toggleListenerComponent();
+            else NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
+            android.util.Log.i("WristNav", "listener recovery attempt=" + listenerRecovery.attempts());
         }
         if (foreground) handler.postDelayed(rebindRetry, REBIND_RETRY_MS);
+    }
+
+    private void toggleListenerComponent() {
+        ComponentName listener = new ComponentName(this, NavigationNotificationListener.class);
+        PackageManager manager = getPackageManager();
+        try {
+            manager.setComponentEnabledSetting(listener,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+            manager.setComponentEnabledSetting(listener,
+                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP);
+            android.util.Log.i("WristNav", "listener component toggled");
+        } catch (IllegalArgumentException | SecurityException error) {
+            // Never leave the toggle half applied.
+            android.util.Log.w("WristNav", "listener toggle rejected: " + error.getClass().getSimpleName());
+            try {
+                manager.setComponentEnabledSetting(listener,
+                    PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP);
+            } catch (RuntimeException ignored) { /* the retry loop keeps trying */ }
+        }
     }
 
     private void update() {

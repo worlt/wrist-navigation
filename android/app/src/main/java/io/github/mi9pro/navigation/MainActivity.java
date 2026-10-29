@@ -193,7 +193,7 @@ public final class MainActivity extends Activity {
         }
         if (bridge.enabled() && !bridge.listenerConnected && bridge.hasConnectedNode()
                 && NavigationSyncService.hasNotificationAccess(this)) {
-            setText(syncDetail, "通知服务未连接 · 到系统设置重新开关「通知使用权」可恢复");
+            setText(syncDetail, "通知服务未连接 · 正在自动重连，也可到系统设置重新开关「通知使用权」");
         }
         action.setVisibility(setup ? View.VISIBLE : View.GONE);
     }
