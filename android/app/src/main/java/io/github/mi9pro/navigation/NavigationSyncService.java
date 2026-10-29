@@ -33,10 +33,10 @@ public final class NavigationSyncService extends Service {
     private long renewWakeAt;
     private String shownText = "";
     // The system can drop the listener without a callback; while this relay runs it keeps
-    // asking for a rebind so a stuck "connecting" state recovers on its own.
-    private static final long REBIND_RETRY_MS = 12000;
+    // pushing for a rebind, fast at first and then backing off while the listener stays down.
+    private static final long CONNECTED_WATCHDOG_MS = 8000;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable rebindRetry = this::retryListenerBind;
+    private final Runnable rebindRetry = this::recoveryTick;
     private final ListenerRecovery listenerRecovery = new ListenerRecovery();
 
     static boolean hasDevicePermission(Context context) {
@@ -75,6 +75,14 @@ public final class NavigationSyncService extends Service {
 
     static String status() { return status; }
     static int listenerRecoveryAttempts() { return instance == null ? 0 : instance.listenerRecovery.attempts(); }
+
+    /** One recovery attempt right now instead of waiting for the timer, e.g. when the page reopens. */
+    static void recoverNow() {
+        NavigationSyncService service = instance;
+        if (service == null || !service.foreground) return;
+        service.handler.removeCallbacks(service.rebindRetry);
+        service.recoveryTick();
+    }
     static boolean running() { return instance != null && instance.foreground; }
     static void refresh() { if (running()) instance.update(); }
     private WearBridge bridge() { return ((NavigationApp) getApplication()).bridge(); }
@@ -113,26 +121,31 @@ public final class NavigationSyncService extends Service {
         }
         status = "后台同步已运行，可退出手机页面";
         android.util.Log.i("WristNav", "foreground relay started");
-        if (!bridge().listenerConnected) NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
         handler.removeCallbacks(rebindRetry);
-        handler.postDelayed(rebindRetry, REBIND_RETRY_MS);
+        recoveryTick();
         bridge().connect(false);
         update();
         return START_STICKY;
     }
 
-    private void retryListenerBind() {
+    private void recoveryTick() {
         if (instance != this || !foreground) return;
-        if (bridge().listenerConnected) listenerRecovery.reset();
-        else if (bridge().enabled() && hasNotificationAccess(this)) {
+        if (bridge().listenerConnected) {
+            listenerRecovery.reset();
+            handler.postDelayed(rebindRetry, CONNECTED_WATCHDOG_MS);
+            return;
+        }
+        if (bridge().enabled() && hasNotificationAccess(this)) {
             // requestRebind is ignored while the system holds no binding at all, which is the
-            // state a dropped listener leaves behind. Every third attempt toggles the component
-            // so the system re-reads this package and binds the listener again.
+            // state a dropped listener leaves behind. Toggling the component makes the package
+            // look changed so the system re-reads it and binds the listener again; the first
+            // attempt still prefers the cheaper rebind in case the binding is intact.
             if (listenerRecovery.toggleNow()) toggleListenerComponent();
             else NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
             android.util.Log.i("WristNav", "listener recovery attempt=" + listenerRecovery.attempts());
         }
-        if (foreground) handler.postDelayed(rebindRetry, REBIND_RETRY_MS);
+        handler.removeCallbacks(rebindRetry);
+        handler.postDelayed(rebindRetry, listenerRecovery.nextDelayMs());
     }
 
     private void toggleListenerComponent() {

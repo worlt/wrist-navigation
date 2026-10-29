@@ -41,7 +41,7 @@ public final class NavigationNotificationListener extends NotificationListenerSe
         if (sbn == null || !NavigationParser.AMAP_PACKAGE.equals(sbn.getPackageName()) || !bridge().enabled()) return;
         // Coalesce remove+repost bursts and reread the active set instead of ending another route.
         handler.removeCallbacks(refreshTask);
-        handler.postDelayed(refreshTask, 350);
+        handler.postDelayed(refreshTask, 150);
     }
 
     private void refresh() {

@@ -149,10 +149,12 @@ public final class MainActivity extends Activity {
     @Override public void onResume() {
         super.onResume();
         bridge.setUiListener(refreshUi);
-        if (NavigationSyncService.hasNotificationAccess(this) && !bridge.listenerConnected) {
-            NotificationListenerService.requestRebind(new ComponentName(this, NavigationNotificationListener.class));
-        }
         NavigationSyncService.start(this);
+        if (NavigationSyncService.hasNotificationAccess(this) && !bridge.listenerConnected) {
+            // Opening the page runs the fastest working attempt instead of waiting for the timer,
+            // so re-entering the app is no longer a slower substitute for the recovery loop.
+            NavigationSyncService.recoverNow();
+        }
         NavigationNotificationListener.requestRefresh();
         render();
     }

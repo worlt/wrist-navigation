@@ -175,7 +175,9 @@ public final class WearBridge {
         if (nodeId != null && !requestPermission) { sendLatest(); return; }
         discovering = true;
         final long generation = ++connectGeneration;
-        nextConnect = SystemClock.elapsedRealtime() + 10000;
+        // Short cooldown: reopening the page is the user's fastest retry, and 10 s made
+        // re-entering the app a no-op that looked like a stuck connection.
+        nextConnect = SystemClock.elapsedRealtime() + 3000;
         statusText = "正在查找已配对的手环…";
         event("discover, requestPermission=" + requestPermission);
         main.postDelayed(() -> {
