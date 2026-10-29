@@ -4,7 +4,7 @@
 
 普通显示和兼容性问题可使用 Issue。涉及私钥、账号令牌、设备 AuthKey、越权访问或可泄露路线的问题，请勿在公开 Issue、PR、评论或附件中披露细节。
 
-安全问题请通过邮箱 [2858005527@qq.com](mailto:2858005527@qq.com) 私下联系维护者。如果仓库的 **Security → Report a vulnerability** 入口可用，也可使用 GitHub 的私下漏洞报告；维护者尚未保证该入口已启用。
+安全问题请通过邮箱 [2516930419@qq.com](mailto:2516930419@qq.com) 私下联系本仓库维护者（GitHub：worlt）。与原项目 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 相关的问题也可联系原作者 Gu-Mie：[2858005527@qq.com](mailto:2858005527@qq.com)（标明原作者）。如果仓库的 **Security → Report a vulnerability** 入口可用，也可使用 GitHub 的私下漏洞报告；维护者尚未保证该入口已启用。
 
 报告可包含受影响版本、影响说明和使用虚构数据的最小复现。不要发送真实密钥；只说明文件位置或泄露类型。
 

@@ -26,3 +26,7 @@ Android 通知使用权是系统级能力；应用收到通知回调后只处理
 ## 分享反馈前
 
 应用预览和自行采集的通知可能含有出行信息。公开 Issue、PR 或截图前，请移除路线、住址、账号、设备标识及 AuthKey。`tools/capture-amap.ps1` 会二次过滤其他应用通知，但过滤后的高德通知依然可能敏感，只应保存在被忽略的 `.local/`。
+
+## 联系方式
+
+对本说明或数据处理有疑问，请联系本仓库维护者（GitHub：worlt）：[2516930419@qq.com](mailto:2516930419@qq.com)。与原项目 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 相关的问题也可联系原作者 Gu-Mie：[2858005527@qq.com](mailto:2858005527@qq.com)（原作者）。
