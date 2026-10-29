@@ -1,9 +1,19 @@
 # 腕上导航 · 小米手环 10 Pro
-本项目仅供学习、研究与技术交流。如有问题，请联系邮箱 2516930419@qq.com
+本项目仅供学习、研究与技术交流。如有问题，请联系维护者邮箱 2516930419@qq.com
 
 把 Android 高德地图的导航通知同步到小米手环 10 Pro，在手腕上查看转向和完整指引。
 
 个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。当前配套版本：**手机 0.2.5 / 手环 0.3.3**，目标设备为**小米手环 10 Pro**。9 Pro 与 10 Pro 共用 336 × 480 面板、布局代码相同，但自 0.3.3 起未再回归测试，**9 Pro 是否仍可用未经确认**。
+
+## 来源与原作者
+
+本仓库是以下原项目的修改版，改动说明见 [更新记录](CHANGELOG.md)：
+
+- 原项目：[Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation)
+- 原作者：Gu-Mie
+- 原作者联系方式：[2858005527@qq.com](mailto:2858005527@qq.com)
+
+许可证为 MIT，版权归原作者 Gu-Mie 与本 fork 维护者 worlt 共同所有。与原项目相关的问题也可以直接向原作者反馈。
 
 [下载安装包](https://github.com/worlt/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [通知监听与重连](docs/listener-recovery.md) · [隐私说明](PRIVACY.md)
 
@@ -44,6 +54,8 @@
 
 顺序的关键点有两个：先让手环链路和通知监听就位，再开始导航。因为导航一旦开始，高德的通知马上就来；虽然监听连上的瞬间会立刻补读一次当前活动通知，但先就位会更稳，不会出现手环先显示「等待导航」再跳转。
 
+非第一次使用可不打开手环的「腕上导航」：打开手机端和高德地图直接开始导航，也能唤醒手环的导航页，只是可能比较慢，并且需要手动亮一下手环屏幕才能持续常亮；是否自动唤醒可在手机端「导航偏好」中设置。
+
 ## 适用范围与测试状态
 
 - 手机最低 Android 8.0（API 26），需要高德地图及小米运动健康；实际联调手机为小米 15，其他手机兼容性待验证。
@@ -76,14 +88,4 @@ licenses/      第三方许可文本
 
 ## 反馈与许可
 
-欢迎提交 [Issue](https://github.com/worlt/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。联系邮箱：[2516930419@qq.com](mailto:2516930419@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。
-
-### 来源与原作者
-
-本仓库是以下原项目的修改版，改动说明见 [更新记录](CHANGELOG.md)：
-
-- 原项目：[Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation)
-- 原作者：Gu-Mie
-- 原作者联系方式：[2858005527@qq.com](mailto:2858005527@qq.com)
-
-许可证为 MIT，版权归原作者 Gu-Mie 与本 fork 维护者 worlt 共同所有。与原项目相关的问题也可以直接向原作者反馈。
+欢迎提交 [Issue](https://github.com/worlt/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。维护者联系邮箱：[2516930419@qq.com](mailto:2516930419@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。
