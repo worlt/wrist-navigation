@@ -28,7 +28,7 @@ public final class NavigationNotificationListener extends NotificationListenerSe
     @Override public void onListenerConnected() {
         instance = this;
         connected = true;
-        bridge().listenerConnected = true;
+        bridge().setNotificationListenerConnected(true);
         NavigationSyncService.start(this);
         handler.removeCallbacks(poll);
         handler.post(poll);
@@ -102,14 +102,28 @@ public final class NavigationNotificationListener extends NotificationListenerSe
         return fields.toArray(new String[0]);
     }
 
-    @Override public void onListenerDisconnected() { disconnect(); }
+    @Override public void onListenerDisconnected() {
+        disconnect();
+        rebindIfEnabled();
+    }
+    @Override public void onDestroy() {
+        boolean wasConnected = connected;
+        disconnect();
+        if (wasConnected) rebindIfEnabled();
+        super.onDestroy();
+    }
+    private void rebindIfEnabled() {
+        if (bridge().enabled() && NavigationSyncService.hasNotificationAccess(this)) {
+            NotificationListenerService.requestRebind(
+                    new android.content.ComponentName(this, NavigationNotificationListener.class));
+        }
+    }
     @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) { bridge().dump(writer); }
-    @Override public void onDestroy() { disconnect(); super.onDestroy(); }
     private void disconnect() {
         if (instance == this) instance = null;
         connected = false;
         handler.removeCallbacksAndMessages(null);
-        bridge().listenerConnected = false;
+        bridge().setNotificationListenerConnected(false);
         bridge().unavailable("通知监听已断开");
     }
 }

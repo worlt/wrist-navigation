@@ -33,6 +33,20 @@ public class NavigationParserTest {
         assertEquals("", parse("导航中，剩余3公里右转").distance);
         assertEquals("200 米", parse("导航中，剩余3公里，前方200米右转").distance);
     }
+    @Test public void recognizesAutomotiveNavigationWithoutOngoingFlagOrTurnText() {
+        for (String text : new String[] {
+                "驾车导航中，剩余15分钟，剩余8.2公里，全程12.5公里",
+                "汽车导航路线预计18分钟到达 · 还有6公里",
+                "开车路线行驶中：距目的地4公里",
+                "预计18分钟到达 · 剩余6公里"
+        }) {
+            var result = NavigationParser.parse(NavigationParser.AMAP_PACKAGE, false, text);
+            assertNotNull(text, result);
+            assertEquals(text, "active", result.status);
+            assertEquals(text, "unknown", result.maneuver);
+        }
+        assertNull(NavigationParser.parse(NavigationParser.AMAP_PACKAGE, false, "汽车导航优惠券活动"));
+    }
     @Test public void preservesUnknownNavigationInsteadOfGuessingStraight() {
         var result = parse("步行导航中，剩余15分钟，1.2公里");
         assertEquals("active", result.status);

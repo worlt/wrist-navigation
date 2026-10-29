@@ -11,6 +11,8 @@ public final class NavigationParser {
     public static final String AMAP_PACKAGE = "com.autonavi.minimap";
     private static final Pattern END = Pattern.compile("导航(?:已)?结束|结束导航|已到达目的地|已到达终点|本次导航已完成");
     private static final Pattern NAV = Pattern.compile("导航|直行|左转|右转|掉头|调头|行驶|步行|骑行|沿.{1,20}(?:路|街)|进入.{1,20}(?:路|街)");
+    private static final Pattern VEHICLE_NAV = Pattern.compile("(?s)(?:驾车|汽车|开车|驾驶|车行).{0,8}(?:导航|路线|行驶).{0,8}(?:中|剩余|预计|到达|抵达|目的地)|(?:导航|路线|行驶).{0,8}(?:驾车|汽车|开车|驾驶|车行)");
+    private static final Pattern TRIP_PROGRESS = Pattern.compile("(?s)(?=.*(?:剩余|还剩|还有)\\s*\\d{1,4}\\s*(?:分钟|小时))(?=.*(?:剩余|还剩|还有|全程)\\s*\\d+(?:\\.\\d+)?\\s*(?:公里|千米|米|km|m)(?![a-z])).*|预计\\s*\\d{1,4}\\s*(?:分钟|小时).{0,8}(?:到达|抵达)", Pattern.CASE_INSENSITIVE);
     private static final Pattern TURN = Pattern.compile("左前方|右前方|左后方|右后方|向左转|向右转|左转|右转|掉头|调头|直行|靠左|靠右|进入环岛|驶出环岛");
     private static final Pattern DISTANCE = Pattern.compile("(\\d+(?:\\.\\d+)?)[\\s]*(公里|千米|米|km|m)(?![a-z])", Pattern.CASE_INSENSITIVE);
 
@@ -39,7 +41,12 @@ public final class NavigationParser {
         if (END.matcher(text).find()) return new Result("ended", title, text, "arrive", "导航已结束", "");
         Matcher turn = TURN.matcher(text);
         boolean hasTurn = turn.find();
-        if (!(ongoing && NAV.matcher(text).find()) && !(hasTurn && DISTANCE.matcher(text).find())) return null;
+        // Vehicle notifications can omit both isOngoing and a turn instruction. Require
+        // an explicit vehicle+route phrase in that case; a Gaode promotion is not a route.
+        boolean vehicleNavigation = VEHICLE_NAV.matcher(text).find();
+        boolean hasTripProgress = TRIP_PROGRESS.matcher(text).find();
+        if (!(ongoing && NAV.matcher(text).find()) && !vehicleNavigation && !hasTripProgress
+                && !(hasTurn && DISTANCE.matcher(text).find())) return null;
 
         String instruction = hasTurn ? turn.group() : "请查看导航原文";
         String maneuver = hasTurn ? maneuver(instruction) : "unknown";

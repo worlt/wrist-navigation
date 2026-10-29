@@ -173,13 +173,24 @@ public final class MainActivity extends Activity {
         } else if (!NavigationSyncService.running()) { state = "后台同步未运行"; setup = true; }
         else if (!bridge.hasConnectedNode()) { state = "等待手环连接"; setup = true; }
         else if (!bridge.listenerConnected) { state = "正在连接通知服务"; setup = true; }
-        else state = bridge.isNavigationActive() ? "正在同步高德导航" : "已就绪 · 等待导航";
+        else if ("尚未检查".equals(bridge.notificationStatus())) { state = "正在读取高德通知"; }
+        else if (bridge.notificationStatus().contains("识别=无")) {
+            state = bridge.readableNotificationCount() == 0 ? "未读到高德导航通知" : "高德通知暂未识别为导航";
+        }
+        else if (bridge.isNavigationActive()) { state = "正在同步高德导航"; }
+        else state = "已就绪 · 等待导航";
         setText(status, state);
         setText(syncDetail, bridge.enabled() ? "高德开始导航后自动同步" : "开启后自动转发导航");
         String connection = !NavigationSyncService.hasNotificationAccess(this) ? "需要通知使用权"
             : !NavigationSyncService.hasDevicePermission(this) ? "需要附近设备权限"
             : bridge.hasConnectedNode() ? "手机互联已连接" : "通过小米运动健康连接";
         setText(connectionDetail, connection);
+        if (bridge.enabled() && bridge.listenerConnected && bridge.hasConnectedNode()
+                && bridge.notificationStatus().contains("识别=无")) {
+            setText(syncDetail, bridge.readableNotificationCount() == 0
+                ? "未读到通知 · 检查高德是否允许显示导航通知"
+                : "已收到通知文字但未识别 · 可查看连接与权限状态");
+        }
         action.setVisibility(setup ? View.VISIBLE : View.GONE);
     }
 

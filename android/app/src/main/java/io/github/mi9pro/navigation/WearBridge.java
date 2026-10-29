@@ -29,7 +29,7 @@ public final class WearBridge {
     private long sequence, nextConnect, connectGeneration, sendGeneration;
     private NavigationParser.Result latest = state("idle", "请在高德地图开始导航");
     private NavigationParser.Result realLatest = latest;
-    public boolean listenerConnected;
+    public volatile boolean listenerConnected;
     public String statusText = "请连接小米运动健康并授权互联";
     public String lastAmapText = "尚未读取到高德通知";
     public long lastAckAt;
@@ -37,6 +37,7 @@ public final class WearBridge {
     private String notificationState = "尚未检查";
     private long lastNotificationCheck;
     private int notificationCount = -1;
+    private int readableNotificationCount;
     private final AutoLaunchPolicy autoLaunch = new AutoLaunchPolicy();
     private final SendPolicy sendPolicy = new SendPolicy();
     private final Runnable sendTask = this::sendLatest;
@@ -59,9 +60,22 @@ public final class WearBridge {
         events.addLast(SystemClock.elapsedRealtime() + " " + text);
     }
 
+    public void setNotificationListenerConnected(boolean connected) {
+        listenerConnected = connected;
+        if (connected) {
+            event("notification listener connected");
+            NavigationNotificationListener.requestRefresh();
+        } else {
+            event("notification listener disconnected");
+        }
+        NavigationSyncService.refresh();
+        notifyUi();
+    }
+
     public void notificationChecked(int count, int readable, NavigationParser.Result result) {
         lastNotificationCheck = System.currentTimeMillis();
         notificationCount = count;
+        readableNotificationCount = readable;
         String state = "高德通知=" + count + "，有文字=" + readable + "，识别=" + (result == null ? "无" : result.status);
         if (!state.equals(notificationState)) event(state);
         notificationState = state;
@@ -99,7 +113,7 @@ public final class WearBridge {
         preferences.edit().putBoolean("keep_screen_on", value).apply();
         sendLatest();
     }
-    public long pollIntervalMs() { return "active".equals(realLatest.status) ? sendPolicy.nextReadDelay(SystemClock.elapsedRealtime()) : 60000; }
+    public long pollIntervalMs() { return "active".equals(realLatest.status) ? sendPolicy.nextReadDelay(SystemClock.elapsedRealtime()) : SendPolicy.HEARTBEAT_MS; }
     public String navigationStatus() { return realLatest.status; }
     public boolean hasConnectedNode() { return nodeId != null; }
     public boolean isNavigationActive() {
@@ -112,6 +126,8 @@ public final class WearBridge {
         maybeAutoLaunch();
     }
     public String preview() { return latest.instruction + (latest.distance.isEmpty() ? "" : " · " + latest.distance) + "\n" + latest.rawText; }
+    public String notificationStatus() { return notificationState; }
+    public int readableNotificationCount() { return readableNotificationCount; }
 
     public void setEnabled(boolean value) {
         preferences.edit().putBoolean("enabled", value).apply();
@@ -120,6 +136,7 @@ public final class WearBridge {
             realLatest = state("idle", "等待导航");
             lastNotificationCheck = 0;
             notificationCount = -1;
+            readableNotificationCount = 0;
         }
         latest = value ? realLatest : state("paused", "手机已暂停同步");
         sendPolicy.reset();
@@ -145,6 +162,7 @@ public final class WearBridge {
 
     public void unavailable(String reason) {
         notificationCount = -1;
+        readableNotificationCount = 0;
         realLatest = state("unavailable", reason);
         updateControlState();
         if (!enabled()) return;
