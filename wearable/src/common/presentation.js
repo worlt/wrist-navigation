@@ -92,7 +92,7 @@ function navigationText(view) {
 function navigationLayout(view, settings, warning) {
   const size = settings.fontSize;
   const rowHeight = Math.ceil(size * 1.4);
-  const text = navigationText(view);
+  let text = navigationText(view);
   if (warning) text += (text ? '\n' : '') + warning;
   const rows = lines(text, Math.floor(geometry.CONTENT_WIDTH / size));
   const guidanceHeight = Math.min(geometry.GUIDANCE_MAX,
