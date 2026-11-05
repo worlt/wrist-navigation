@@ -84,7 +84,7 @@ node tools/check-wearable-package.cjs
 
 依赖由 wearable/package-lock.json 锁定（aiot-toolkit 2.0.5）。prebuild 在缺少原手环证书时停止，避免 toolkit 回退到自带证书；start 和 release 也有签名前置检查。检查确认文件完整和密钥配对，不代替 APK/RPK 身份一致性及真机验证。发布包需另按 toolkit 约定恢复原发布签名，并与 debug 证书保持同一身份。
 
-RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk（当前源码版本；已发布配套手环为 0.3.3）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
+RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk（当前源码版本；v0.4.0 Release 以 NAV-BAND-040.rpk 提供，标记为测试版）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
 
 0.2.4 附加字体 TTF、许可和字符覆盖信息已经放入 wearable/src/common/，普通开发与打包仍只需 Node.js，不读取电脑安装字体。只有重新制作字体子集才需要 Python/fontTools 和原字体文件；来源、哈希及重建方式见 [显示设置记录](display-settings-024.md)。
 

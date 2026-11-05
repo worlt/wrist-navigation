@@ -2,6 +2,14 @@
 
 更新日期：2026-11-05。工作目录以当前仓库根目录为准，与用户使用中文沟通。
 
+## 2026-11-05 v0.4.0 测试版发布准备
+
+用户已明确要求提交、推送 GitHub，随后要求发布 Release。此前修改已提交为 `7c19dc1`，维护者信息修改为 `fd3b712`；本仓库 Git 身份按用户要求设为 `worlt <2516930419@qq.com>`，后续提交会公开此邮箱，不改写此前历史。远程目标为 `mine`（worlt/wrist-navigation），不要向原作者的 `origin` 推送。
+
+v0.4.0 按 Pre-release 发布，保留 v0.2.5 原发布。附件为现有 `NAV-BAND-040.rpk`、与 v0.2.5 完全相同的 `NAV-PHONE-025-local-0B6ED811.apk`、校验表及第三方声明；安装包没有重新构建或签名。RPK 资源/编译逻辑/签名复核通过，APK 版本 0.2.5/code 10、签名有效，双端证书匹配。补查 Android runtimeClasspath 与 DEX 中的 AndroidX、Kotlin、JetBrains 注解，随附件补齐 Apache-2.0 及原项目/字体许可。只修正 package-lock 的项目版本号为 0.4.0，没有升级依赖。
+
+本轮将下载入口和版本说明同步到测试版，旧版实机证据与 0.4.0 未验证范围继续分开。发布后的 API 记录、附件哈希和匿名下载校验保存在被忽略的 `.local/release-040/`；是否已完成发布以该记录及 GitHub Release 实际状态为准。仍未传包至手机、未安装、未完成本轮真机验收。
+
 ## 2026-11-05 文档、演示声明、隐私与字体复核
 
 按用户要求，README 改用 `docs/images/arrow-gallery-040.png`，与用户提供的原图字节一致；旧图 `docs/images/wearable-native-024.png` 保留且未改动，不再在 README 展示。两图均为虚构内容的浏览器截图，PNG 无 EXIF、文本或位置元数据。已加入 https://wrist-navigation.vercel.app/ 和两项子页面入口，更新开发、安装、显示设置、隐私和第三方声明，区分当前源码手环 0.4.0 与 GitHub 已发布手环 0.3.3。公开 v0.2.5 Release 的 SHA-256 位于正文，未附独立校验表或第三方声明附件。
