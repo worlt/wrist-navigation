@@ -3,12 +3,13 @@
 (() => {
   const template = document.createElement('template');
   template.innerHTML = bundle.template;
-  function launch(index, initialScene, initialSettings, settingsOpen) {
+  function launch(index, initialScene, initialSettings, settingsOpen, initialPicker) {
     const host = document.getElementById('band-' + index);
     let page;
     let queued = false;
     let offset = 0;
     let connected = true;
+    let apkStatus = 'CONNECTED';
     let seq = 0;
     let timer = null;
     let expire = null;
@@ -20,6 +21,7 @@
     const moduleCache = {};
     const connection = {
       getReadyState: cb => cb.success({ status: connected ? 1 : 2 }),
+      getApkStatus: () => apkStatus,
       send: cb => events.push(JSON.parse(cb.data))
     };
     const storage = {
@@ -105,16 +107,30 @@
     function setScene(next) {
       scene = next;
       offset = 0;
+      if (next === 'ready' || next === 'noapk') {
+        // These screens only exist before any packet arrives, so restart the page.
+        page.onDestroy();
+        apkStatus = next === 'ready' ? 'CONNECTED' : 'UNINSTALLED';
+        connected = true;
+        page.onInit();
+        page.onReady();
+        page.onShow();
+        render();
+        return;
+      }
       if (next === 'disconnected') {
         connected = false; connection.onclose(''); render(); return;
       }
       if (next === 'error') { connection.onerror('本地模拟连接错误'); render(); return; }
       connected = true;
-      const active = ['active', 'long', 'expired'].includes(next);
+      const roundabout = next.startsWith('roundabout-');
+      const exit = roundabout ? next.slice('roundabout-'.length) : '';
+      const active = ['active', 'long', 'expired'].includes(next) || roundabout;
       connection.onmessage({ data: JSON.stringify({ v: 1, type: 'navigation', session: 'browser-only', seq: ++seq,
-        status: active ? 'active' : next, title: '高德地图', maneuver: next === 'long' ? 'right' : 'straight',
-        distance: active ? '200 米' : '', instruction: active ? '直行' : '',
-        rawText: next === 'long' ? '前方1.2公里右转进入示例道路，请注意路况并继续查看完整指引' : active ? '直行200米\n高德导航中' : '' }) });
+        status: active ? 'active' : next, title: '高德地图', maneuver: roundabout ? 'roundabout' : next === 'long' ? 'right' : 'straight',
+        distance: active ? '200 米' : '', instruction: roundabout ? '进入环岛' : active ? '直行' : '',
+        rawText: roundabout ? '前方200米进入环岛' + (exit === 'unknown' ? '，请查看导航原文' : '，第' + exit + '出口驶出')
+          : next === 'long' ? '前方1.2公里右转进入示例道路，请注意路况并继续查看完整指引' : active ? '直行200米\n高德导航中' : '' }) });
       if (next === 'expired') advance(20000);
       render();
     }
@@ -123,21 +139,16 @@
     if (initialSettings) page.applySettings(initialSettings);
     setScene(initialScene);
     if (settingsOpen) page.openSettings();
+    if (initialPicker) page.openPicker(initialPicker);
     render();
-    const heartbeat = window.setInterval(() => { if (scene === 'active' || scene === 'long') setScene(scene); }, 8000);
+    const heartbeat = window.setInterval(() => { if (scene === 'active' || scene === 'long' || scene.startsWith('roundabout-')) setScene(scene); }, 8000);
     return { page, setScene, advance, render, screenRequests, events, callbacks,
       stop() { window.clearInterval(heartbeat); page.onDestroy(); },
       reset() { localStorage.removeItem(storageKey); page.applySettings(initialSettings || requireModule('../../common/settings').DEFAULTS); page.paint(); render(); }
     };
   }
-  const previews = [launch(0, 'active'), launch(1, 'idle'), launch(2, 'idle', null, true), launch(3, 'long', { fontSize: 44, arrowSize: 100, arrowWeight: 6 })];
+  const previews = bundle.scenes.map((entry, i) => launch(i, entry.scene, entry.settings, entry.settingsOpen, entry.picker));
   window.nativePreviews = previews;
-  const controls = [...document.querySelectorAll('[data-scene]')];
-  controls.forEach(button => button.addEventListener('click', () => {
-    previews[0].setScene(button.dataset.scene);
-    controls.forEach(item => item.classList.toggle('selected', item === button));
-  }));
-  controls[0].classList.add('selected');
   document.getElementById('reset').addEventListener('click', () => previews.forEach(preview => preview.reset()));
   window.addEventListener('keydown', event => { if (event.key === 'Escape') previews.forEach(preview => { preview.page.onBackPress(); preview.render(); }); });
   window.addEventListener('beforeunload', () => previews.forEach(preview => preview.stop()));

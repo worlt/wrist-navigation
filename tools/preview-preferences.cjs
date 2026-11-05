@@ -1,8 +1,8 @@
 // Display preferences for the interactive browser prototype, not device storage.
 function createPreferences() {
   const key = 'mi9pro.preview.display.v1';
-  const defaults = { font: 'default', fontSize: 34, arrowSize: 78, arrowWeight: 6 };
-  const bounds = { fontSize: [24, 44], arrowSize: [56, 100], arrowWeight: [4, 10] };
+  const defaults = { font: 'default', fontSize: 34, arrowSize: 160, arrowWeight: 6 };
+  const bounds = { fontSize: [24, 44], arrowSize: [32, 232], arrowWeight: [4, 10] };
   const fonts = ['default', 'song', 'kai', 'rounded'];
   function normalize(value) {
     const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};

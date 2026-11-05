@@ -1,17 +1,64 @@
 const KEY = 'navigation.display.v1';
 const FONT_COVERAGE = require('./font-coverage');
-const DEFAULTS = { font: 'default', fontSize: 30, arrowSize: 42, arrowWeight: 8 };
-const LIMITS = { fontSize: [24, 44], arrowSize: [32, 100], arrowWeight: [4, 10] };
+const DEFAULTS = { font: 'default', fontSize: 36, arrowSize: 160, arrowWeight: 8,
+  textColor: 'white', arrowColor: 'mint', arrowStyle: 'solid' };
+// 232px + 8px gap + two 62px rows fits the 368px navigation stage, even at 44pt.
+const LIMITS = { fontSize: [24, 44], arrowSize: [32, 232], arrowWeight: [4, 10] };
 const FONTS = ['default', 'song', 'kai', 'round'];
+// 'short' is the compact value shown in the one-line settings row; the picker
+// list has room for the full name.
 const FONT_OPTIONS = [
-  { id: 'default', name: '系统默认', family: 'sans-serif' },
-  { id: 'song', name: '宋体', family: 'BandSong' },
-  { id: 'kai', name: '楷体', family: 'BandKai' },
-  { id: 'round', name: '圆体', family: 'BandRound' }
+  { id: 'default', name: '系统默认', short: '默认', family: 'sans-serif' },
+  { id: 'song', name: '宋体', short: '宋体', family: 'BandSong' },
+  { id: 'kai', name: '楷体', short: '楷体', family: 'BandKai' },
+  { id: 'round', name: '圆体', short: '圆体', family: 'BandRound' }
 ];
+// Vela has no canvas or image tint, so an arrow colour is a set of pre-coloured
+// PNGs picked by directory. Keep this list identical to tools/generate-band-assets.ps1.
+const COLOR_OPTIONS = [
+  { id: 'white', name: '白色', short: '白色', value: '#ffffff' },
+  { id: 'mint', name: '薄荷绿', short: '薄荷', value: '#80f5be' },
+  { id: 'amber', name: '琥珀黄', short: '琥珀', value: '#ffcf6b' },
+  { id: 'sky', name: '天蓝', short: '天蓝', value: '#7cc7ff' }
+];
+const STYLE_OPTIONS = [
+  { id: 'line', name: '线条' },
+  { id: 'solid', name: '实心' }
+];
+const COLORS = COLOR_OPTIONS.map(option => option.id);
+const STYLES = STYLE_OPTIONS.map(option => option.id);
+const PICKER_TITLES = { font: '选择字体', textColor: '文字颜色', arrowColor: '箭头颜色', arrowStyle: '箭头样式' };
 
 function fontOption(id) {
   return FONT_OPTIONS[FONTS.indexOf(id)] || FONT_OPTIONS[0];
+}
+
+function colorOption(id) {
+  return COLOR_OPTIONS[COLORS.indexOf(id)] || COLOR_OPTIONS[0];
+}
+
+function styleOption(id) {
+  return STYLE_OPTIONS[STYLES.indexOf(id)] || STYLE_OPTIONS[0];
+}
+
+function optionsFor(kind) {
+  if (kind === 'font') return FONT_OPTIONS.slice();
+  if (kind === 'textColor' || kind === 'arrowColor') return COLOR_OPTIONS.slice();
+  if (kind === 'arrowStyle') return STYLE_OPTIONS.slice();
+  return [];
+}
+
+function clamp(value, range, fallback) {
+  if (typeof value !== 'number' || !isFinite(value)) return fallback;
+  return Math.min(range[1], Math.max(range[0], Math.round(value)));
+}
+
+function arrowPath(style, color, weight, maneuver) {
+  const picked = STYLES.indexOf(style) >= 0 ? style : DEFAULTS.arrowStyle;
+  const tint = COLORS.indexOf(color) >= 0 ? color : DEFAULTS.arrowColor;
+  const thickness = clamp(weight, LIMITS.arrowWeight, DEFAULTS.arrowWeight);
+  const shape = /^[a-z_]{2,12}$/.test(String(maneuver)) ? maneuver : 'unknown';
+  return '/common/arrows/' + picked + '/' + tint + '/' + thickness + '/' + shape + '.png';
 }
 
 // An uncommon road name or emoji must not disappear because of a font subset.
@@ -30,14 +77,13 @@ function fontForText(id, text) {
 function normalize(value) {
   const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const result = { font: DEFAULTS.font, fontSize: DEFAULTS.fontSize,
-    arrowSize: DEFAULTS.arrowSize, arrowWeight: DEFAULTS.arrowWeight };
+    arrowSize: DEFAULTS.arrowSize, arrowWeight: DEFAULTS.arrowWeight,
+    textColor: DEFAULTS.textColor, arrowColor: DEFAULTS.arrowColor, arrowStyle: DEFAULTS.arrowStyle };
   if (FONTS.indexOf(input.font) >= 0) result.font = input.font;
-  for (const name of Object.keys(LIMITS)) {
-    const number = input[name];
-    if (typeof number === 'number' && isFinite(number)) {
-      result[name] = Math.min(LIMITS[name][1], Math.max(LIMITS[name][0], Math.round(number)));
-    }
-  }
+  if (COLORS.indexOf(input.textColor) >= 0) result.textColor = input.textColor;
+  if (COLORS.indexOf(input.arrowColor) >= 0) result.arrowColor = input.arrowColor;
+  if (STYLES.indexOf(input.arrowStyle) >= 0) result.arrowStyle = input.arrowStyle;
+  for (const name of Object.keys(LIMITS)) result[name] = clamp(input[name], LIMITS[name], DEFAULTS[name]);
   return result;
 }
 
@@ -89,4 +135,6 @@ function createStore(storage, onLoad, onStatus) {
   };
 }
 
-module.exports = { KEY, DEFAULTS, LIMITS, FONTS, FONT_OPTIONS, fontOption, fontForText, normalize, createStore };
+module.exports = { KEY, DEFAULTS, LIMITS, FONTS, FONT_OPTIONS, COLORS, COLOR_OPTIONS,
+  STYLES, STYLE_OPTIONS, PICKER_TITLES, fontOption, colorOption, styleOption, optionsFor,
+  arrowPath, fontForText, normalize, createStore };

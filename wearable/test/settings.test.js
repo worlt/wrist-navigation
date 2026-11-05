@@ -1,13 +1,56 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const settings = require('../src/common/settings');
 const presentation = require('../src/common/presentation');
+
+const MANEUVERS = ['left', 'right', 'straight', 'slight_left', 'slight_right', 'sharp_left', 'sharp_right', 'uturn', 'roundabout', 'arrive', 'unknown'];
 
 test('device preferences reject invalid values and bound layout sizes', () => {
   assert.deepEqual(settings.normalize(null), settings.DEFAULTS);
   assert.deepEqual(settings.normalize({ font: 'unverified', fontSize: 1000, arrowSize: -8, arrowWeight: NaN }),
-    { font: 'default', fontSize: 44, arrowSize: 32, arrowWeight: 8 });
-  assert.equal(settings.normalize({ fontSize: '40' }).fontSize, 30);
+    { ...settings.DEFAULTS, fontSize: 44, arrowSize: 32 });
+  assert.equal(settings.normalize({ fontSize: '40' }).fontSize, 36);
+  assert.equal(settings.normalize({ arrowSize: 999 }).arrowSize, 232);
+  assert.equal(settings.normalize({ arrowSize: 160 }).arrowSize, 160, 'preserve previously saved sizes');
+});
+
+test('unknown colours and styles fall back instead of shipping a missing asset', () => {
+  assert.deepEqual(settings.normalize({ textColor: 'pink', arrowColor: 'neon', arrowStyle: 'dotted' }), settings.DEFAULTS);
+  assert.equal(settings.colorOption('mint').value, '#80f5be');
+  assert.equal(settings.styleOption('solid').name, '实心');
+  assert.equal(new Set(settings.COLORS).size, settings.COLOR_OPTIONS.length);
+  assert.equal(new Set(settings.STYLES).size, settings.STYLE_OPTIONS.length);
+  assert.ok(settings.COLOR_OPTIONS.every(option => /^#[0-9a-f]{6}$/.test(option.value)));
+  for (const kind of ['font', 'textColor', 'arrowColor', 'arrowStyle']) {
+    assert.ok(settings.optionsFor(kind).length > 0, kind);
+    assert.ok(settings.PICKER_TITLES[kind]);
+  }
+  assert.deepEqual(settings.optionsFor('unknown'), []);
+});
+
+test('arrow paths stay inside the asset tree for hostile values', () => {
+  assert.equal(settings.arrowPath('line', 'white', 8, 'left'), '/common/arrows/line/white/8/left.png');
+  assert.equal(settings.arrowPath('bogus', 'bogus', 99, 'left'), '/common/arrows/solid/mint/10/left.png');
+  assert.equal(settings.arrowPath('solid', 'mint', 2, 'right'), '/common/arrows/solid/mint/4/right.png');
+  assert.equal(settings.arrowPath('line', 'sky', 8, '../../etc/passwd'), '/common/arrows/line/sky/8/unknown.png');
+});
+
+test('every style, colour and weight ships the full maneuver set', () => {
+  let count = 0;
+  for (const style of settings.STYLES) {
+    for (const color of settings.COLORS) {
+      for (let weight = 4; weight <= 10; weight++) {
+        for (const maneuver of MANEUVERS) {
+          const file = path.join(__dirname, '../src', settings.arrowPath(style, color, weight, maneuver));
+          assert.ok(fs.existsSync(file), 'missing asset: ' + file);
+          count++;
+        }
+      }
+    }
+  }
+  assert.equal(count, settings.STYLES.length * settings.COLORS.length * 7 * MANEUVERS.length);
 });
 
 test('a late load cannot undo user changes and queued writes finish in order', () => {
@@ -31,6 +74,14 @@ test('a late load cannot undo user changes and queued writes finish in order', (
   assert.notEqual(statuses.at(-1), '已保存');
   writes[1].success();
   assert.equal(statuses.at(-1), '已保存');
+});
+
+test('settings stored before colours and styles existed fall back to the current defaults', () => {
+  let loaded;
+  const store = settings.createStore({ get: cb => cb.success('{"fontSize":38,"arrowWeight":9}'), set() {} },
+    value => { loaded = value; }, () => {});
+  store.load();
+  assert.deepEqual(loaded, { ...settings.DEFAULTS, fontSize: 38, arrowWeight: 9 });
 });
 
 test('corrupt settings, storage errors and callbacks after destruction are contained', () => {
@@ -66,8 +117,6 @@ test('guidance uses the full original instruction and preserves long text at eve
 });
 
 test('bundled fonts cover UI text and missing glyphs retain the original system fallback', () => {
-  const fs = require('node:fs');
-  const path = require('node:path');
   for (const id of settings.FONTS) {
     assert.equal(settings.normalize({ font: id }).font, id);
     const option = settings.fontOption(id);

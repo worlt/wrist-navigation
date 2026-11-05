@@ -15,12 +15,22 @@ const GEAR_SIZE = 64
 const GEAR_BOTTOM = 16
 const GEAR_LEFT = (WIDTH - GEAR_SIZE) / 2
 const GEAR_TOP = HEIGHT - GEAR_SIZE - GEAR_BOTTOM
-const ARROW_GAP = 26
-// The guidance block stops here so the bottom gear keeps a 16px gap.
+const ARROW_GAP = 8
+const NAVIGATION_TOP = 24
+const NAVIGATION_DEMO_TOP = 72
+const NAVIGATION_BOTTOM = GEAR_TOP - 8
+const NAVIGATION_HEIGHT = NAVIGATION_BOTTOM - NAVIGATION_TOP
+// Cap the scroll viewport at three normal-sized rows; layout rounds to full rows.
 const GUIDANCE_MAX = 166
+// The arrow gives way to the text, but never below this much.
+const MIN_ARROW_SIZE = 64
 
 function centerTop(size) { return (HEIGHT - size) / 2 }
 function centerInContent(size) { return (CONTENT_WIDTH - size) / 2 }
+
+// Small content remains centered. Larger arrows use the space above it while
+// the last complete text row always stays clear of the settings hit target.
+function navigationTop(size) { return Math.min(centerTop(size), NAVIGATION_BOTTOM - size) }
 
 // A taller type scale pushes the list down instead of overlapping the title.
 function settingsListTop(titleHeight) {
@@ -32,5 +42,6 @@ function settingsListHeight(titleHeight) {
 }
 
 module.exports = { WIDTH, HEIGHT, MARGIN, CONTENT_WIDTH, BOTTOM_INSET, SETTINGS_TOP,
-  GEAR_SIZE, GEAR_LEFT, GEAR_TOP, ARROW_GAP, GUIDANCE_MAX,
+  GEAR_SIZE, GEAR_LEFT, GEAR_TOP, ARROW_GAP, GUIDANCE_MAX, MIN_ARROW_SIZE,
+  NAVIGATION_TOP, NAVIGATION_DEMO_TOP, NAVIGATION_BOTTOM, NAVIGATION_HEIGHT, navigationTop,
   centerTop, centerInContent, settingsListTop, settingsListHeight }

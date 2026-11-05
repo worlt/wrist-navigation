@@ -11,6 +11,7 @@
     "preview": "node tools/preview-wearable.cjs",
     "settings": "node tools/preview-settings.cjs",
     "dev": "node tools/preview-server.cjs",
+    "site": "node tools/build-site.cjs",
     "deps:wearable": "npm --prefix wearable ci",
     "build:wearable": "npm --prefix wearable run build"
   }

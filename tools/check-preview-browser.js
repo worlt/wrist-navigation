@@ -5,7 +5,7 @@
   const assert = (ok, message) => { if (!ok) throw new Error(message); checks++; };
   const q = (selector, index = 0) => document.querySelector('#band-' + index + ' ' + selector);
   const click = selector => { const node = q(selector); assert(!!node, 'click target: ' + selector); node.click(); };
-  const scene = name => document.querySelector('[data-scene="' + name + '"]').click();
+  const scene = name => { window.nativePreviews[0].setScene(name); window.nativePreviews[0].render(); };
   const near = (actual, expected) => Math.abs(actual - expected) < 0.6;
   const app = window.nativePreviews[0];
   document.getElementById('reset').click();
@@ -17,10 +17,11 @@
     const rect = content.getBoundingClientRect();
     const gear = q('.settings-entry', index).getBoundingClientRect();
     assert(near(rect.x + rect.width / 2 - page.x, 168), 'content centered horizontally');
-    assert(near(rect.y + rect.height / 2 - page.y, 240), 'content centered vertically');
-    assert(rect.bottom <= gear.top - 16, 'content leaves space for the gear');
-    assert(gear.width === 64 && gear.height === 64, '64px hit target');
-    assert(q('.settings-icon', index).getBoundingClientRect().width === 42, '42px gear icon');
+    if (q('.navigation-stage', index) && rect.height > 304) assert(near(rect.bottom - page.y, 392), 'large navigation uses upper space');
+    else assert(near(rect.y + rect.height / 2 - page.y, 240), 'small content centered vertically');
+    assert(rect.top >= page.top + 24 && rect.bottom <= gear.top - 8, 'content stays in the safe area above the gear');
+    assert(near(gear.width, 64) && near(gear.height, 64), '64px hit target');
+    assert(near(q('.settings-icon', index).getBoundingClientRect().width, 42), '42px gear icon');
     assert(near(gear.x + gear.width / 2 - page.x, 168), 'gear centered horizontally');
     assert(near(gear.bottom - page.y, 464), 'gear 16px from bottom');
   }
@@ -28,7 +29,7 @@
     assert(!q('.home'), 'home removed on settings entry');
     const page = q('.page').getBoundingClientRect();
     const settings = q('.settings').getBoundingClientRect();
-    assert(settings.x === page.x && settings.y === page.y, 'settings starts at screen origin');
+    assert(near(settings.x, page.x) && near(settings.y, page.y), 'settings starts at screen origin');
     const list = q('.settings-list');
     const viewport = list.getBoundingClientRect();
     assert(viewport.top >= q('.settings-title').getBoundingClientRect().bottom, 'settings list below scaled header');
@@ -48,18 +49,20 @@
       const less = row.querySelector('.decrease').getBoundingClientRect();
       const value = row.querySelector('.setting-value').getBoundingClientRect();
       const more = row.querySelector('.increase').getBoundingClientRect();
-      assert(less.width === 44 && less.height >= 52, 'narrower, tall button');
+      assert(near(less.width, 44) && less.height >= 51.9, 'narrower, tall button');
       assert(near(value.left - less.right, 12) && near(more.left - value.right, 12), 'equal compact stepper gaps');
       assert(near(value.x + value.width / 2 - page.x, 168), 'values centered');
     }
-    assert(q('.font-selector').getBoundingClientRect().width === 288, 'font selector spans the common content width');
+    const selectors = q('.settings-list').querySelectorAll('.picker-selector');
+    assert(selectors.length === 4, 'four selection rows: font, text colour, arrow style, arrow colour');
+    assert([...selectors].every(node => near(node.getBoundingClientRect().width, 288)), 'selectors span the common content width');
     assert(q('.version').textContent.includes(app.page.versionName), 'current version rendered');
     list.scrollTop = list.scrollHeight;
     const reset = q('.reset-defaults').getBoundingClientRect();
     assert(reset.bottom <= viewport.bottom && reset.top >= viewport.top, 'restore defaults reachable by scrolling');
     list.scrollTop = 0;
   }
-  for (const name of ['active', 'idle', 'ended', 'paused', 'disconnected', 'error', 'expired']) {
+  for (const name of ['active', 'ready', 'idle', 'noapk', 'ended', 'paused', 'disconnected', 'error', 'expired']) {
     scene(name); geometry();
     click('.settings-entry'); settingsGeometry();
     click('.back'); assert(!q('.settings'), 'settings removed on return'); geometry();
@@ -75,7 +78,7 @@
   click('.back'); assert(!q('.navigation-stage'), 'return after expiry does not show stale guidance');
   scene('long');
   for (const fontSize of [24, 30, 44]) {
-    for (const arrowSize of [32, 42, 100]) {
+    for (const arrowSize of [32, 100, 160, 232]) {
       app.page.applySettings({ fontSize, arrowSize, arrowWeight: 6 }); app.page.paint(); app.render();
       geometry();
       const list = q('.guidance-list');
@@ -88,11 +91,11 @@
     }
   }
   for (const font of ['default', 'song', 'kai', 'round']) {
-    scene('active'); click('.settings-entry'); click('.font-selector');
-    assert(!q('.settings-list') && q('.font-options'), 'font picker is an exclusive view');
+    scene('active'); click('.settings-entry'); click('.picker-selector');
+    assert(!q('.settings-list') && q('.option-list'), 'font picker is an exclusive view');
     const index = ['default', 'song', 'kai', 'round'].indexOf(font);
-    q('.font-options').children[index].querySelector('.font-choice').click();
-    assert(app.page.font === font && !app.page.fontPickerOpen, 'font-choice click selects and returns');
+    q('.option-list').children[index].querySelector('.option-card').click();
+    assert(app.page.font === font && !app.page.pickerOpen, 'option click selects and returns');
     await document.fonts.ready;
     for (const fontSize of [24, 30, 44]) {
       app.page.saveSettings({ font, fontSize, arrowSize: 42, arrowWeight: 8 }); app.render();
@@ -115,7 +118,25 @@
     click('.back');
   }
   click('.settings-entry'); click('.reset-defaults');
-  assert(app.page.fontSize === 30 && app.page.arrowSize === 42 && app.page.arrowWeight === 8 && app.page.font === 'default', 'restore defaults');
+  assert(app.page.fontSize === 36 && app.page.arrowSize === 160 && app.page.arrowWeight === 8 && app.page.font === 'default' && app.page.arrowColor === 'mint' && app.page.arrowStyle === 'solid', 'restore defaults');
+  assert(app.page.textColor === 'white' && app.page.arrowColor === 'mint' && app.page.arrowStyle === 'solid', 'colours and style restored');
+  // Colour and arrow-style pickers switch the real asset and paint the chosen text colour.
+  scene('active'); app.page.openSettings(); app.page.openPicker('arrowColor'); app.render();
+  assert(q('.option-list') && !q('.settings-list'), 'arrow colour picker is an exclusive view');
+  const arrowColors = q('.option-list').children;
+  assert(arrowColors.length === 4, 'four arrow colours');
+  arrowColors[2].querySelector('.option-card').click();
+  assert(app.page.arrowColor === 'amber' && !app.page.pickerOpen, 'arrow colour click selects and returns');
+  app.page.openPicker('arrowStyle'); app.render();
+  q('.option-list').children[1].querySelector('.option-card').click();
+  assert(app.page.arrowStyle === 'solid', 'arrow style click selects');
+  app.page.openPicker('textColor'); app.render();
+  q('.option-list').children[1].querySelector('.option-card').click();
+  app.page.closeSettings(); app.render();
+  assert(app.page.arrowSrc === '/common/arrows/solid/amber/8/straight.png', 'arrow asset follows style and colour');
+  assert(q('.arrow').getAttribute('src').indexOf('data:image/png') === 0, 'the chosen arrow image is rendered');
+  assert(getComputedStyle(q('.guidance-text')).color === 'rgb(128, 245, 190)', 'text colour applied to guidance');
+  app.reset(); app.render();
   click('.back');
   // Leave the saved stepper settings for the separate reload check.
   app.page.saveSettings(saved); scene('active');

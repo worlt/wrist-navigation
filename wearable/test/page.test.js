@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { lines, errorText, details } = require('../src/common/presentation');
+const settings = require('../src/common/settings');
 
 const source = fs.readFileSync(path.join(__dirname, '../src/pages/index/index.ux'), 'utf8')
   .match(/<script>([\s\S]*?)<\/script>/)[1].replace('export default', 'module.exports =');
@@ -84,6 +85,29 @@ function launch(options = {}) {
 
 const navigation = seq => ({ v: 1, type: 'navigation', session: 'phone', seq, status: 'active', title: '高德地图', rawText: '前方200米右转', maneuver: 'right', instruction: '右转', distance: '200 米' });
 
+test('native page displays an exit ordinal and clears it on the next maneuver or expiry', () => {
+  const app = launch({ connected: true });
+  app.page.onReady();
+  app.page.onShow();
+  const ring = seq => ({ ...navigation(seq), maneuver: 'roundabout', instruction: '进入环岛',
+    rawText: '前方200米进入环岛，从第3出口驶出' });
+  app.connection.onmessage({ data: JSON.stringify(ring(1)) });
+  assert.equal(app.page.roundaboutExit, '3');
+  assert.match(app.page.arrowSrc, /roundabout\.png$/);
+  app.page.applySettings({ ...settings.DEFAULTS, arrowStyle: 'line', arrowColor: 'sky', arrowSize: 160 });
+  app.page.paint();
+  assert.equal(app.page.roundaboutExit, '3');
+  assert.equal(app.page.arrowColorValue, '#7cc7ff');
+  app.connection.onmessage({ data: JSON.stringify(navigation(2)) });
+  assert.equal(app.page.roundaboutExit, '');
+  app.connection.onmessage({ data: JSON.stringify(ring(3)) });
+  app.advance(20000);
+  assert.equal(app.page.roundaboutExit, '');
+  app.connection.onmessage({ data: JSON.stringify(ring(4)) });
+  app.connection.onclose('');
+  assert.equal(app.page.roundaboutExit, '');
+});
+
 test('page creates visible initial data before loading interconnect', () => {
   const app = launch({ loadThrows: true });
   assert.equal(app.loads(), 0);
@@ -103,16 +127,23 @@ test('firmware that rejects the string payload switches to the nested envelope',
   assert.deepEqual(app.sent.at(-1), { v: 1, type: 'ack', session: 'phone', seq: 1 });
 });
 
-test('waiting screen reports whether the phone APK is attached', () => {
+test('waiting screen names the missing phone link', () => {
   for (const status of ['CONNECTED', 'DISCONNECTED', 'UNINSTALLED']) {
     const app = launch({ connected: true, apkStatus: status });
     app.page.onReady();
     assert.match(app.page.linkText, new RegExp(status));
-    assert.match(app.page.rawLines.join(''), new RegExp('手机端APK：' + status));
+    assert.equal(app.page.status, { CONNECTED: '已连接', DISCONNECTED: '手机端未就绪', UNINSTALLED: '手机端未安装' }[status]);
+    assert.equal(app.page.rawLines.length, 0, 'a named state needs no raw diagnostic');
+    assert.ok(app.page.hintLines.length > 0, 'every named state carries a hint');
   }
   const missing = launch({ connected: true });
   missing.page.onReady();
   assert.match(missing.page.linkText, /接口不可用/);
+  assert.equal(missing.page.status, '等待导航');
+  assert.match(missing.page.rawLines.join(''), /手机端APK：接口不可用/);
+  const offline = launch({ connected: false });
+  offline.page.onReady();
+  assert.equal(offline.page.status, '等待连接');
 });
 
 test('instance and state exceptions preserve a readable failure state', () => {
@@ -317,7 +348,7 @@ test('settings retain incoming navigation and expiry while releasing screen-on',
   app.page.openSettings();
   app.page.adjust('fontSize', 6);
   app.page.adjust('arrowWeight', 1);
-  assert.equal(app.page.fontSize, 36);
+  assert.equal(app.page.fontSize, 42);
   assert.equal(app.stored.at(-1).arrowWeight, 9);
   app.connection.onmessage({ data: JSON.stringify({ ...navigation(2), rawText: '直行100米' }) });
   assert.equal(app.page.settingsOpen, true);
@@ -343,7 +374,7 @@ test('restores settings on reopen; missing storage does not abort navigation', (
   missing.page.onReady(); missing.page.onShow();
   missing.connection.onmessage({ data: JSON.stringify(navigation(1)) });
   missing.page.adjust('fontSize', 4);
-  assert.equal(missing.page.fontSize, 34);
+  assert.equal(missing.page.fontSize, 40);
   assert.equal(missing.page.guidance, true);
   assert.match(missing.page.saveStatus, /无法保存/);
 });
@@ -354,17 +385,52 @@ test('storage completion after destroy cannot overwrite a closed page', () => {
   const callback = app.storageRead();
   app.page.onDestroy();
   callback.success('{"fontSize":44}');
-  assert.equal(app.page.fontSize, 30);
+  assert.equal(app.page.fontSize, 36);
+});
+
+test('colour and style pickers preview real assets, save and repaint', () => {
+  const app = launch({ connected: true });
+  app.page.onReady(); app.page.onShow();
+  app.page.openSettings();
+  app.page.openPicker('textColor');
+  assert.equal(app.page.pickerOpen, true);
+  assert.equal(app.page.settingsTitle, '文字颜色');
+  assert.equal(app.page.pickerOptions.length, settings.COLOR_OPTIONS.length);
+  assert.ok(app.page.pickerOptions.every(option => option.showSample && !option.showImage));
+  app.page.selectOption('mint');
+  assert.equal(app.page.textColorValue, '#80f5be');
+  assert.equal(app.page.pickerOpen, false);
+  assert.equal(app.stored.at(-1).textColor, 'mint');
+  app.page.openPicker('arrowStyle');
+  assert.equal(app.page.settingsTitle, '箭头样式');
+  assert.equal(app.page.pickerOptions.filter(option => option.id === 'solid')[0].image,
+    '/common/arrows/solid/mint/8/straight.png');
+  app.page.selectOption('solid');
+  assert.equal(app.page.arrowStyleName, '实心');
+  app.page.openPicker('arrowColor');
+  assert.ok(app.page.pickerOptions.every(option => option.image.indexOf('/common/arrows/solid/') === 0));
+  app.page.selectOption('amber');
+  app.page.adjust('arrowWeight', 1);
+  app.connection.onmessage({ data: JSON.stringify(navigation(1)) });
+  assert.equal(app.page.arrowSrc, '/common/arrows/solid/amber/9/right.png');
+  assert.equal(app.page.guidance, true);
+  app.page.openPicker('arrowColor');
+  app.page.selectOption('pink');
+  assert.equal(app.page.arrowColor, 'amber', 'unknown option is ignored');
+  assert.equal(app.page.pickerOpen, true, 'a rejected option keeps the list open');
+  app.page.settingsBack();
+  assert.equal(app.page.pickerOpen, false);
+  assert.equal(app.page.settingsOpen, true);
 });
 
 test('font selection, typography and defaults survive storage and every display state', () => {
   const app = launch({ connected: true, settings: '{"fontSize":30,"arrowSize":78,"arrowWeight":8}' });
   app.page.onReady(); app.page.onShow();
   assert.equal(app.page.arrowSize, 78, 'upgrades preserve user adjustments');
-  app.page.openSettings(); app.page.openFonts();
-  app.page.selectFont('kai');
+  app.page.openSettings(); app.page.openPicker('font');
+  app.page.selectOption('kai');
   assert.equal(app.page.fontFamily, 'BandKai');
-  assert.equal(app.page.fontPickerOpen, false);
+  assert.equal(app.page.pickerOpen, false);
   app.page.adjust('fontSize', 14);
   assert.equal(app.stored.at(-1).font, 'kai', 'size adjustment must not reset the font');
   assert.equal(app.page.fontSize, 44);
@@ -381,12 +447,12 @@ test('font selection, typography and defaults survive storage and every display 
   app.connection.onmessage({ data: JSON.stringify({ ...navigation(2), rawText: '直行到𠮷🚦路口' }) });
   assert.equal(app.page.guidanceFontFamily, 'sans-serif');
   assert.equal(app.page.guidanceLines.join(''), '直行到𠮷🚦路口');
-  app.page.openSettings(); app.page.openFonts();
+  app.page.openSettings(); app.page.openPicker('font');
   assert.equal(app.page.onBackPress(), true);
-  assert.equal(app.page.fontPickerOpen, false);
+  assert.equal(app.page.pickerOpen, false);
   assert.equal(app.page.settingsOpen, true);
   app.page.resetSettings();
-  assert.deepEqual(app.stored.at(-1), { font: 'default', fontSize: 30, arrowSize: 42, arrowWeight: 8 });
+  assert.deepEqual(app.stored.at(-1), settings.DEFAULTS);
   app.page.onBackPress();
   assert.equal(app.page.settingsOpen, false);
 });

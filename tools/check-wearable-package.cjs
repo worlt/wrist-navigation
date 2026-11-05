@@ -103,19 +103,20 @@ for (const name of ['settings', 'home']) {
   assert.equal(styles[name].left, '0px');
 }
 for (let i = 0; i < 6; i++) click('increase', byClass(page.template(page), 'font-size-row'));
-assert.equal(page.fontSize, 36);
-assert.equal(saved.at(-1).fontSize, 36);
+assert.equal(page.fontSize, 42);
+assert.equal(saved.at(-1).fontSize, 42);
 assert.equal(page.versionName, manifest.versionName);
-click('font-selector');
-assert.equal(page.fontPickerOpen, true);
+click('picker-selector');
+assert.equal(page.pickerOpen, true);
+assert.equal(page.settingsTitle, '选择字体');
 assert.equal(byClass(page.template(page), 'settings-list'), null);
-const fontChoices = byClass(page.template(page), 'font-options').children;
+const fontChoices = byClass(page.template(page), 'option-list').children;
 for (let i = 1; i <= 3; i++) {
-  if (!page.fontPickerOpen) click('font-selector');
-  click('font-choice', byClass(page.template(page), 'font-options').children[i]);
+  if (!page.pickerOpen) click('picker-selector');
+  click('option-card', byClass(page.template(page), 'option-list').children[i]);
   assert.equal(page.font, ['default', 'song', 'kai', 'round'][i]);
   assert.equal(saved.at(-1).font, page.font);
-  assert.equal(page.fontPickerOpen, false);
+  assert.equal(page.pickerOpen, false);
   const family = page.fontFamily;
   assert.ok(archive.getEntry('common/fonts/' + family + '.ttf'));
   assert.ok(archive.getEntry('common/fonts/' + family + '-OFL.txt'));
@@ -123,23 +124,63 @@ for (let i = 1; i <= 3; i++) {
   assert.ok(archive.readFile('common/fonts/' + family + '.ttf').equals(
     fs.readFileSync(path.join(project, 'wearable/src/common/fonts', family + '.ttf'))));
 }
+for (const [kind, value] of [['textColor', 'mint'], ['arrowColor', 'amber'], ['arrowStyle', 'solid']]) {
+  page.openPicker(kind);
+  assert.equal(page.pickerOpen, true);
+  assert.equal(page.settingsTitle, { textColor: '文字颜色', arrowColor: '箭头颜色', arrowStyle: '箭头样式' }[kind]);
+  const options = byClass(page.template(page), 'option-list').children;
+  const index = page.pickerOptions.findIndex(option => option.id === value);
+  assert.ok(index >= 0, 'option available: ' + kind + '/' + value);
+  click('option-card', options[index]);
+  assert.equal(page[kind], value, 'saved ' + kind);
+  assert.equal(page.pickerOpen, false);
+  assert.equal(saved.at(-1)[kind], value);
+}
+assert.match(page.arrowSrc, /^\/common\/arrows\/solid\/amber\/8\//);
 click('reset-defaults');
 assert.equal(page.font, 'default');
-assert.equal(page.fontSize, 30);
-assert.equal(page.arrowSize, 42);
+assert.equal(page.fontSize, 36);
+assert.equal(page.arrowSize, 160);
 assert.equal(page.arrowWeight, 8);
+assert.equal(page.textColor, 'white');
+assert.equal(page.arrowColor, 'mint');
+assert.equal(page.arrowStyle, 'solid');
 click('back');
 assert.equal(byClass(page.template(page), 'settings'), null);
 assert.ok(byClass(page.template(page), 'navigation-stage'));
 assert.equal(byClass(page.template(page), 'rest'), null);
 assert.equal(page.guidanceLines.join(''), '右转进入示例路');
+page.saveSettings({ ...page.currentSettings(), fontSize: 44, arrowSize: 232 });
+page.paint();
+assert.equal(page.arrowSize, 232);
+assert.equal(page.arrowDrawSize, 232, 'compiled navigation keeps the maximum arrow at the maximum font');
+assert.ok(page.contentTop >= 24);
+assert.ok(page.contentTop + page.contentHeight <= 392);
+page.resetSettings();
 assert.ok(archive.getEntry('common/settings.png'));
 for (let i = 0; i < 3; i++) { click('settings-entry'); click('back'); }
-for (let weight = 4; weight <= 10; weight++) {
-  for (const maneuver of ['left', 'right', 'straight', 'slight_left', 'slight_right', 'sharp_left', 'sharp_right', 'uturn', 'roundabout', 'arrive', 'unknown']) {
-    assert.ok(archive.getEntry('common/arrows/' + weight + '/' + maneuver + '.png'));
+for (const style of ['line', 'solid']) {
+  for (const color of ['white', 'mint', 'amber', 'sky']) {
+    for (let weight = 4; weight <= 10; weight++) {
+      for (const maneuver of ['left', 'right', 'straight', 'slight_left', 'slight_right', 'sharp_left', 'sharp_right', 'uturn', 'roundabout', 'arrive', 'unknown']) {
+        const name = 'common/arrows/' + style + '/' + color + '/' + weight + '/' + maneuver + '.png';
+        assert.ok(archive.getEntry(name));
+        assert.ok(archive.readFile(name).equals(fs.readFileSync(path.join(project, 'wearable/src', name))),
+          'packaged arrow matches the current preview: ' + name);
+      }
+    }
   }
+}
+for (const [seq, maneuver, rawText, expected] of [
+  [2, 'roundabout', '前方200米进入环岛，第3出口驶出', '3'],
+  [3, 'roundabout', '前方200米进入环岛', ''],
+  [4, 'right', '前方200米右转', '']
+]) {
+  connection.onmessage({ data: JSON.stringify({ v: 1, type: 'navigation', session: 'package-check', seq,
+    status: 'active', title: '高德地图', rawText, maneuver, instruction: '', distance: '200 米' }) });
+  assert.equal(page.roundaboutExit, expected);
+  assert.equal(!!byClass(page.template(page), 'exit-number'), !!expected, 'compiled exit label visibility');
 }
 page.onDestroy();
 assert.deepEqual(screenRequests, [true, false, true, false, true, false, true, false, true, false]);
-console.log('RPK ' + manifest.versionName + ': startup, compiled click handlers, font choices/resources, exclusive page trees, settings persistence/reset, navigation, screen lifecycle and assets passed.');
+console.log('RPK ' + manifest.versionName + ': startup, compiled click handlers, font/colour/style choices and resources, exclusive page trees, settings persistence/reset, navigation, screen lifecycle and assets passed.');

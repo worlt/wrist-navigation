@@ -18,37 +18,38 @@ npm run dev
 
 提交前在完整 Git 检出中运行 `npm run check:public`（需要 Git）。它检查当前候选文件、暂存区和全部本地可达历史的禁止路径及少量凭据模式；浅克隆会被拒绝，应先获取完整历史。CI 在 Windows/Ubuntu 与 Node.js 22/24 上执行 JS 测试、公开文件检查及源码预览生成，不持有签名，也不验证真机或 Android 编译。
 
-- http://127.0.0.1:4173/：使用当前 .ux 模板、样式与实际页面脚本生成可操作源码预览。可进入设置、加减、返回与切换导航状态；原生接口由浏览器模拟。保存页面或公共 JS 后自动刷新。
-- http://127.0.0.1:4173/settings：可操作设置预览，字体/字号/箭头自定义、当前浏览器保存、项目版本号。单独生成执行 `npm run settings`。
-- npm run preview / npm run settings：分别生成源码预览与设置原型的离线 HTML，输出到 `outputs/previews/`，目录自动创建。PORT 环境变量可调整服务端口。
-- 服务仅监听本机，只提供固定预览路径，不暴露仓库、签名或手机截图。
+本地入口与线上入口的首页不同：本地服务的根路径是源码交互预览，静态站点的首页是箭头总览。
 
-示例数据只在预览工具中。浏览器字体、布局与 Vela 原生组件存在差异，预览和模拟测试不能证明真机显示、后台通信、常亮或耗电。
+| 页面 | 本地地址 | 线上地址 |
+| --- | --- | --- |
+| 手环交互预览 | [preview.html](http://127.0.0.1:4173/preview.html)（也可用根路径） | [交互预览](https://wrist-navigation.vercel.app/preview.html) |
+| 箭头总览 | [index.html](http://127.0.0.1:4173/index.html) | [演示首页](https://wrist-navigation.vercel.app/) |
+| 设置设计原型 | [settings.html](http://127.0.0.1:4173/settings.html) | [设置原型](https://wrist-navigation.vercel.app/settings.html) |
+
+源码预览有 18 个导航、环岛和设置场景，各自可操作和保存偏好；箭头总览支持线条 / 实心、颜色、粗细和大小对照，可展开全部 616 张资源。设置原型保留早期设计，其本地字体回退不等于手环内置字体。源码预览和设置原型都使用虚构数据，浏览器模拟接口不能证明真机显示、后台通信、常亮或耗电。
+
+“npm run preview”、“npm run settings”、“node tools/preview-icons.cjs”分别生成独立 HTML 到被忽略的 outputs/previews/。本地服务只监听 127.0.0.1，提供固定预览路径，不暴露源码、签名或手机截图。PORT 环境变量可调整端口；修改预览输入后自动重建，修改生成的 PNG 后运行“npm run site”并刷新页面。
+
+## 生成网站与部署到 Vercel
+
+~~~sh
+npm run site
+~~~
+
+生成 site/index.html、site/preview.html、site/settings.html，以及 site/licenses/ 中的 MIT、隐私、第三方声明和三份字体 OFL。字体和图片内嵌在 HTML 中，源码预览体积较大；具体大小以构建输出为准，不需要后端、手机或 Android SDK。
+
+- 连接 Git 仓库部署时，项目根目录选仓库根目录，Framework Preset 选 Other。vercel.json 已指定构建命令“node tools/build-site.cjs”和输出目录“site”；使用 Vercel 支持的 Node.js 22 或 24。
+- 从本地生成目录部署时，上传整个 site/，包括 licenses/；不要上传项目工作目录、签名、.local/ 或 outputs/。
+- Git 自动部署只会包含已经提交和推送的内容。本地生成成功、README 修改或安装包构建成功都不等于线上站点已更新。
+- 每个独立 HTML 都包含完整版权和字体许可，保持内嵌声明及 licenses/ 原文。网站声明由 tools/preview-notices.cjs 统一生成；隐私规则见 [PRIVACY.md](../PRIVACY.md)，字体条件见 [字体使用与验证](fonts.md)。
+
+已部署地址为 [wrist-navigation.vercel.app](https://wrist-navigation.vercel.app/)。Vercel 提供 vercel.app 子域名，不需要购买域名。网页只演示虚构数据；访问托管站点会产生网络请求，不能承诺零日志。发布后核对三个页面、默认值、声明入口及资源加载，不把本地截图当作线上已更新的证据。
 
 ## Android 检查与无签名构建
 
 需要 JDK 17+、Android SDK Platform 35、Build Tools 34.0.0、Platform Tools。Gradle Wrapper 固定为 8.9（带下载校验），AGP 8.7.3，不需要全局 Gradle。通过 JAVA_HOME 选择 JDK，通过 ANDROID_HOME 或被 Git 忽略的 android/local.properties 配置 SDK。
 
-本机（Windows）工具链装在 `C:\E\dev-tools`，不依赖系统安装：
-
-| 组件 | 位置 |
-| --- | --- |
-| JDK 17（Temurin 17.0.20.1） | `C:\E\dev-tools\jdk-17` |
-| Android SDK（platform-35、build-tools 35.0.0、platform-tools） | `C:\E\dev-tools\android-sdk` |
-| Gradle 用户目录（Wrapper 8.9 分发与依赖缓存） | `C:\E\dev-tools\gradle-home` |
-| 小米互联示例包与 JDK/SDK 安装包备份 | `C:\E\dev-tools\dl` |
-
-`JAVA_HOME`、`ANDROID_HOME`、`ANDROID_SDK_ROOT` 已写入用户环境变量，`android/local.properties` 也已指向该 SDK（该文件被 Git 忽略），新开终端直接执行 `.\android\gradlew.bat -p android :app:assembleDebug --console=plain` 即可。注意本机 Git Bash 没有 `/e` 挂载点，这里所说的「E 盘」实际是 `C:\E`。
-
-手机端已签名构建（2026-10-28）：
-
-~~~powershell
-.\android\gradlew.bat -p android :app:testDebugUnitTest :app:assembleDebug --console=plain
-~~~
-
-产物 `android/app/build/outputs/apk/debug/app-debug.apk`（0.2.1，versionCode 6），包名 `io.github.mi9pro.navigation`、标签「腕上导航」；3 个单元测试类共 29 项通过。`apksigner verify --print-certs` 的签名证书 SHA-256 为 `0B:6E:D8:11:58:19:85:B3:38:93:7A:4E:07:EC:31:7E:0B:EF:54:25:67:8F:CD:50:AE:63:89:6A:39:13:A3:94`，与手环 0.3.2 RPK 是同一张证书，双端互联身份一致。产物副本为 `outputs/NAV-PHONE-021-local-0B6ED811.apk`。
-
-`signing/development.p12` 由 `wearable/sign/debug/` 的 PEM 导入而来（`tools/ImportSigning.java`，导入前后都会校验私钥与证书配对）。`tools/prepare-signing.ps1` 现在只会在缺少 p12 时导入现有身份，不再生成第二套证书、也不再覆盖手环 PEM。
+本机路径通过 JAVA_HOME、ANDROID_HOME 和被忽略的 android/local.properties 配置，不要求与维护者使用同一目录。签名身份在维护者私下管理的 signing/ 和 wearable/sign/ 中；迁移时恢复原证书，不能重新生成第二套身份。
 
 小米互联 SDK AAR 不在仓库中。Windows 从项目根目录运行 tools/fetch-xiaomi-sdk.ps1，从官方示例包下载并核对 SHA-256。macOS/Linux 可下载相同的 [官方 ZIP](https://cdn.cnbj3-fusion.fds.api.mi-img.com/quickapp-vela/interconnect_dev_test_demo.zip)，提取 interconnect_dev_test_demo/libs/xms-wearable-lib_1.4_release.aar 至 android/app/libs/，核对 SHA-256 为 9c40fd1c5409bb948523d503af71e2978ae522c35636afe7d64f474c0f6bc195。
 
@@ -72,7 +73,7 @@ wearable/sign/debug/private.pem
 wearable/sign/debug/certificate.pem
 ~~~
 
-不要用新签名替代原身份。已安装包不能还原签名私钥。tools/prepare-signing.ps1 用于最初建立身份，迁移现有项目时不能运行它生成新证书。私钥始终被 Git 忽略。
+不要用新签名替代原身份。已安装包不能还原签名私钥。tools/prepare-signing.ps1 仅从现有手环 PEM 导入手机密钥库，不生成新身份；缺少手环原证书时会停止。私钥始终被 Git 忽略。
 
 ~~~sh
 npm run deps:wearable
@@ -83,7 +84,7 @@ node tools/check-wearable-package.cjs
 
 依赖由 wearable/package-lock.json 锁定（aiot-toolkit 2.0.5）。prebuild 在缺少原手环证书时停止，避免 toolkit 回退到自带证书；start 和 release 也有签名前置检查。检查确认文件完整和密钥配对，不代替 APK/RPK 身份一致性及真机验证。发布包需另按 toolkit 约定恢复原发布签名，并与 debug 证书保持同一身份。
 
-RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.3.2.rpk（当前源码版本；已发布的是 0.2.4）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.3.2.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
+RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk（当前源码版本；已发布配套手环为 0.3.3）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
 
 0.2.4 附加字体 TTF、许可和字符覆盖信息已经放入 wearable/src/common/，普通开发与打包仍只需 Node.js，不读取电脑安装字体。只有重新制作字体子集才需要 Python/fontTools 和原字体文件；来源、哈希及重建方式见 [显示设置记录](display-settings-024.md)。
 
@@ -96,7 +97,7 @@ RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.3.2.rpk（当前
 3. 用户在高德自行开始导航，分别记录 SDK 发送、ACK、手环画面与锁屏表现。
 4. 截图运行 node tools/phone-screenshot.cjs。ADB 按 ADB 环境变量、项目 .local/adb/platform-tools/、Android SDK、PATH 顺序查找，支持各系统文件名。
 
-通知采集继续用 tools/capture-amap.ps1 二次过滤，避免保存其他应用通知。浏览器操作使用 agent-browser。
+通知采集继续用 tools/capture-amap.ps1 二次过滤，避免保存其他应用通知。浏览器检查使用可用的浏览器调试工具，先核对当前页面，不把模拟结果写成真机验收。
 
 ## 本地资料与交付边界
 
