@@ -8,7 +8,7 @@
 
 源码仓库不附带安装包或签名。`outputs/` 是维护者本地目录，克隆源码不会下载其中的文件。请从 [GitHub Releases](https://github.com/worlt/wrist-navigation/releases) 阅读发布说明，取得标明兼容的 APK、RPK，并核对发布正文或随附校验表中的 SHA-256。v0.2.5 的校验值写在发布正文，未单独附校验表。不要把无签名检查产物作为安装包。
 
-[`v0.4.0 测试版`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.0) 配套手机 0.2.5 / code 10、手环 0.4.0 / code 14，附完整校验表和第三方声明。它标记为 Pre-release，手环尚待本轮真机验收；已有同版手机 APK 可仅更新 RPK。此前 [`v0.2.5`](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5) 配套手环 0.3.3，已安装于**小米手环 10 Pro** 并日常使用。9 Pro 自 0.3.3 起未再回归，**是否仍可用未经确认**。字体加载、滚动、设置保存、长时间锁屏与亮屏行为尚未获得逐项反馈，长期稳定性仍待验证。10 Pro 的适配范围与验收项见 [10 Pro 移植](port-10pro.md)。
+[`v0.4.0（Latest）`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.0) 配套手机 0.2.5 / code 10、手环 0.4.0 / code 14，附完整校验表和第三方声明。维护者已在红米 K80 Ultra（K80U）上试用，其他手机因没有设备尚未测试；已有同版手机 APK 可仅更新 RPK。此前 [`v0.2.5`](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5) 配套手环 0.3.3，曾在**小米手环 10 Pro** 日常使用。9 Pro 自 0.3.3 起未再回归，**是否仍可用未经确认**。字体加载、滚动、设置保存、长时间锁屏与亮屏行为尚未获得逐项反馈，长期稳定性仍待验证。10 Pro 的适配范围与验收项见 [10 Pro 移植](port-10pro.md)。
 
 ## 配置顺序
 

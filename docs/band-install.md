@@ -1,14 +1,14 @@
 # 手环安装与更新
 
-首次使用需同时配置手机端，见 [首次使用](getting-started.md)。[`v0.4.0 测试版`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.0) 配套手机 `NAV-PHONE-025-local-0B6ED811.apk`（0.2.5 / code 10）与手环 `NAV-BAND-040.rpk`（0.4.0 / code 14），双端同签名证书。手机包与此前版本相同；已有手环 0.3.3 使用记录的旧配套仍可从 [`v0.2.5`](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5) 获取。
+首次使用需同时配置手机端，见 [首次使用](getting-started.md)。[`v0.4.0（Latest）`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.0) 配套手机 `NAV-PHONE-025-local-0B6ED811.apk`（0.2.5 / code 10）与手环 `NAV-BAND-040.rpk`（0.4.0 / code 14），双端同签名证书。手机包与此前版本相同；已有手环 0.3.3 使用记录的旧配套仍可从 [`v0.2.5`](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5) 获取。
 
 ## 安装步骤
 
-手环 0.4.0 是 Pre-release，已完成本地构建与检查，尚未完成本轮真机验收。先核对附件 SHA256SUMS.txt，再在可停留操作的环境验证字体、箭头和导航。始终以所下载 Release 的说明、文件名及手环设置版本号为准。
+手环 0.4.0 已正式发布并设为 Latest，维护者已在 K80U 上试用，其他手机因没有设备尚未测试；字体和长时表现等仍未逐项验收。先核对附件 SHA256SUMS.txt，再在可停留操作的环境验证字体、箭头和导航。始终以所下载 Release 的说明、文件名及手环设置版本号为准。
 
 1. 将 RPK 下载到手机可访问的位置，例如“下载 / Download”。
 2. 打开 AstroBox，连接小米手环 10 Pro。选择「快应用」安装类型，导入 `NAV-BAND-040.rpk`；不要选择 APK 或表盘类型。
-3. 等待安装完成，在手环应用列表打开“腕上导航”，进入设置确认版本号与所装包一致（本测试版为 v0.4.0）。
+3. 等待安装完成，在手环应用列表打开“腕上导航”，进入设置确认版本号与所装包一致（本版为 v0.4.0）。
 4. 退出 AstroBox 的设备连接，恢复小米运动健康连接。
 5. 手机安装配套 APK，打开“腕上导航”，开启通知使用权、设备权限、互联授权及同步。
 6. 在高德开始导航，核对手环指引是否更新。旧设置会保留，可在手环设置底部点“恢复默认”。
