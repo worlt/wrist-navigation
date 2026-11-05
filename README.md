@@ -1,5 +1,5 @@
 # 腕上导航 · 小米手环 10 Pro
-本项目用于学习、研究与技术交流；许可范围以 [MIT 许可证](LICENSE) 及第三方组件各自许可为准。如有问题，请联系维护者邮箱 2516930419@qq.com。
+本项目用于学习、研究与技术交流；许可范围以 [MIT 许可证](LICENSE) 及第三方组件各自许可为准。如有问题，请联系当前维护者 **worlt**：[2516930419@qq.com](mailto:2516930419@qq.com)。
 
 把 Android 高德地图的导航通知同步到小米手环 10 Pro，在手腕上查看转向和完整指引。
 
@@ -100,4 +100,4 @@ licenses/      第三方许可文本
 
 ## 反馈与许可
 
-欢迎提交 [Issue](https://github.com/worlt/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。维护者联系邮箱：[2516930419@qq.com](mailto:2516930419@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。
+欢迎提交 [Issue](https://github.com/worlt/wrist-navigation/issues) 或小范围 PR，先阅读 [贡献指南](CONTRIBUTING.md)。当前维护者：**worlt**；联系邮箱：[2516930419@qq.com](mailto:2516930419@qq.com)。安全问题请按 [安全说明](SECURITY.md) 私下反馈。
