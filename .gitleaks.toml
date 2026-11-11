@@ -1,0 +1,8 @@
+# Keep the default rules. This exact string is a non-secret local storage key.
+[extend]
+useDefault = true
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+regexTarget = "secret"
+regexes = ['''^navigation\.haptics\.v1$''']

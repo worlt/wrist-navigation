@@ -3,6 +3,7 @@ import java.security.*;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Properties;
 
 /**
  * Rebuild signing/development.p12 from the existing Vela PEM identity.
@@ -12,6 +13,15 @@ import java.util.Base64;
 public class ImportSigning {
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args[0]).toAbsolutePath();
+        Properties passwords = new Properties();
+        Path passwordsFile = root.resolve("signing/passwords.properties");
+        if (Files.isRegularFile(passwordsFile)) {
+            try (var input = Files.newInputStream(passwordsFile)) { passwords.load(input); }
+        }
+        String configured = System.getenv("WRIST_SIGNING_PASSWORD");
+        if (configured == null || configured.isEmpty()) configured = passwords.getProperty("password");
+        if (configured == null || configured.isEmpty()) throw new IllegalStateException("Restore local signing/passwords.properties or set WRIST_SIGNING_PASSWORD.");
+        char[] password = configured.toCharArray();
         Path pemDirectory = root.resolve("wearable/sign/debug");
         Path certificatePath = pemDirectory.resolve("certificate.pem");
         Path privateKeyPath = pemDirectory.resolve("private.pem");
@@ -38,11 +48,11 @@ public class ImportSigning {
         }
         KeyStore store = KeyStore.getInstance("PKCS12");
         store.load(null, null);
-        store.setKeyEntry("wrist-navigation", key, "android".toCharArray(), new java.security.cert.Certificate[] { certificate });
+        store.setKeyEntry("wrist-navigation", key, password, new java.security.cert.Certificate[] { certificate });
         Path output = root.resolve("signing/development.p12");
         Files.createDirectories(output.getParent());
         try (var stream = Files.newOutputStream(output)) {
-            store.store(stream, "android".toCharArray());
+            store.store(stream, password);
         }
         System.out.println("Imported the wearable identity into signing/development.p12.");
     }

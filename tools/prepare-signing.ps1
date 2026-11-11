@@ -5,7 +5,8 @@ if (-not $taskJdk) {
     $taskJdk = (Get-ChildItem -LiteralPath "$taskRoot\.local\jdk" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 }
 if (-not $taskJdk) {
-    $taskJdk = 'C:\E\dev-tools\jdk-17'
+    $taskJava = Get-Command java.exe -ErrorAction SilentlyContinue
+    if ($taskJava) { $taskJdk = Split-Path -Parent (Split-Path -Parent $taskJava.Source) }
     if (-not (Test-Path -LiteralPath "$taskJdk\bin\java.exe")) { $taskJdk = $null }
 }
 if (-not $taskJdk -or -not (Test-Path -LiteralPath "$taskJdk\bin\java.exe")) { throw 'Install JDK 17+ and set JAVA_HOME first.' }

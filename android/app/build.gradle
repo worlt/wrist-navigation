@@ -1,5 +1,14 @@
 plugins { id 'com.android.application' }
 
+// Local-only credentials; do not substitute a different paired signing identity.
+def signingPasswords = new Properties()
+def passwordsFile = rootProject.file('../signing/passwords.properties')
+if (passwordsFile.isFile()) passwordsFile.withInputStream { signingPasswords.load(it) }
+def pairedPassword = System.getenv('WRIST_SIGNING_PASSWORD') ?: signingPasswords.getProperty('password')
+if (!project.hasProperty('unsigned') && !pairedPassword) {
+    throw new GradleException('Restore signing/passwords.properties or set WRIST_SIGNING_PASSWORD; use -Punsigned for compile-only checks.')
+}
+
 android {
     namespace 'io.github.mi9pro.navigation'
     compileSdk 35
@@ -14,9 +23,9 @@ android {
     signingConfigs {
         sharedDebug {
             storeFile rootProject.file('../signing/development.p12')
-            storePassword 'android'
+            storePassword pairedPassword
             keyAlias 'wrist-navigation'
-            keyPassword 'android'
+            keyPassword pairedPassword
             storeType 'PKCS12'
         }
     }
