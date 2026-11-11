@@ -16,7 +16,7 @@ npm run dev
 
 根目录没有第三方依赖，无需先运行 npm install。测试覆盖手环协议、页面生命周期和开发工具。
 
-提交前在完整 Git 检出中运行 `npm run check:public`（需要 Git）。它检查当前候选文件、暂存区和全部本地可达历史的禁止路径及少量凭据模式；浅克隆会被拒绝，应先获取完整历史。CI 在 Windows/Ubuntu 与 Node.js 22/24 上执行 JS 测试、公开文件检查及源码预览生成，不持有签名，也不验证真机或 Android 编译。
+提交前在完整 Git 检出中运行 `npm run check:public`（需要 Git）。它检查当前候选文件、暂存区和全部本地可达历史的禁止路径及少量凭据模式；浅克隆会被拒绝，应先获取完整历史。CI 在 Windows/Ubuntu 与 Node.js 22/24 上执行 JS 测试、公开文件检查及源码预览生成和已提交 site/ 与源码一致性检查，不持有签名，也不验证真机或 Android 编译。
 
 本地入口与线上入口的首页不同：本地服务的根路径是源码交互预览，静态站点的首页是箭头总览。
 
@@ -36,10 +36,13 @@ npm run dev
 npm run site
 ~~~
 
-生成 site/index.html、site/preview.html、site/settings.html，以及 site/licenses/ 中的 MIT、隐私、第三方声明和三份字体 OFL。字体和图片内嵌在 HTML 中，源码预览体积较大；具体大小以构建输出为准，不需要后端、手机或 Android SDK。
+生成 site/index.html、site/preview.html、site/settings.html，以及 site/licenses/ 中的 MIT、隐私、项目与使用声明、第三方声明和三份字体 OFL。字体和图片内嵌在 HTML 中，源码预览体积较大；具体大小以构建输出为准，不需要后端、手机或 Android SDK。
 
-- 连接 Git 仓库部署时，项目根目录选仓库根目录，Framework Preset 选 Other。vercel.json 已指定构建命令“node tools/build-site.cjs”和输出目录“site”；使用 Vercel 支持的 Node.js 22 或 24。
-- 从本地生成目录部署时，上传整个 site/，包括 licenses/；不要上传项目工作目录、签名、.local/ 或 outputs/。
+- `site/` 已纳入 Git；Vercel 直接发布仓库中已生成的页面，不在云端安装依赖或重新构建。`vercel.json` 已配置 `framework: null`、空 `buildCommand`/`installCommand` 和 `outputDirectory: site`。
+- 现有 Vercel 项目只需一次在 Settings → Git 关联 `worlt/wrist-navigation`，Production Branch 选 `main`；Root Directory 留空（仓库根目录），Framework Preset 选 Other，Output Directory 选 `site`。不要把 Root Directory 也设为 `site`，否则会重复解析路径；无需删除或重新创建项目。
+- 已关联 Git 后，每次推送 `main` 由 Vercel 自动生成新生产部署；不是网站实时从 GitHub 读取文件。若尚未关联 Git，则单纯推送不会更新现有手动部署。
+- 修改页面、内嵌模块或声明后，在本地依次运行 `npm run site`、`npm run check:site`，把源码与生成后的 `site/` 一起提交并推送。CI 会检查三页和完整声明是否与当前源码一致，防止忘记更新生成文件。
+- 若保留手动部署方式，仅上传整个 `site/`（包括 `licenses/`）；不要上传项目工作目录、签名、`.local/` 或 `outputs/`。Git 自动更新应使用上面的现有项目关联方式。
 - Git 自动部署只会包含已经提交和推送的内容。本地生成成功、README 修改或安装包构建成功都不等于线上站点已更新。
 - 每个独立 HTML 都包含完整版权和字体许可，保持内嵌声明及 licenses/ 原文。网站声明由 tools/preview-notices.cjs 统一生成；隐私规则见 [PRIVACY.md](../PRIVACY.md)，字体条件见 [字体使用与验证](fonts.md)。
 

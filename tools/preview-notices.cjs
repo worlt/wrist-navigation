@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const noticeFiles = ['LICENSE', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md',
+const noticeFiles = ['LICENSE', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md', 'DISCLAIMER.md',
   ...['BandSong', 'BandKai', 'BandRound'].map(name => 'wearable/src/common/fonts/' + name + '-OFL.txt')];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 

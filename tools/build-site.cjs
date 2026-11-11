@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const previews = path.join(root, 'outputs/previews');
 const site = path.join(root, 'site');
 const { noticeFiles } = require('./preview-notices.cjs');
+const { pages, checkSite } = require('./check-site.cjs');
 
 for (const script of ['preview-wearable.cjs', 'preview-settings.cjs', 'preview-icons.cjs']) {
   execFileSync(process.execPath, [path.join(__dirname, script)], { stdio: 'inherit' });
@@ -14,12 +15,10 @@ for (const script of ['preview-wearable.cjs', 'preview-settings.cjs', 'preview-i
 
 // The icon gallery is the smaller landing page. The
 // interactive preview embeds every font and arrow, so it stays a secondary page.
-const pages = [
-  ['wearable-icons.html', 'index.html'],
-  ['wearable-source.html', 'preview.html'],
-  ['wearable-settings-preview.html', 'settings.html']
-];
-
+if (process.argv.includes('--check')) {
+  const files = checkSite(root);
+  console.log('Checked-in static site matches current source and notices (' + files.length + ' files).');
+} else {
 fs.mkdirSync(site, { recursive: true });
 const keep = new Set(pages.map(([, to]) => to));
 for (const entry of fs.readdirSync(site)) {
@@ -38,3 +37,5 @@ for (const file of noticeFiles) fs.copyFileSync(path.join(root, file), path.join
 const bytes = pages.reduce((total, [, to]) => total + fs.statSync(path.join(site, to)).size, 0);
 console.log('静态站点已生成：' + site + '（' + pages.length + ' 页，' + (bytes / 1048576).toFixed(1) + ' MB）');
 for (const [, to] of pages) console.log('  /' + to);
+
+}

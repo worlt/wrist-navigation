@@ -1,2 +1,14 @@
-# Preserve upstream font license text verbatim, including original whitespace.
-wearable/src/common/fonts/*-OFL.txt -whitespace
+# Preview generators embed source text; keep inputs identical across platforms.
+tools/** text=auto eol=lf
+wearable/src/** text=auto eol=lf
+*.md text eol=lf
+LICENSE text eol=lf
+# Preserve upstream font license whitespace and canonical repository text.
+wearable/src/common/fonts/*-OFL.txt text eol=lf -whitespace
+# Keep the imported Windows Gradle wrapper byte-identical.
+android/gradlew.bat -text
+# Generated output and copied notices are deployed byte-for-byte.
+site/** -text
+site/licenses/*-OFL.txt -whitespace
+# The HTML embeds the same verbatim OFL text, including original trailing spaces.
+site/*.html -whitespace

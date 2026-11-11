@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>腕上导航 · 自定义显示设置</title>
+<style>
+@font-face{font-family:BandSong;src:local("SimSun"),local("Songti SC")}
+@font-face{font-family:BandKai;src:local("KaiTi"),local("Kaiti SC")}
+@font-face{font-family:BandRounded;src:local("YouYuan"),local("Yuanti SC")}
+*{box-sizing:border-box}body{margin:0;background:#eff2eb;color:#273b30;font-family:"Microsoft YaHei",system-ui,sans-serif;padding:36px 24px}
+button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.35}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #86d6ad;outline-offset:3px}a{color:#315d42}button svg{pointer-events:none}
+.shell{max-width:1080px;margin:auto}.eyebrow{font-size:12px;letter-spacing:2px;color:#657c6b}h1{font-size:30px;line-height:1.5;margin:10px 0}header p{margin:0;color:#65786a;line-height:1.8;font-size:14px}
+.workspace{display:grid;grid-template-columns:minmax(360px,1fr) minmax(0,1fr);align-items:center;gap:60px;margin-top:28px}.stage{display:flex;flex-direction:column;align-items:center;min-width:0}
+.strap{height:35px;width:184px;background:linear-gradient(90deg,#202322,#353936 45%,#202322);border-radius:24px 24px 0 0}.strap.bottom{border-radius:0 0 24px 24px}
+.device{padding:8px;background:linear-gradient(135deg,#767d78,#242a27 24%,#505651 70%,#1c221e);border:1px solid #626a63;border-radius:51px;box-shadow:0 16px 40px #24362a25}
+.screen{--instruction-size:34px;--arrow-size:160px;--nav-font:"Microsoft YaHei",system-ui,sans-serif;width:336px;height:480px;background:#000;border-radius:43px;overflow:hidden;color:#fff;position:relative}
+[hidden]{display:none!important}.navigation{position:absolute;inset:0}.navigation-content{position:absolute;left:24px;width:288px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.nav-arrow{width:var(--arrow-size);height:var(--arrow-size);flex-shrink:0;overflow:visible}.nav-arrow path{stroke:#fff;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.instruction{flex-shrink:0;margin:0;width:100%;max-height:166px;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center;color:#fff;font-family:var(--nav-font);font-size:var(--instruction-size);font-weight:400;line-height:1.4;scrollbar-width:thin;scrollbar-color:#535b55 transparent}
+.gear{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:52px;height:52px;padding:12px;color:#88958c;background:transparent;border:0;border-radius:16px}.gear:hover{background:#18231d;color:#f0f6f2}.gear svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.settings{height:100%;display:flex;flex-direction:column;padding:22px 18px 15px}.settings-header{display:flex;align-items:center;gap:10px;flex-shrink:0;margin:0 8px 10px}.back{width:42px;height:42px;color:#f4f8f5;background:#17231b;border:0;border-radius:50%;font-size:24px}.settings h2{margin:0;font-size:23px;font-weight:500}
+.settings-body{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#394b40 transparent;padding:0 6px 4px}.setting-block{margin:0 0 10px;border:0;padding:0;min-width:0}.setting-block legend,.setting-label{display:block;color:#b7c9bd;font-size:16px;margin-bottom:9px}
+.font-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.font-choice{position:relative;cursor:pointer}.font-choice input{position:absolute;opacity:0;width:1px;height:1px}.font-choice span{display:block;text-align:center;padding:10px 2px;border:1px solid #2c3b31;border-radius:12px;background:#111914;font-size:18px}.font-choice input:checked+span{color:#cef2d9;border-color:#81b294;background:#263e30}.font-choice input:focus-visible+span{outline:2px solid #b0dbc0;outline-offset:2px}
+.stepper{display:grid;grid-template-columns:46px 1fr 46px;gap:8px;align-items:center}.stepper button{height:44px;padding:0;color:#d9e6dd;background:#1a281f;border:0;border-radius:12px;font-size:24px}.value{display:flex;align-items:baseline;justify-content:center;gap:4px}.value input{width:60px;border:0;border-bottom:1px solid #4b6856;background:transparent;color:#fff;text-align:center;padding:6px 0;font-size:23px;appearance:textfield;-moz-appearance:textfield}.value input::-webkit-inner-spin-button{appearance:none}.value small{color:#84968a;font-size:12px}
+.settings-footer{flex-shrink:0;padding-top:10px;text-align:center}.save-status{margin:0 0 4px;color:#95ad9f;font-size:12px;min-height:16px}.version{margin:0;color:#73857a;font-size:13px}
+.caption{font-size:12px;color:#718273;line-height:1.8;margin:16px 0 0;text-align:center}.aside{max-width:410px}.aside h2{font-size:27px;line-height:1.5;font-weight:600;margin:0 0 16px}.aside>p{font-size:15px;color:#627668;line-height:1.9;margin:0 0 24px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px;padding:20px 0;border-top:1px solid #d4ddd2;border-bottom:1px solid #d4ddd2;margin:0 0 24px}.summary dt{font-size:12px;color:#768777;margin-bottom:6px}.summary dd{font-size:19px;margin:0;color:#304d3b}
+.sample-label{display:block;font-size:13px;margin-bottom:8px;color:#617564}select{max-width:100%;width:100%;padding:12px;border:1px solid #ccd8ce;border-radius:10px;background:#fafbf8;color:#304837;font:inherit;font-size:14px}.note{font-size:12px!important;line-height:1.8!important;color:#7a877b!important;margin:14px 0!important}.aside a{font-size:13px}.footer{font-size:12px;color:#7b887d;margin-top:28px}
+.site-nav{display:flex;gap:10px;margin:0 0 18px;font-size:14px}.site-nav a{padding:7px 12px;border:1px solid #ccd8ce;border-radius:9px;background:#fff;text-decoration:none}.site-nav a[aria-current]{background:#273b30;color:#fff;border-color:#273b30}
+@media(max-width:780px){body{padding:24px 14px}.workspace{grid-template-columns:1fr;gap:30px;margin-top:24px}.aside{max-width:440px;width:100%;margin:auto}h1{font-size:26px}.aside h2{font-size:24px}.strap{height:24px}}
+@media(max-width:370px){body{padding:22px 8px}.stage{zoom:.86}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="site-nav"><a href="preview.html">交互预览</a><a href="settings.html" aria-current="page">设置原型</a><a href="index.html">图标总览</a></nav>
+<header><div class="eyebrow">腕上导航 / 显示设置</div><h1>指引居中，设置放在底部。</h1><p>轻点底部正中的齿轮，字体、字号和箭头都可以自己调。</p></header>
+<main class="workspace">
+<section class="stage" aria-label="可操作的手环预览">
+<div class="strap" aria-hidden="true"></div>
+<div class="device"><div class="screen" id="screen">
+<div class="navigation" id="navigation">
+<div class="navigation-content" id="navigation-content">
+<img class="nav-arrow" alt="直行" id="nav-arrow" width="160" height="160">
+<p class="instruction" id="instruction" tabindex="0" aria-label="完整导航文字">直行200米</p>
+</div>
+<button class="gear" id="open-settings" aria-label="打开显示设置" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5l.7 2.5 2.2 1.3 2.5-.6 2.5 4.3-1.8 1.8v2.5l1.8 1.8-2.5 4.3-2.5-.6-2.2 1.3-.7 2.4h-5l-.7-2.4-2.2-1.3-2.5.6-2.5-4.3 1.8-1.8v-2.5L1.6 10.5l2.5-4.3 2.5.6 2.2-1.3Z" transform="translate(1 0) scale(.9)"/><circle cx="12" cy="12" r="3.2"/></svg></button>
+</div>
+<section class="settings" id="settings" aria-label="显示设置" hidden>
+<div class="settings-header"><button class="back" id="close-settings" aria-label="返回导航">‹</button><h2>显示设置</h2></div>
+<div class="settings-body" id="settings-body">
+<fieldset class="setting-block"><legend>字体</legend><div class="font-options">
+<label class="font-choice"><input type="radio" name="font" value="default"><span>默认</span></label>
+<label class="font-choice"><input type="radio" name="font" value="song"><span style="font-family:BandSong,serif">宋体</span></label>
+<label class="font-choice"><input type="radio" name="font" value="kai"><span style="font-family:BandKai,serif">楷体</span></label>
+<label class="font-choice"><input type="radio" name="font" value="rounded"><span style="font-family:BandRounded,sans-serif">柔圆</span></label>
+</div></fieldset>
+<div class="setting-block"><label class="setting-label" for="font-size">文字大小</label><div class="stepper"><button data-field="fontSize" data-step="-1" aria-label="减小字号">−</button><div class="value"><input id="font-size" data-value="fontSize" type="number" min="24" max="44" step="1" inputmode="numeric" aria-label="字号，24至44"><small>px</small></div><button data-field="fontSize" data-step="1" aria-label="增大字号">＋</button></div></div>
+<div class="setting-block"><label class="setting-label" for="arrow-size">箭头大小</label><div class="stepper"><button data-field="arrowSize" data-step="-2" aria-label="缩小箭头">−</button><div class="value"><input id="arrow-size" data-value="arrowSize" type="number" min="32" max="232" step="2" inputmode="numeric" aria-label="箭头大小，32至232"><small>px</small></div><button data-field="arrowSize" data-step="2" aria-label="放大箭头">＋</button></div></div>
+<div class="setting-block"><label class="setting-label" for="arrow-weight">箭头粗细</label><div class="stepper"><button data-field="arrowWeight" data-step="-1" aria-label="减细箭头">−</button><div class="value"><input id="arrow-weight" data-value="arrowWeight" type="number" min="4" max="10" step="1" inputmode="numeric" aria-label="箭头粗细，4至10"><small>px</small></div><button data-field="arrowWeight" data-step="1" aria-label="加粗箭头">＋</button></div></div>
+</div>
+<div class="settings-footer"><p class="save-status" id="save-status" role="status" aria-live="polite">调整后自动保存</p><p class="version">腕上导航 v<span data-app-version>0.4.6</span></p></div>
+</section>
+</div></div><div class="strap bottom" aria-hidden="true"></div>
+<p class="caption">336 × 480 · 可操作设计预览<br>示例数据，非真机画面</p>
+</section>
+<aside class="aside">
+<h2>字体保留四种，<br>大小由你决定。</h2><p>点击底部正中的设置图标，使用 ＋ / − 或输入数值调整。返回导航即可查看效果，下次打开也会记住。</p>
+<dl class="summary"><div><dt>字体</dt><dd id="summary-font">默认字体</dd></div><div><dt>字号</dt><dd id="summary-size">34 px</dd></div><div><dt>箭头大小</dt><dd id="summary-arrow">160 px</dd></div><div><dt>箭头粗细</dt><dd id="summary-weight">6 px</dd></div></dl>
+<label class="sample-label" for="sample">预览示例</label><select id="sample"><option value="short">直行200米</option><option value="long">长文字换行 · 滑动查看完整内容</option></select>
+<p class="note">本页保留四字体设计原型，调用电脑本地字体或浏览器回退字体，设置只保存在浏览器。查看项目实际内置字体、完整导航布局、颜色与样式，请打开<a href="preview.html">源码预览</a>；手环上的字体效果仍需真机验证。</p>
+<a id="design-link" href="preview.html">打开当前手环源码预览 →</a>
+</aside>
+</main><footer class="footer">设置页版本号来自手环项目配置，当前为 v0.4.6。</footer>
+</div>
+<script>
+const preferences = (function createPreferences() {
+  const key = 'mi9pro.preview.display.v1';
+  const defaults = { font: 'default', fontSize: 34, arrowSize: 160, arrowWeight: 6 };
+  const bounds = { fontSize: [24, 44], arrowSize: [32, 232], arrowWeight: [4, 10] };
+  const fonts = ['default', 'song', 'kai', 'rounded'];
+  function normalize(value) {
+    const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    const result = { ...defaults };
+    if (fonts.includes(input.font)) result.font = input.font;
+    for (const field of Object.keys(bounds)) {
+      if (typeof input[field] !== 'number' || !Number.isFinite(input[field])) continue;
+      const [min, max] = bounds[field];
+      result[field] = Math.min(max, Math.max(min, Math.round(input[field])));
+    }
+    return result;
+  }
+  function read(storage) {
+    try { return normalize(JSON.parse(storage.getItem(key))); }
+    catch { return normalize(null); }
+  }
+  function write(storage, value) {
+    storage.setItem(key, JSON.stringify(normalize(value)));
+  }
+  return { key, defaults, bounds, fonts, normalize, read, write };
+})();
+const arrowAssets = {"4":"data:image/png;base64,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","5":"data:image/png;base64,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","6":"data:image/png;base64,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","7":"data:image/png;base64,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","8":"data:image/png;base64,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","9":"data:image/png;base64,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","10":"data:image/png;base64,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"};
+let storage;
+try { storage = window.localStorage; } catch { /* Private contexts may block persistence. */ }
+let state = preferences.read(storage);
+const screen = document.getElementById('screen');
+const fontFamilies = { default:'"Microsoft YaHei",system-ui,sans-serif', song:'BandSong,serif', kai:'BandKai,serif', rounded:'BandRounded,sans-serif' };
+const fontNames = { default:'默认字体', song:'宋体', kai:'楷体', rounded:'柔圆' };
+const numericInputs = [...document.querySelectorAll('[data-value]')];
+const steppers = [...document.querySelectorAll('[data-step]')];
+function layoutNavigation() {
+  const rowHeight = Math.ceil(state.fontSize * 1.4);
+  const instruction = document.getElementById('instruction');
+  const visibleHeight = Math.floor(Math.min(166, 368-state.arrowSize-8)/rowHeight)*rowHeight;
+  instruction.style.lineHeight = rowHeight + 'px';
+  instruction.style.maxHeight = visibleHeight + 'px';
+  const textHeight = instruction.getBoundingClientRect().height;
+  const height = state.arrowSize + 8 + textHeight;
+  const navigation = document.getElementById('navigation-content');
+  navigation.style.height = height + 'px';
+  navigation.style.top = Math.min((480-height)/2, 392-height) + 'px';
+}
+function render() {
+  screen.style.setProperty('--instruction-size', state.fontSize + 'px');
+  screen.style.setProperty('--arrow-size', state.arrowSize + 'px');
+  screen.style.setProperty('--nav-font', fontFamilies[state.font]);
+  document.getElementById('nav-arrow').src = arrowAssets[state.arrowWeight];
+  document.querySelectorAll('input[name=font]').forEach(input => { input.checked = input.value === state.font; });
+  numericInputs.forEach(input => { input.value = state[input.dataset.value]; });
+  steppers.forEach(button => {
+    const field = button.dataset.field;
+    const [min, max] = preferences.bounds[field];
+    button.disabled = Number(button.dataset.step) < 0 ? state[field] <= min : state[field] >= max;
+  });
+  document.getElementById('summary-font').textContent = fontNames[state.font];
+  document.getElementById('summary-size').textContent = state.fontSize + ' px';
+  document.getElementById('summary-arrow').textContent = state.arrowSize + ' px';
+  document.getElementById('summary-weight').textContent = state.arrowWeight + ' px';
+  layoutNavigation();
+}
+function update(patch) {
+  state = preferences.normalize({ ...state, ...patch });
+  render();
+  try {
+    preferences.write(storage, state);
+    document.getElementById('save-status').textContent = '已保存';
+  } catch { document.getElementById('save-status').textContent = '本次已应用，无法保存到浏览器'; }
+}
+function setOpen(open) {
+  document.getElementById('settings').hidden = !open;
+  document.getElementById('navigation').hidden = open;
+  document.getElementById('open-settings').setAttribute('aria-expanded', String(open));
+  (open ? document.getElementById('close-settings') : document.getElementById('open-settings')).focus();
+  if (!open) layoutNavigation();
+}
+document.getElementById('open-settings').addEventListener('click', () => setOpen(true));
+document.getElementById('close-settings').addEventListener('click', () => setOpen(false));
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !document.getElementById('settings').hidden) setOpen(false); });
+document.querySelectorAll('input[name=font]').forEach(input => input.addEventListener('change', () => update({ font:input.value })));
+steppers.forEach(button => button.addEventListener('click', () => update({ [button.dataset.field]:state[button.dataset.field] + Number(button.dataset.step) })));
+numericInputs.forEach(input => {
+  const commit = () => {
+    const value = input.value.trim() === '' ? NaN : Number(input.value);
+    if (!Number.isFinite(value)) { render(); return; }
+    update({ [input.dataset.value]:value });
+  };
+  input.addEventListener('change', commit);
+  input.addEventListener('keydown', event => { if (event.key === 'Enter') { commit(); input.blur(); } });
+});
+document.getElementById('sample').addEventListener('change', event => {
+  document.getElementById('instruction').textContent = event.target.value === 'long'
+    ? '沿示例道路直行200米\n经过示例路口后继续直行，请注意路况。\n这是一段用于检查换行的较长示例文字，所有内容均保留，可上下滑动查看。'
+    : '直行200米';
+  document.getElementById('instruction').scrollTop = 0;
+  layoutNavigation();
+});
+if (location.protocol === 'file:') document.getElementById('design-link').href = 'wearable-source.html';
+render();
+</script>
+<style>.project-notices{max-width:1400px;margin:32px auto 0;padding:18px 0;border-top:1px solid #b8c8ba;font:13px/1.8 system-ui,sans-serif;color:#354f3d;overflow-wrap:anywhere}.project-notices p{margin:8px 0}.project-notices a{color:inherit;text-decoration:underline}.project-notices summary{cursor:pointer;padding:4px 0}.project-notices details{margin:8px 0;padding:0;border:0}.project-notices pre{white-space:pre-wrap;font:12px/1.7 monospace;max-height:320px;overflow:auto;background:#fff;padding:12px}</style><footer class="project-notices" aria-label="演示与许可声明"><p><strong>演示与许可声明</strong></p><p>虚构数据，仅供界面演示；不连接手机或手环，不能用于真实导航。浏览器效果不等于真机验证，演示可能先于已发布安装包。</p><p>预览设置保存在当前浏览器。访问线上站点会连接 Vercel；托管方可能处理 IP、浏览器信息和请求日志，详见下方隐私说明。</p><p>本项目基于 <a href="https://github.com/Gu-Mie/wrist-navigation">Gu-Mie/wrist-navigation</a> 修改，由 <a href="https://github.com/worlt/wrist-navigation">worlt 维护此 fork</a>。与高德、小米、AstroBox 无隶属关系，Vercel 提供托管，不表示上述品牌背书。</p><p>代码与文档采用 MIT；内置字体为站酷小薇体、霞鹜文楷轻便版、站酷庆科黄油体的改名子集，字体保留 OFL 1.1，真机加载效果待验证。</p><details><summary>版权、字体完整许可与隐私说明</summary><details><summary>LICENSE</summary><pre>MIT License
+
+Copyright (c) 2026 Gu-Mie and contributors
+Copyright (c) 2026 worlt and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></details><details><summary>PRIVACY.md</summary><pre># 隐私与权限说明
+
+本说明依据当前手机 0.3.0、手环 0.4.6 本地候选及网页演示源码整理，更新时间为 2026-11-11；已发布 v0.4.0 配套仍为手机 0.2.5、手环 0.4.0，本地候选尚未发布或真机验证。代码检查不能代替对第三方平台的隐私承诺或对设备的完整测试。
+
+## 处理哪些信息
+
+Android 通知使用权是系统级能力；应用收到通知回调后只处理包名为 `com.autonavi.minimap` 的高德通知。通知中的标题、导航指引和原文用于解析、手机预览及手环显示，可能包含距离或道路名称。无法识别时保留原文，不补造路线。
+
+应用通过小米 XMS SDK 与小米运动健康连接的手环通信。发送内容包含导航状态、标题/原文、解析字段、时间、会话、序号及本次导航标识、结束标记和独立振动偏好；导航标识只用于提醒去重，不含位置坐标。启用手机退出联动时增加一次性退出请求标识（phoneExitId），由会话和进出计数构成，只在进程内用于退出请求去重和确认，不包含路线内容；两个联动偏好保存在手机私有设置中，不新增权限。当前手机 / 手环源码没有项目自建的导航后端、广告或统计上报代码；小米 SDK、运动健康、高德和安装工具的数据处理由各自产品决定，不能据此承诺第三方完全离线或不收集数据。
+
+手机设置保存在应用私有 SharedPreferences，导航状态和最近的诊断事件在进程内维护；手环显示设置与提醒震感通过 `system.storage` 分别保存；振动偏好仅存总开关与轻柔/明显档位，不新增路线历史。手环 App 在内存中保留一条最新导航消息，以及转向、临近两类各最多 32 条指令标识，以及开始、结束两类各最多 32 条导航标识用于去重；离开或关闭导航页面不会清除这些应用级状态。新的有效手机导航会话会重置提醒去重记录；App 销毁后停止处理，重建不保证保留这些内存状态。浏览器预览使用虚构数据，设置保存在当前浏览器。源码没有自行持久化完整路线历史；操作系统、第三方组件以及用户手动导出的日志仍可能留有数据。
+
+## 在线演示与托管
+
+[Vercel 演示站](https://wrist-navigation.vercel.app/) 只使用虚构场景，不接收高德通知，不读取设备位置，也不连接手机或手环。交互预览和设置原型将偏好保存在浏览器 `localStorage`；源码未将这些偏好上传。源码预览的“恢复全部预览默认值”可清除该页模拟设置；清除站点数据可删除此域名下的全部本地偏好。
+
+访问站点会向 Vercel 发出网络请求，托管方可能处理 IP 地址、浏览器 / 设备信息、访问路径及时间等请求数据，适用其 [隐私政策](https://vercel.com/legal/privacy-policy)。本项目未接入分析 SDK；仅核对公开页面与生成代码，未审计托管账户的日志、分析或保留期限设置，因此不承诺“零日志”或“完全离线”。点击 GitHub、字体来源等外部链接后，适用目标站点的规则。
+
+网站展示的联系邮箱是项目公开联络方式。不要在公开反馈中填入真实路线、住址、设备凭据或完整日志。
+
+## 为什么需要权限
+
+| 权限/能力 | 用途 |
+| --- | --- |
+| 通知使用权 | 获取高德导航通知；可在系统设置中撤销 |
+| 蓝牙/附近设备、互联授权 | 通过小米运动健康发现并连接手环 |
+| 发送通知、前台服务 | 显示后台同步状态和停止入口 |
+| 唤醒锁、电池优化设置 | 活动导航期间尽量保持同步；受手机省电策略影响 |
+| 开机完成/应用更新广播 | 尝试恢复此前开启的同步，真机重启恢复仍待验证 |
+| 手环亮屏控制 | 导航页在前台且指引有效时保持点亮 |
+| 手环振动 | 收到导航开始、确认结束、新转向、临近或暂停状态，以及确认连接断开时触发两次短振或长振；手机开关控制导航提醒，手环总开关控制全部提醒和试振 |
+
+关闭手机应用中的同步开关可停止转发；通知使用权和其他权限也可从系统设置撤销。手环离开导航页、断连或消息过期后释放常亮，但离开导航页本身不会关闭应用级接收与振动提醒。要停止后续提醒，可关闭手环振动总开关、手机导航偏好中的手环振动开关或关闭同步；恢复开关不会补振已消费的提醒。
+
+断连提醒仅使用手环最后收到的手机振动偏好；断连后手机修改开关需恢复通信才会传达，手环本地总开关可立即关闭全部提醒。
+
+手动试振无需导航，在手环总开关开启时按当前档位振两下；离开设置或隐藏页面会取消尚未发出的试振，不影响正常导航提醒。
+
+当前 Android 清单没有申请 VIBRATE 权限，也没有新增手机振动；高德自身的手机提醒不由本项目控制。此次优化未新增定位、音频或下载能力，不借用这些能力保活。手环 App 仍运行且收到有效实时消息时才尝试振动，后台、熄屏和回表盘后的运行、收消息及振动仍取决于固件与互联，需真机测试。
+
+## 分享反馈前
+
+应用预览和自行采集的通知可能含有出行信息。公开 Issue、PR 或截图前，请移除路线、住址、账号、设备标识及 AuthKey。`tools/capture-amap.ps1` 会二次过滤其他应用通知，但过滤后的高德通知依然可能敏感，只应保存在被忽略的 `.local/`。
+
+## 联系方式
+
+对本说明或数据处理有疑问，请联系本仓库维护者（GitHub：worlt）：[2516930419@qq.com](mailto:2516930419@qq.com)。与原项目 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 相关的问题也可联系原作者 Gu-Mie：[2858005527@qq.com](mailto:2858005527@qq.com)（原作者）。
+
+手机的打开/退出联动默认关闭，可在「导航偏好」独立控制。启用退出联动不关闭手机后台同步服务；手环收到请求后先确认接收再退出快应用，关闭退出开关或手机重入可取消尚未执行的请求。断连、强杀/强停和系统回收时不能保证退出；确认接收不等于固件实际退出已验证。
+</pre></details><details><summary>THIRD_PARTY_NOTICES.md</summary><pre># 第三方代码、资源与工具
+
+项目根目录的 [MIT 许可证](LICENSE) 适用于原创代码和文档。以下内容保留各自许可，不因本项目开源而重新授权。
+
+## 随源码提供的字体
+
+| 文件/家族 | 上游 | 许可与版权声明 |
+| --- | --- | --- |
+| `BandSong.ttf` / BandSong | [ZCOOL XiaoWei](https://github.com/google/fonts/tree/main/ofl/zcoolxiaowei) | [SIL OFL 1.1 与原作者声明](wearable/src/common/fonts/BandSong-OFL.txt) |
+| `BandKai.ttf` / BandKai | [LXGW WenKai Lite v1.522](https://github.com/lxgw/LxgwWenKai-Lite/releases/tag/v1.522) | [SIL OFL 1.1、保留字体名称及附加许可](wearable/src/common/fonts/BandKai-OFL.txt) |
+| `BandRound.ttf` / BandRound | [ZCOOL QingKe HuangYou](https://github.com/google/fonts/tree/main/ofl/zcoolqingkehuangyou) | [SIL OFL 1.1 与原作者声明](wearable/src/common/fonts/BandRound-OFL.txt) |
+
+这些文件由 `tools/prepare-band-fonts.py` 制作子集并改名，保留原始版权与许可记录；上游哈希及修改范围见 [字体实现记录](docs/display-settings-024.md)。完整许可随字体和 RPK 一同提供。未分发电脑自带的宋体、楷体或圆体字库。
+
+OFL 允许按条款使用、嵌入、修改及随商业或非商业软件分发字体，要求保留版权与许可，字体不得单独出售；字体本身继续适用 OFL，不改用本项目 MIT。当前子集家族名为 BandSong / BandKai / BandRound，TTF 名称表已核对。许可条件、网页原型与真机支持的区别见 [字体使用与验证](docs/fonts.md)。
+
+源码预览内嵌这些字体。各独立 HTML 的“演示与许可声明”提供完整版权及许可，静态站点 `site/licenses/` 同时附原文。部署或复制站点时必须保留这些声明，不能只带走 TTF 或图片。
+
+## Gradle Wrapper
+
+`android/gradlew`、`android/gradlew.bat`、`android/gradle/wrapper/gradle-wrapper.jar` 来自 Gradle 8.9，保留原作者版权及 Apache-2.0 许可，完整文本见 [Apache-2.0](licenses/Apache-2.0.txt) 和 [Gradle 上游 LICENSE](licenses/Gradle-LICENSE.txt)。来源为 [Gradle v8.9.0](https://github.com/gradle/gradle/tree/v8.9.0)。
+
+## 单独下载的依赖
+
+- 小米 `xms-wearable-lib_1.4_release.aar`：从小米官方示例包单独获取并校验哈希，源码仓库不分发该 AAR；获取入口见 [开发文档](docs/development.md)。手机 APK 内含此互联组件，其权利归原权利人所有，不适用本项目 MIT 许可。已检查的官方文档与示例包未提供可确认的独立再分发条款，本项目不据此声称已取得额外授权或该 SDK 可以任意再分发。
+- `aiot-toolkit` 2.0.5 及依赖：由 `wearable/package-lock.json` 锁定，仅构建时安装；许可见各依赖包。`node_modules/` 不随源码提交。
+- 手机 0.3.0（与此前 0.2.5 相同声明依赖）的运行时依赖解析包含 AndroidX Annotation / annotation-jvm 1.8.2（Android Open Source Project）、Kotlin stdlib / stdlib-common 1.7.10（JetBrains 与 Kotlin 贡献者）、JetBrains annotations 13.0。对应 POM 均声明 Apache-2.0；APK 的 DEX 中可见 AndroidX、Kotlin 和 JetBrains 注解类。完整 [Apache-2.0 文本](licenses/Apache-2.0.txt) 随 v0.4.6 的 THIRD_PARTY_NOTICES.txt 一起分发；这些组件保留各自权利，不改用项目 MIT。
+- Android Gradle Plugin 8.7.3、Gradle 和 JUnit 4.13.2 为构建 / 测试工具，按各自许可使用。上述清单来自当前构建配置、缓存的依赖 POM 和 APK 类目录核对，不表示已独立审计小米 SDK 的全部内部实现。
+
+## 图片与名称
+
+导航图标由仓库内绘图脚本生成；`docs/images/` 的图片是使用虚构数据的浏览器预览截图，不代表真机效果。新箭头总览由维护者提供，旧 0.2.4 截图保留作历史参考，来源见 [截图记录](docs/images/README.md)。截图中浏览器或扩展的浮动控件不是本项目功能或品牌授权证明。历史 AI 概念图及提示词已归档到维护者本地，不属于当前公开源码的必要资源。
+
+高德、小米、AstroBox 等名称仅用于说明兼容对象与安装流程，不表示官方合作或背书。仓库不分发运动健康、高德或 AstroBox 的安装包及其提取内容。
+
+Vercel 是演示站的第三方托管平台，不是本项目的共同开发者或背书方，其服务条款与隐私规则独立适用。
+</pre></details><details><summary>DISCLAIMER.md</summary><pre># 项目与使用声明
+
+## 项目定位与来源
+
+腕上导航将 Android 高德地图的导航通知同步至小米手环 10 Pro，由手机高德负责路线规划；手环仅显示已有指引，不独立定位、计算路线或保证信息实时送达。项目用于学习、研究与技术交流；这是用途介绍，不为 MIT 增加“仅非商业”等限制。
+
+本项目是 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 的修改版。原作者 Gu-Mie，当前 fork 维护者 worlt；保留双方及贡献者的版权。与高德、小米、AstroBox 或 Vercel 无隶属、合作或背书关系，相关名称仅说明兼容对象和工具。
+
+## Release 状态与验证边界
+
+2026-11-11 的 v0.4.6 按维护者要求作为正式 Release 并设为 Latest，配套手机 0.3.0 / code 15、手环 0.4.6 / code 20。**“正式 Release / Latest”是分发状态，不代表稳定性认证、厂商认证或本版真机验收完成。** APK/RPK 仍是复用原配对签名的 debug 构建，并非重新生成签名或已加固的生产构建。
+
+当前已完成本地自动化、Lint、编译产物与原签名检查；本版新联动、各类双振提醒、熄屏/后台/锁屏、长时稳定性和耗电仍待真机测试。此前 K80U / 10 Pro 的试用、基础振动反馈不能扩展为本版全部功能通过；其他手机未测试，9 Pro 自 0.3.3 起未回归。SDK 发送成功、收到 ACK、实际显示/振动/退出是不同证据。
+
+两个手机进出联动开关默认关闭，互相独立。启用“退出手机应用时退出手环”后，回桌面或切到高德也会请求退出手环，并抑制手机后台的通知自动重开；希望导航在后台持续展示时，请保持该开关关闭。锁屏、配置重建和主动进入权限设置不触发退出。强杀、强停、断连、系统回收及固件/网络时序不保证退出。
+
+## 安全使用
+
+请先在安全、静止的位置核对双端安装与显示，不要在驾驶、骑行或过街时操作手机或手环。通知可能滞后、缺失或误解析，振动可能延迟或不发生；不能用作避险、紧急服务或安全关键导航。应以实际道路状况、交通规则及手机高德指引为准。独立路线摘要（剩余时间/路程/全程里程）未实现。
+
+## 隐私与分发
+
+项目未实现自建服务器、分析/广告 SDK 或主动上传路线接口。通知仅处理 `com.autonavi.minimap`；路线和原文仍属于敏感信息，反馈前替换为虚构数据并裁去账号、设备标识。小米/高德及演示托管方的数据处理不受本项目控制，详见 [PRIVACY.md](PRIVACY.md)。源码、APK/RPK、截图与日志须分别检查，未检出凭据不等于绝无泄露。
+
+## 许可及联系
+
+原创代码按 [MIT](LICENSE) 提供，包含按许可条件使用、修改和分发的权利及按现状提供/无担保条款。字体按 SIL OFL 1.1，Apache/Gradle 等按各自许可；小米 SDK 权利归原权利人，本项目不声称取得超出其条款的额外授权。完整文本随 Release 的 `THIRD_PARTY_NOTICES.txt` 提供，介绍见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+普通问题通过仓库 Issue 反馈；安全问题私下联系维护者，见 [SECURITY.md](SECURITY.md)，不要发送真实凭据或用户路线。
+</pre></details><details><summary>BandSong-OFL.txt</summary><pre>Copyright 2018 The ZCOOL XiaoWei Project Authors (https://github.com/googlefonts/zcool-xiaowei/)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details><details><summary>BandKai-OFL.txt</summary><pre>Copyright 2021-2026 LXGW (https://github.com/lxgw/LxgwWenKai-Lite), with Reserved Font Name '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩' and 'LXGW'. [ADDITIONAL PERMISSION] The Reserved Font Names '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩' and 'LXGW' may continue to be used in Modified Versions recompiled from the Original Version, without modifications to the font source code; or in Modified Versions subsetted or converted to other formats (e.g., WOFF/WOFF2) solely for web font delivery, provided such Modified Versions are not made available as installable desktop fonts (e.g., on mainstream platforms like Google Fonts, or third-party non-commercial platforms recognized by the author @lxgw; other web font platforms please contact the author @lxgw for confirmation).
+Copyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+https://openfontlicense.org
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details><details><summary>BandRound-OFL.txt</summary><pre>Copyright 2018 The ZCOOL QingKe HuangYou Project Authors (https://www.github.com/googlefonts/zcool-qingke-huangyou)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details></details></footer></body></html>

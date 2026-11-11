@@ -75,6 +75,7 @@ node tools/check-wearable-package.cjs
 - 针对行为变化增加有意义的测试，尤其自动启动的去重、重试和结束状态；文档变动不必重跑构建。
 - 构建后更新 `outputs/releases/<版本>/` 中交付文件和同目录 `SHA256SUMS.txt`。推送手机后核对 SHA-256，并分别记录「已构建」「已传输」「已安装」「真机已验证」。
 - 更新交接记录时保留未验证的限制，不能把计划写成实现。
+- `site/` 按用户要求纳入 Git，不能恢复为忽略目录。改预览代码或内嵌声明后运行 `npm run site` / `npm run check:site`，源码与生成文件一起提交；Vercel 在仓库根目录读取配置、直接发布 site/，跳过安装和构建。云端现有项目需已关联 mine 的 main；未核对云端前不能声称部署已更新。
 - 网站演示地址为 https://wrist-navigation.vercel.app/ ，本地 `site/` 修改不等于已经部署。预览页需保留虚构数据、非真机验收、第三方托管隐私、原作者、MIT 与字体 OFL 声明。README 旧截图 `docs/images/wearable-native-024.png` 按用户要求保留，不再展示；不要删除或覆盖。
 
 ## ADB 与本地数据

@@ -1,5 +1,11 @@
 # 腕上导航维护交接
 
+## 2026-11-11 · site 入库与 Git 自动部署配置
+
+用户要求把当前 site/ 推到 GitHub，供 Vercel 直接使用最新静态页面，不再每次删除重建部署。已取消忽略 site/，Vercel 配置为仓库根目录下直接输出 site/，跳过安装和构建；页面与许可生成后纳入 Git；126项Node测试及三页/七份声明一致性检查通过（10个站点文件，HTML合计约27.7MiB）。用户随后明确“先推送”，本轮不操作Vercel设置。新增 check:site/CI 门禁，核对三页与七份声明和当前源码一致，并统一生成输入的 Git 换行以保持跨平台字节一致。
+
+本机未发现 Vercel CLI 登录凭据；只读打开现有浏览器的 Vercel dashboard 返回登录页，没有操作登录、账户/Git 权限或删除项目。因此本轮先完成仓库侧配置和推送，不把它写成现有云端项目已经绑定或线上页面已经更新。现有 Vercel 项目只需一次在 Settings → Git 关联 worlt/wrist-navigation，Production Branch=main，Root Directory=仓库根（留空），Framework=Other，Output=site，安装和构建为空；之后 push 自动新部署。最新公开页面使用虚构数据，保留原作者/维护者、MIT/OFL、隐私与项目声明，不含手机/手环联调数据。
+
 ## 2026-11-11 · v0.4.6 已正式发布并设为 Latest
 
 用户在本轮明确要求 v0.4.6 正式发布并设为 Latest，以正文说明验证限制；不是预发布。前两步已推至 mine/main：c96a2ec（签名口令本地化、发布附件门禁），2621262（双端联动、双振与测试），没有推送原作者 origin。新提交使用 GitHub noreply 邮箱，未改写历史作者或公开联系信息。第三步 520ea10 已推送项目介绍、声明和发布文档；v0.4.6 注释标签指向 520ea10f9d629457d1fc9cb1351d9dbb8cb94d72，未改写旧标签。122项Node（含4项发布门禁）、63项Android、Lint/双端构建、RPK编译后检查与原签名通过。GitHub Actions run 43011989798 的 Windows/Linux × Node22/24 四组源码检查全部成功。下面是此前开发时的历史状态，不代表本轮发布结果。

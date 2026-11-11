@@ -29,4 +29,5 @@ jobs:
       - run: npm test
       - run: npm run check:public
       - run: npm run preview
+      - run: npm run check:site
       - run: git diff --check

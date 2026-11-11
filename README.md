@@ -94,7 +94,7 @@ npm test
 npm run dev
 ```
 
-根目录无需安装 npm 依赖，也无需手机、手环、签名或 Android SDK。打开 <http://127.0.0.1:4173/> 操作源码交互预览；`/index.html` 为箭头总览，`/settings.html` 为设置原型。`npm run site` 生成可部署到 Vercel 的 `site/`，其中首页为箭头总览。原生接口由浏览器模拟，构建和部署步骤见 [开发指南](docs/development.md)。
+根目录无需安装 npm 依赖，也无需手机、手环、签名或 Android SDK。打开 <http://127.0.0.1:4173/> 操作源码交互预览；`/index.html` 为箭头总览，`/settings.html` 为设置原型。`npm run site` 生成已纳入 Git 的 `site/`，其中首页为箭头总览；`npm run check:site` 检查页面与当前源码一致。Vercel 直接发布该目录，现有项目关联本仓库的 `main` 后可随推送自动更新，无需删除重建。原生接口由浏览器模拟，构建和部署步骤见 [开发指南](docs/development.md)。
 
 ```text
 android/       Android 手机应用及单元测试

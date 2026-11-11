@@ -2,8 +2,13 @@
   "name": "wrist-navigation-development",
   "private": true,
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/Gu-Mie/wrist-navigation.git" },
-  "engines": { "node": ">=22" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gu-Mie/wrist-navigation.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "doctor": "node tools/dev-doctor.cjs",
     "test": "node --test wearable/test/*.test.js tools/test/*.test.cjs",
@@ -13,6 +18,7 @@
     "dev": "node tools/preview-server.cjs",
     "site": "node tools/build-site.cjs",
     "deps:wearable": "npm --prefix wearable ci",
-    "build:wearable": "npm --prefix wearable run build"
+    "build:wearable": "npm --prefix wearable run build",
+    "check:site": "node tools/build-site.cjs --check"
   }
 }
