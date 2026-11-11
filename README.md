@@ -15,7 +15,7 @@
 
 本仓库保留原作者及贡献者的版权声明，本 fork 修改部分保留 worlt 及贡献者的声明，详见 [LICENSE](LICENSE)。字体和第三方 SDK 适用各自许可，见 [第三方声明](THIRD_PARTY_NOTICES.md)。本 fork 的改动和演示站由本仓库维护者负责。
 
-[在线演示](https://wrist-navigation.vercel.app/) · [下载安装包](https://github.com/worlt/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [隐私说明](PRIVACY.md) · [项目与使用声明](DISCLAIMER.md)
+[在线演示](https://wrist-navigation-seven.vercel.app/) · [下载安装包](https://github.com/worlt/wrist-navigation/releases) · [首次使用](docs/getting-started.md) · [开发指南](docs/development.md) · [更新记录](CHANGELOG.md) · [隐私说明](PRIVACY.md) · [项目与使用声明](DISCLAIMER.md)
 
 ![0.4.0 箭头总览：薄荷绿、粗细 8、大小 160，线条与实心上下对照](docs/images/arrow-gallery-040.png)
 
@@ -23,9 +23,9 @@
 
 ## 在线演示
 
-- [箭头图标总览](https://wrist-navigation.vercel.app/)：调整颜色、粗细和大小，对比线条 / 实心，查看环岛出口序号示例。
-- [手环交互预览](https://wrist-navigation.vercel.app/preview.html)：用当前页面代码模拟导航、等待和设置场景。
-- [设置设计原型](https://wrist-navigation.vercel.app/settings.html)：独立的早期设计原型，样式和字体呈现不完全等同于当前手环界面。
+- [箭头图标总览](https://wrist-navigation-seven.vercel.app/)：调整颜色、粗细和大小，对比线条 / 实心，查看环岛出口序号示例。
+- [手环交互预览](https://wrist-navigation-seven.vercel.app/preview.html)：用当前页面代码模拟导航、等待和设置场景。
+- [设置设计原型](https://wrist-navigation-seven.vercel.app/settings.html)：独立的早期设计原型，样式和字体呈现不完全等同于当前手环界面。
 
 **演示声明：** 网站使用虚构数据，只用于展示；不会连接手机或手环，也不能用于真实导航。浏览器预览不等于 Vela 模拟器、真机验证或已发布安装包，演示版本可能先于 Release。预览设置保存在当前浏览器；访问网站需要连接 Vercel，托管方的数据处理见 [隐私说明](PRIVACY.md)。源码预览内嵌字体和图片，首次打开比首页加载更多资源。
 
