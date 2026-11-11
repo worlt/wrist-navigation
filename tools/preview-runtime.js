@@ -25,8 +25,8 @@
       send: cb => events.push(JSON.parse(cb.data))
     };
     const storage = {
-      get(cb) { try { cb.success(localStorage.getItem(storageKey) || ''); } catch { cb.fail(); } },
-      set(cb) { try { localStorage.setItem(storageKey, cb.value); cb.success(); } catch { cb.fail(); } }
+      get(cb) { try { cb.success(localStorage.getItem(cb.key === 'navigation.haptics.v1' ? storageKey + '.haptics' : storageKey) || ''); } catch { cb.fail(); } },
+      set(cb) { try { localStorage.setItem(cb.key === 'navigation.haptics.v1' ? storageKey + '.haptics' : storageKey, cb.value); cb.success(); } catch { cb.fail(); } }
     };
     const clock = { now: () => Date.now() + offset };
     function schedule(fn, ms) {
@@ -37,6 +37,7 @@
     function unschedule(id) { window.clearTimeout(id); timer = null; expire = null; }
     function requireModule(name) {
       if (name === '@system.storage') return storage;
+      if (name === '@system.vibrator') return { vibrate() { /* Preview never invokes a real motor. */ } };
       if (name === '@system.interconnect') return { instance: () => connection };
       if (name === '@system.brightness') return { setKeepScreenOn: cb => screenRequests.push(cb.keepScreenOn) };
       if (!moduleCache[name]) {
@@ -51,7 +52,10 @@
     const module = { exports: {} };
     new Function('module', 'require', 'Date', 'setTimeout', 'clearTimeout', bundle.script)(module, requireModule, clock, schedule, unschedule);
     const definition = module.exports;
-    page = new Proxy(Object.assign({}, definition.private, definition), {
+    const navigationSession = requireModule('../../common/session').createSession({ load: requireModule,
+      now: clock.now, schedule: (fn, ms) => window.setTimeout(() => { fn(); render(); }, ms),
+      unschedule: id => window.clearTimeout(id) });
+    page = new Proxy(Object.assign({}, definition.private, definition, { $app: { $def: { navigationSession } } }), {
       set(target, key, value) {
         target[key] = value;
         if (!queued) { queued = true; queueMicrotask(() => { queued = false; render(); }); }
@@ -144,7 +148,7 @@
     const heartbeat = window.setInterval(() => { if (scene === 'active' || scene === 'long' || scene.startsWith('roundabout-')) setScene(scene); }, 8000);
     return { page, setScene, advance, render, screenRequests, events, callbacks,
       stop() { window.clearInterval(heartbeat); page.onDestroy(); },
-      reset() { localStorage.removeItem(storageKey); page.applySettings(initialSettings || requireModule('../../common/settings').DEFAULTS); page.paint(); render(); }
+      reset() { localStorage.removeItem(storageKey); navigationSession.selectHaptic('noticeable'); navigationSession.setHapticEnabled(true); localStorage.removeItem(storageKey + '.haptics'); page.applySettings(initialSettings || requireModule('../../common/settings').DEFAULTS); page.paint(); render(); }
     };
   }
   const previews = bundle.scenes.map((entry, i) => launch(i, entry.scene, entry.settings, entry.settingsOpen, entry.picker));

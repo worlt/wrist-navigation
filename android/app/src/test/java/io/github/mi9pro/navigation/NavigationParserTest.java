@@ -8,6 +8,22 @@ public class NavigationParserTest {
     private NavigationParser.Result parse(String text) {
         return NavigationParser.parse(NavigationParser.AMAP_PACKAGE, true, "高德地图", text);
     }
+    @Test public void readsOnlyRoadAssociatedWithFirstTurnNotCurrentOrLaterRoads() {
+        var result = parse("沿当前路行驶，前方200米右转进入下一路，再左转进入后续路");
+        assertEquals("下一路", result.roadName);
+        assertEquals("200 米", result.distance);
+        assertEquals("right", result.maneuver);
+        assertNull(parse("沿当前路行驶，前方200米右转").roadName);
+        assertEquals("示例路辅路", parse("前方200米右转进入示例路辅路").roadName);
+    }
+    @Test public void extractsExplicitUnambiguousRoundaboutExitWithoutFabricatingAnAngle() {
+        assertEquals(Integer.valueOf(3), parse("前方200米进入环岛，从第3出口驶出").exitNumber);
+        assertEquals(Integer.valueOf(12), parse("前方200米进入环岛，从第十二个出口驶出").exitNumber);
+        assertEquals(Integer.valueOf(3), parse("前方200米进入环岛，第３出口驶出").exitNumber);
+        for (String text : new String[]{"前方200米进入环岛", "前方200米从第3出口进入环岛",
+                "前方200米进入环岛，第3出口或者第4出口驶出", "前方200米进入环岛，第0出口驶出",
+                "前方200米进入环岛，第100出口驶出", "前方200米右转，第3出口驶出"}) assertNull(text, parse(text).exitNumber);
+    }
     @Test public void extractsTurnDistanceAndKeepsRawText() {
         var result = parse("前方200米后右转，进入示例路");
         assertEquals("right", result.maneuver);

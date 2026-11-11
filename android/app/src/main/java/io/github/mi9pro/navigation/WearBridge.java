@@ -25,8 +25,9 @@ public final class WearBridge {
     private final MessageApi messages;
     private final String session = UUID.randomUUID().toString();
     private String nodeId;
-    private boolean discovering, sending;
-    private long sequence, nextConnect, connectGeneration, sendGeneration;
+    private boolean discovering;
+    private final SendFlight sendFlight = new SendFlight();
+    private long sequence, nextConnect, connectGeneration;
     private NavigationParser.Result latest = state("idle", "请在高德地图开始导航");
     private NavigationParser.Result realLatest = latest;
     public volatile boolean listenerConnected;
@@ -38,8 +39,12 @@ public final class WearBridge {
     private long lastNotificationCheck;
     private int notificationCount = -1;
     private int readableNotificationCount;
+    private final PhoneAppLinkPolicy appLink;
+    private final Runnable appLinkRetry = this::retryAppLink;
     private final AutoLaunchPolicy autoLaunch = new AutoLaunchPolicy();
     private final SendPolicy sendPolicy = new SendPolicy();
+    private final TurnIdentity turnIdentity = new TurnIdentity();
+    private final NavigationLifecycle navigationLifecycle = new NavigationLifecycle();
     private final Runnable sendTask = this::sendLatest;
     private Runnable uiListener;
     public void setUiListener(Runnable listener) {
@@ -86,9 +91,11 @@ public final class WearBridge {
         writer.println("enabled=" + enabled() + " listenerConnected=" + listenerConnected);
         writer.println("notification=" + notificationState + " checkedAt=" + lastNotificationCheck);
         writer.println("status=" + statusText);
-        writer.println("nodeReady=" + (nodeId != null) + " discovering=" + discovering + " sending=" + sending);
+        writer.println("nodeReady=" + (nodeId != null) + " discovering=" + discovering + " sending=" + sendFlight.pending());
         writer.println("outgoing=" + latest.status + " sequence=" + sequence + " lastAckAt=" + lastAckAt);
         writer.println("background=" + NavigationSyncService.status());
+        writer.println("openWithPhone=" + openWithPhoneEnabled() + " closeWithPhone=" + closeWithPhoneEnabled()
+                + " exitPending=" + (appLink.exitId(SystemClock.elapsedRealtime()) != 0));
         writer.println("autoOpen=" + autoOpenEnabled() + " attempts=" + autoLaunch.attempts()
                 + " opened=" + autoLaunch.opened() + " pending=" + autoLaunch.pending() + " status=" + autoLaunchStatus);
         for (String entry : events) writer.println("event=" + entry);
@@ -98,19 +105,89 @@ public final class WearBridge {
     WearBridge(Context context) {
         this.context = context;
         preferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        appLink = new PhoneAppLinkPolicy(openWithPhoneEnabled(), closeWithPhoneEnabled());
         nodes = Wearable.getNodeApi(context);
         messages = Wearable.getMessageApi(context);
         Wearable.getServiceApi(context).registerServiceConnectionListener(new OnServiceConnectionListener() {
-            @Override public void onServiceConnected() { main.post(() -> { event("XMS service connected"); nextConnect = 0; if (enabled()) connect(false); }); }
+            @Override public void onServiceConnected() { main.post(() -> { event("XMS service connected"); nextConnect = 0; if (enabled() || appLinkNeedsConnection()) connect(false); }); }
             @Override public void onServiceDisconnected() { main.post(() -> lost("小米运动健康连接已断开")); }
         });
     }
 
     public boolean enabled() { return preferences.getBoolean("enabled", false); }
+    public boolean openWithPhoneEnabled() { return preferences.getBoolean("open_with_phone", false); }
+    public boolean closeWithPhoneEnabled() { return preferences.getBoolean("close_with_phone", false); }
+    public void setOpenWithPhoneEnabled(boolean value) {
+        preferences.edit().putBoolean("open_with_phone", value).apply();
+        appLink.setOpenEnabled(value); retryAppLink(); notifyUi();
+    }
+    public void setCloseWithPhoneEnabled(boolean value) {
+        preferences.edit().putBoolean("close_with_phone", value).apply();
+        appLink.setCloseEnabled(value); sendPolicy.reset(); sendLatest(); notifyUi();
+    }
+    public void phoneAppVisible() {
+        appLink.setForeground(true, SystemClock.elapsedRealtime());
+        sendPolicy.reset(); retryAppLink();
+    }
+    public void phoneAppHidden() {
+        appLink.setForeground(false, SystemClock.elapsedRealtime());
+        if (appLink.blocksNavigationLaunch()) autoLaunch.disconnected(SystemClock.elapsedRealtime());
+        sendPolicy.reset(); retryAppLink();
+    }
+    private boolean appLinkNeedsConnection() {
+        return appLink.launchExpected() || appLink.exitId(SystemClock.elapsedRealtime()) != 0;
+    }
+    private void retryAppLink() {
+        main.removeCallbacks(appLinkRetry);
+        if (nodeId == null && appLinkNeedsConnection()) connect(false);
+        sendLatest();
+        if (nodeId == null && appLinkNeedsConnection()) main.postDelayed(appLinkRetry, 10000);
+    }
+    private void maybeLaunchWithPhone() {
+        if (nodeId == null) return;
+        long request = appLink.claimLaunch(SystemClock.elapsedRealtime());
+        if (request == 0) return;
+        event("phone entry wear launch requested");
+        main.postDelayed(() -> finishPhoneLaunch(request, false, "打开请求超时"), 10000);
+        try {
+            nodes.launchWearApp(nodeId, "/pages/index")
+                .addOnSuccessListener(ignored -> main.post(() -> finishPhoneLaunch(request, true, "")))
+                .addOnFailureListener(error -> main.post(() -> finishPhoneLaunch(request, false, error.getMessage())));
+        } catch (RuntimeException error) { finishPhoneLaunch(request, false, error.getMessage()); }
+    }
+    private void finishPhoneLaunch(long request, boolean success, String detail) {
+        if (!appLink.completeLaunch(request, success, SystemClock.elapsedRealtime())) {
+            compensateObsoleteLaunch(success); return;
+        }
+        if (success) {
+            autoLaunch.manuallyOpened();
+            event("phone entry wear launch accepted"); sendPolicy.reset(); sendLatest();
+        } else {
+            statusText = "手机打开联动失败：" + detail;
+            event("phone entry wear launch failed");
+            main.postDelayed(appLinkRetry, PhoneAppLinkPolicy.RETRY_MS);
+        }
+    }
+    private void compensateObsoleteLaunch(boolean success) {
+        if (!success || !appLink.blocksNavigationLaunch()) return;
+        appLink.reassertExit(SystemClock.elapsedRealtime());
+        event("obsolete native launch accepted; request compensating exit");
+        sendPolicy.reset(); retryAppLink();
+    }
     public boolean autoOpenEnabled() { return preferences.getBoolean("auto_open", true); }
     public boolean keepScreenOnEnabled() { return preferences.getBoolean("keep_screen_on", true); }
     public void setKeepScreenOnEnabled(boolean value) {
         preferences.edit().putBoolean("keep_screen_on", value).apply();
+        sendLatest();
+    }
+    public boolean vibrationEnabled() { return preferences.getBoolean("vibration", true); }
+    public boolean cyclingReminders() { return preferences.getBoolean("cycling_reminders", false); }
+    public void setVibrationEnabled(boolean value) {
+        preferences.edit().putBoolean("vibration", value).apply();
+        sendLatest();
+    }
+    public void setCyclingReminders(boolean value) {
+        preferences.edit().putBoolean("cycling_reminders", value).apply();
         sendLatest();
     }
     public long pollIntervalMs() { return "active".equals(realLatest.status) ? sendPolicy.nextReadDelay(SystemClock.elapsedRealtime()) : SendPolicy.HEARTBEAT_MS; }
@@ -130,6 +207,7 @@ public final class WearBridge {
     public int readableNotificationCount() { return readableNotificationCount; }
 
     public void setEnabled(boolean value) {
+        navigationLifecycle.update("paused", SystemClock.elapsedRealtime());
         preferences.edit().putBoolean("enabled", value).apply();
         if (value) {
             // Notifications may have ended while synchronization was disabled.
@@ -138,6 +216,7 @@ public final class WearBridge {
             notificationCount = -1;
             readableNotificationCount = 0;
         }
+        turnIdentity.reset();
         latest = value ? realLatest : state("paused", "手机已暂停同步");
         sendPolicy.reset();
         updateControlState();
@@ -153,6 +232,10 @@ public final class WearBridge {
         realLatest = result == null ? new NavigationParser.Result("idle", "高德地图",
                 notificationCount > 0 ? NavigationParser.clip(lastAmapText, 480) : "",
                 "unknown", "等待导航", "") : result;
+        turnIdentity.update(realLatest);
+        // Unrecognized Gaode text is not evidence that all navigation notifications disappeared.
+        navigationLifecycle.update("idle".equals(realLatest.status) && notificationCount != 0
+                ? "unavailable" : realLatest.status, SystemClock.elapsedRealtime());
         updateControlState();
         if (!enabled()) return;
         latest = realLatest;
@@ -161,9 +244,11 @@ public final class WearBridge {
     }
 
     public void unavailable(String reason) {
+        navigationLifecycle.update("unavailable", SystemClock.elapsedRealtime());
         notificationCount = -1;
         readableNotificationCount = 0;
         realLatest = state("unavailable", reason);
+        turnIdentity.reset();
         updateControlState();
         if (!enabled()) return;
         latest = realLatest;
@@ -250,6 +335,8 @@ public final class WearBridge {
     }
 
     private void maybeAutoLaunch() {
+        maybeLaunchWithPhone();
+        if (appLink.blocksNavigationLaunch() || appLink.launchExpected()) return;
         if (nodeId == null || !isNavigationActive() || !"active".equals(latest.status)) return;
         long request = autoLaunch.claim(SystemClock.elapsedRealtime());
         if (request == 0) return;
@@ -265,7 +352,9 @@ public final class WearBridge {
     }
 
     private void finishAutoLaunch(long request, boolean success, String detail) {
-        if (!autoLaunch.complete(request, success, SystemClock.elapsedRealtime())) return;
+        if (!autoLaunch.complete(request, success, SystemClock.elapsedRealtime())) {
+            compensateObsoleteLaunch(success); return;
+        }
         if (success) {
             autoLaunchStatus = "已请求打开手环，本次导航不重复打开";
             event("auto wear launch accepted");
@@ -288,8 +377,17 @@ public final class WearBridge {
             if ("ack".equals(packet.optString("type")) && session.equals(packet.optString("session"))
                     && packet.optLong("seq") == sequence) {
                 lastAckAt = System.currentTimeMillis();
-                statusText = "手环已确认收到";
+                long exit = appLink.exitId(SystemClock.elapsedRealtime());
+                if (exit != 0 && (session + ":" + exit).equals(packet.optString("phoneExitId"))) {
+                    appLink.ackExit(exit);
+                    statusText = "手环已收到退出请求";
+                } else statusText = "手环已确认收到";
+                sendFlight.ack(sequence);
                 event("ack sequence=" + sequence);
+                // ACK is stronger than a delayed SDK success. Flush a foreground cancellation
+                // now, rather than waiting behind the obsolete close frame's callback.
+                if (packet.has("phoneExitId")) sendPolicy.reset();
+                sendLatest();
             }
         } catch (Exception ignored) { /* Ignore malformed peer frames, never log navigation contents. */ }
     }
@@ -297,10 +395,22 @@ public final class WearBridge {
     private void sendLatest() {
         maybeAutoLaunch();
         main.removeCallbacks(sendTask);
-        if (nodeId == null || sending) return;
+        if (nodeId == null || sendFlight.pending()) return;
+        long exit = appLink.exitId(SystemClock.elapsedRealtime());
+        // Do not send a normal snapshot immediately after the exit ACK: that would cancel
+        // the band's 300 ms exit grace. Also do not reopen a manually restarted band.
+        if (appLink.blocksNavigationLaunch() && exit == 0) return;
+        String phoneExitId = exit == 0 ? "" : session + ":" + exit;
         // Before the first permission grant, do not emit a misleading live state.
-        NavigationParser.Result outgoing = enabled() ? latest : state("paused", "手机已暂停同步");
-        String fingerprint = outgoing.fingerprint() + "\n" + keepScreenOnEnabled();
+        NavigationParser.Result outgoing = exit != 0 ? state("paused", "手机应用已退出") :
+                (enabled() ? latest : state("paused", "手机已暂停同步"));
+        String actionId = "active".equals(outgoing.status) ? turnIdentity.actionId() : null;
+        boolean allowVibration = navigationLifecycle.allowsVibration(enabled(), vibrationEnabled(), listenerConnected,
+                outgoing.status, System.currentTimeMillis() - lastNotificationCheck);
+        String fingerprint = outgoing.fingerprint() + "\n" + keepScreenOnEnabled()
+                + "\n" + actionId + "\n" + allowVibration + "\n" + cyclingReminders()
+                + "\n" + navigationLifecycle.id() + "\n" + navigationLifecycle.ended()
+                + "\n" + vibrationEnabled() + "\n" + phoneExitId;
         long delay = sendPolicy.delay(fingerprint, "active".equals(outgoing.status), SystemClock.elapsedRealtime());
         if (delay != 0) {
             // Heartbeats require a fresh notification read; only defer short update bursts here.
@@ -313,24 +423,32 @@ public final class WearBridge {
                 .put("status", outgoing.status).put("title", outgoing.title).put("rawText", outgoing.rawText)
                 .put("maneuver", outgoing.maneuver).put("instruction", outgoing.instruction)
                 .put("distance", outgoing.distance).put("sentAt", System.currentTimeMillis())
-                .put("keepScreenOn", keepScreenOnEnabled());
+                .put("keepScreenOn", exit == 0 && keepScreenOnEnabled())
+                .put("mode", cyclingReminders() ? "cycle" : "walk")
+                .put("vibrationEnabled", allowVibration)
+                // The user preference remains meaningful when sync is paused or the link drops.
+                .put("reminderEnabled", vibrationEnabled());
+            if (exit != 0) packet.put("phoneExitId", phoneExitId);
+            if (actionId != null) packet.put("actionId", actionId);
+            if (navigationLifecycle.id() != null) {
+                packet.put("navigationId", navigationLifecycle.id());
+                packet.put("navigationEnded", navigationLifecycle.ended());
+            }
             byte[] data = packet.toString().getBytes(StandardCharsets.UTF_8);
             if (data.length > 4096) { statusText = "通知过长，发送已跳过"; return; }
-            final long generation = ++sendGeneration;
-            sending = true;
+            final long generation = sendFlight.start(sequence);
             sendPolicy.sent(fingerprint, SystemClock.elapsedRealtime());
             statusText = "正在发送到手环…";
             event("send sequence=" + sequence + " status=" + outgoing.status + " bytes=" + data.length);
-            main.postDelayed(() -> { if (sending && generation == sendGeneration) lost("发送超时，请检查手环应用是否打开"); }, 10000);
+            main.postDelayed(() -> { if (sendFlight.current(generation)) lost("发送超时，请检查手环应用是否打开"); }, 10000);
             messages.sendMessage(nodeId, data).addOnSuccessListener(ignored -> main.post(() -> {
-                if (generation != sendGeneration) return;
-                sending = false;
+                if (!sendFlight.complete(generation)) return;
                 event("SDK send succeeded");
                 if (!"手环已确认收到".equals(statusText)) statusText = "已发送，等待手环确认";
                 // A changed snapshot during an in-flight send supersedes the old one immediately.
                 sendLatest();
             })).addOnFailureListener(error -> main.post(() -> {
-                if (generation == sendGeneration) lost("发送失败：" + error.getMessage());
+                if (sendFlight.current(generation)) lost("发送失败：" + error.getMessage());
             }));
         } catch (Exception error) { lost("无法发送：" + error.getMessage()); }
     }
@@ -342,10 +460,11 @@ public final class WearBridge {
         String old = nodeId;
         nodeId = null;
         discovering = false;
-        sending = false;
+        sendFlight.cancel();
         connectGeneration++;
-        sendGeneration++;
         nextConnect = SystemClock.elapsedRealtime() + 10000;
+        appLink.disconnected(SystemClock.elapsedRealtime());
+        if (appLinkNeedsConnection()) main.postDelayed(appLinkRetry, 10000);
         autoLaunch.disconnected(SystemClock.elapsedRealtime());
         NavigationSyncService.refresh();
         statusText = message;

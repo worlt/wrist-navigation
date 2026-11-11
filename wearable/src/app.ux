@@ -1,4 +1,20 @@
 <script>
-export default {}
+const sessions = require('./common/session')
+const nativeApi = require('./common/native')
+export default {
+  navigationSession: null,
+  onCreate() {
+    if (this.navigationSession && this.navigationSession.isAlive()) return
+    this.navigationSession = sessions.createSession({ load: nativeApi.loadNative, now: () => Date.now(),
+      schedule: (fn, delay) => setTimeout(fn, delay), unschedule: id => clearTimeout(id) })
+    this.navigationSession.retry()
+  },
+  onShow() {
+    if (this.navigationSession) this.navigationSession.retry()
+  },
+  onDestroy() {
+    if (this.navigationSession) this.navigationSession.dispose()
+    this.navigationSession = null
+  }
+}
 </script>
-

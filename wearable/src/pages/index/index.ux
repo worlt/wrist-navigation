@@ -84,6 +84,25 @@
             <text class="picker-chevron" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px;">›</text>
           </div>
         </list-item>
+        <list-item type="haptic-enabled" class="picker-row haptic-toggle-row" style="height: {{ pickerRowHeight }}px;">
+          <div class="picker-selector haptic-toggle" onclick="toggleHaptic" style="height: {{ pickerHeight }}px;">
+            <text class="picker-label" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px; font-size: {{ hintSize }}px; font-family: {{ fontFamily }};">振动提醒</text>
+            <text class="picker-value" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px; font-size: {{ labelSize }}px; color: {{ hapticEnabled ? '#80f5be' : '#b7c9bd' }};">{{ hapticEnabled ? '开启' : '关闭' }}</text>
+          </div>
+        </list-item>
+        <list-item type="haptic" class="picker-row haptic-row" style="height: {{ pickerRowHeight }}px;">
+          <div class="picker-selector" onclick="openPicker('haptic')" style="height: {{ pickerHeight }}px;">
+            <text class="picker-label" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px; font-size: {{ hintSize }}px; font-family: {{ fontFamily }};">提醒震感</text>
+            <text class="picker-value" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px; font-size: {{ labelSize }}px; font-family: {{ fontFamily }};">{{ hapticName }}</text>
+            <text class="picker-chevron" style="height: {{ pickerHeight }}px; line-height: {{ pickerHeight }}px;">›</text>
+          </div>
+        </list-item>
+        <list-item type="haptic-test" class="reset-row" style="height: {{ buttonHeight + 16 }}px;">
+          <text class="settings-button haptic-test" onclick="testHaptic" style="font-size: {{ labelSize }}px; height: {{ buttonHeight }}px; line-height: {{ buttonHeight }}px; font-family: {{ fontFamily }};">试振两下</text>
+        </list-item>
+        <list-item type="haptic-status" class="link-row" style="height: {{ auxiliaryHeight + 10 }}px;">
+          <text class="link-state" style="font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px;">{{ hapticStatus }}</text>
+        </list-item>
         <list-item type="footer" class="settings-footer" style="height: {{ footerHeight }}px;">
           <text class="save-status" style="font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">{{ saveStatus }}</text>
           <text class="version" style="top: {{ auxiliaryHeight + 4 }}px; font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">腕上导航 v{{ versionName }}</text>
@@ -92,7 +111,7 @@
           <text class="link-state" style="font-size: {{ auxiliarySize }}px; height: {{ auxiliaryHeight }}px; line-height: {{ auxiliaryHeight }}px; font-family: {{ fontFamily }};">{{ linkText }}</text>
         </list-item>
         <list-item type="reset" class="reset-row" style="height: {{ buttonHeight + 16 }}px;">
-          <text class="reset-defaults" onclick="resetSettings" style="font-size: {{ labelSize }}px; height: {{ buttonHeight }}px; line-height: {{ buttonHeight }}px; font-family: {{ fontFamily }};">恢复默认</text>
+          <text class="settings-button reset-defaults" onclick="resetSettings" style="font-size: {{ labelSize }}px; height: {{ buttonHeight }}px; line-height: {{ buttonHeight }}px; font-family: {{ fontFamily }};">恢复默认</text>
         </list-item>
       </list>
       <list class="option-list" if="{{ pickerOpen }}" style="top: {{ settingsListTop }}px; height: {{ settingsListHeight }}px;">
@@ -111,12 +130,16 @@
 
 <script>
 const protocol = require('../../common/protocol')
+const sessions = require('../../common/session')
+const nativeApi = require('../../common/native')
+const haptics = require('../../common/haptics')
 const presentation = require('../../common/presentation')
 const settings = require('../../common/settings')
 const geometry = require('../../common/geometry')
 const manifest = require('../../manifest.json')
 let preferenceStore = null
-let connection = null
+let session = null
+let unsubscribe = null
 let latest = null
 let receivedAt = 0
 let connected = false
@@ -133,20 +156,17 @@ let lastSend = '尚未发送'
 // CONNECTED / DISCONNECTED / UNINSTALLED, as reported by the interconnect service.
 let apkStatus = '未检测'
 
-function readApkStatus() {
-  if (!connection) return '未检测'
-  try {
-    if (typeof connection.getApkStatus !== 'function') return '接口不可用'
-    return String(connection.getApkStatus() || '未知')
-  } catch (error) { return '读取失败' }
-}
 
 export default {
   private: {
     settingsOpen: false,
     pickerOpen: false,
     pickerKind: '',
-    settingsTitle: '显示设置',
+    settingsTitle: '导航设置',
+    hapticProfile: haptics.DEFAULT,
+    hapticEnabled: true,
+    hapticName: '明显',
+    hapticStatus: '调整后自动保存',
     pickerOptions: [],
     pickerValue: '',
     font: settings.DEFAULTS.font,
@@ -217,17 +237,19 @@ export default {
     this.settingsOpen = false
     this.closePicker()
     this.applySettings(settings.DEFAULTS)
-    latest = null
-    receivedAt = 0
-    connected = false
-    connectionError = ''
     visible = false
     screenRequested = false
     screenError = ''
     alive = true
+    if (unsubscribe) unsubscribe()
+    const app = this.$app && this.$app.$def
+    session = app && app.navigationSession || sessions.getSession(nativeApi.loadNative, () => Date.now(),
+      (fn, delay) => setTimeout(fn, delay), id => clearTimeout(id))
+    this.syncSession(session.peek())
+    unsubscribe = session.subscribe(state => this.syncSession(state))
     this.paint()
   },
-  // Establish interconnect only after the first screen has been created.
+  // App owns the transport; onReady also supports standalone browser previews.
   onReady() {
     this.loadSettings()
     this.retry()
@@ -289,20 +311,33 @@ export default {
     if (preferenceStore) preferenceStore.save(checked)
     else this.saveStatus = '本次调整无法保存'
   },
-  resetSettings() { this.saveSettings(settings.DEFAULTS) },
+  resetSettings() {
+    this.saveSettings(settings.DEFAULTS)
+    if (alive && session) session.selectHaptic(haptics.DEFAULT)
+    if (alive && session) session.setHapticEnabled(true)
+  },
+  toggleHaptic() { if (alive && session) session.setHapticEnabled(!this.hapticEnabled) },
+  testHaptic() {
+    if (!alive || !visible || !this.settingsOpen) return
+    if (!this.hapticEnabled) { this.hapticStatus = '请先开启振动提醒'; return }
+    this.hapticStatus = session.testHaptic() ? '已请求试振两下' : '正在提醒或振动不可用'
+  },
   // One exclusive list serves every choice; the options carry their own preview.
   openPicker(kind) {
     if (!alive) return
-    const options = settings.optionsFor(kind)
+    const options = kind === 'haptic' ? haptics.OPTIONS : settings.optionsFor(kind)
     if (!options.length) return
-    const value = this.currentSettings()[kind]
+    const value = kind === 'haptic' ? this.hapticProfile : this.currentSettings()[kind]
     this.pickerKind = kind
-    this.settingsTitle = settings.PICKER_TITLES[kind]
+    this.settingsTitle = kind === 'haptic' ? '提醒震感' : settings.PICKER_TITLES[kind]
     this.pickerValue = value
     this.pickerOptions = options.map(item => {
       const option = { id: item.id, name: item.name, family: this.fontFamily, sample: '', color: '#ffffff',
         image: '', showSample: false, showImage: false, selected: item.id === value }
-      if (kind === 'font') {
+      if (kind === 'haptic') {
+        option.sample = item.sample
+        option.showSample = true
+      } else if (kind === 'font') {
         option.family = item.family
         option.sample = '直行200米'
         option.showSample = true
@@ -323,10 +358,15 @@ export default {
   },
   selectOption(id) {
     if (!alive || !this.pickerOpen) return
-    const options = settings.optionsFor(this.pickerKind)
+    const options = this.pickerKind === 'haptic' ? haptics.OPTIONS : settings.optionsFor(this.pickerKind)
     let found = null
     for (const option of options) if (option.id === id) found = option
     if (!found) return
+    if (this.pickerKind === 'haptic') {
+      session.selectHaptic(id)
+      this.closePicker()
+      return
+    }
     const value = this.currentSettings()
     value[this.pickerKind] = id
     this.closePicker()
@@ -335,11 +375,11 @@ export default {
   closePicker() {
     this.pickerOpen = false
     this.pickerKind = ''
-    this.settingsTitle = '显示设置'
+    this.settingsTitle = '导航设置'
     this.pickerOptions = []
   },
   openSettings() { this.settingsOpen = true; this.closePicker(); this.paint() },
-  closeSettings() { this.closePicker(); this.settingsOpen = false; this.paint() },
+  closeSettings() { session.cancelHapticTest(); this.closePicker(); this.settingsOpen = false; this.paint() },
   settingsBack() {
     if (this.pickerOpen) this.closePicker()
     else this.closeSettings()
@@ -350,16 +390,18 @@ export default {
   },
   onShow() {
     visible = true
-    this.paint()
-    if (connection) this.retry()
+    this.syncSession(session.peek())
+    if (session.peek().hasConnection) this.retry()
   },
   onHide() {
+    if (session) session.cancelHapticTest()
     visible = false
     if (timer) clearTimeout(timer)
     timer = null
     this.keepScreenOn(false)
   },
   onDestroy() {
+    if (session) session.cancelHapticTest()
     if (preferenceStore) preferenceStore.dispose()
     preferenceStore = null
     alive = false
@@ -368,94 +410,29 @@ export default {
     this.keepScreenOn(false, true)
     if (timer) clearTimeout(timer)
     timer = null
-    if (connection) {
-      try {
-        connection.onmessage = () => {}
-        connection.onopen = () => {}
-        connection.onclose = () => {}
-        connection.onerror = () => {}
-      } catch (error) { /* Some firmware rejects callback changes after disconnect. */ }
-    }
-    connection = null
+    if (unsubscribe) unsubscribe()
+    unsubscribe = null
     latest = null
   },
-  ready() {
-    this.send({ v: 1, type: 'ready' })
-  },
-  send(message) {
-    if (!connection || !alive) return
-    try {
-      const payload = JSON.stringify(message)
-      const options = sendShape === 0 ? { data: payload } : { data: { data: payload } }
-      options.success = () => {
-        lastSend = '已发送 ' + (message.type || '') + (sendShape === 0 ? '' : '（嵌套）')
-      }
-      options.fail = (data, code) => this.sendFailed(message, data, code)
-      connection.send(options)
-    } catch (error) { this.failed('发送失败', error) }
-  },
-  // Vela 5.0 rejects the bare string form with 202 (invalid args) and wants the
-  // documented envelope; older firmware only accepts the string. Switch once.
-  sendFailed(message, data, code) {
+  syncSession(state) {
     if (!alive) return
-    if (Number(code) === 202 && sendShape === 0) {
-      sendShape = 1
-      lastSend = '字符串格式被拒，改用嵌套格式'
-      this.send(message)
-      return
-    }
-    lastSend = '发送失败 ' + (code === undefined ? '' : code)
-    this.failed('发送失败', data, code)
-  },
-  failed(stage, data, code) {
-    if (!alive) return
-    connected = false
-    connectionError = presentation.errorText(stage, data, code)
-    this.paint()
+    this.hapticProfile = state.haptic.profile
+    this.hapticEnabled = state.haptic.enabled
+    this.hapticName = haptics.profile(state.haptic.profile).name
+    this.hapticStatus = state.haptic.status
+    latest = state.latest
+    receivedAt = state.receivedAt
+    connected = state.connected
+    connectionError = state.connectionError
+    sendShape = state.sendShape
+    lastSend = state.lastSend
+    apkStatus = state.apkStatus
+    if (visible) this.paint()
   },
   retry() {
-    if (!alive) return
-    connectionError = ''
-    try {
-      if (!connection) {
-        // Lazy loading keeps missing/failed firmware APIs from aborting page creation.
-        const interconnect = require('@system.interconnect')
-        connection = interconnect.instance()
-        connection.onopen = () => {
-          if (!alive) return
-          connected = true
-          connectionError = ''
-          this.ready()
-          this.paint()
-        }
-        connection.onclose = data => this.failed('连接断开', data)
-        connection.onerror = data => this.failed('连接异常', data)
-        connection.onmessage = event => {
-          if (!alive) return
-          const packet = protocol.decode(event && event.data)
-          if (!protocol.accept(latest, packet)) return
-          latest = packet
-          receivedAt = Date.now()
-          connected = true
-          connectionError = ''
-          if (visible) this.paint()
-          this.send({ v: 1, type: 'ack', session: packet.session, seq: packet.seq })
-        }
-      }
-      connection.getReadyState({
-        success: data => {
-          if (!alive) return
-          connected = !!data && data.status === 1
-          connectionError = ''
-          if (connected) this.ready()
-          this.paint()
-        },
-        fail: (data, code) => this.failed('连接检查失败', data, code)
-      })
-    } catch (error) {
-      connection = null
-      this.failed('互联初始化失败', error)
-    }
+    if (!alive || !session) return
+    session.retry()
+    this.syncSession(session.peek())
     this.paint()
   },
   scheduleExpiry() {
@@ -487,7 +464,7 @@ export default {
     const age = now - receivedAt
     let view = protocol.present(latest, age, connected)
     this.keepScreenOn(visible && !this.settingsOpen && !!view.live && latest.keepScreenOn !== false)
-    apkStatus = readApkStatus()
+    apkStatus = session ? session.peek().apkStatus : '未检测'
     if (connectionError) {
       view.status = '连接不可用'
       view.rawText = connectionError
@@ -576,7 +553,7 @@ export default {
 .link-row { width: 288px; height: 33px; }
 .link-state { position: absolute; left: 0px; top: 0px; width: 288px; color: #73857a; text-align: center; }
 .reset-row { width: 288px; height: 68px; }
-.reset-defaults { position: absolute; left: 24px; top: 8px; width: 240px; color: #b7c9bd; background-color: #101a14; border-radius: 12px; text-align: center; }
+.settings-button { position: absolute; left: 24px; top: 8px; width: 240px; color: #b7c9bd; background-color: #101a14; border-radius: 12px; text-align: center; }
 .option-list { position: absolute; left: 24px; top: 66px; width: 288px; height: 398px; }
 .option-row { width: 288px; height: 98px; }
 .option-card { position: absolute; left: 0px; top: 0px; width: 288px; height: 86px; border-radius: 12px; }

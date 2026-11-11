@@ -25,6 +25,14 @@ function decode(input) {
   if (message.title.length > 80 || message.rawText.length > 480 || message.instruction.length > 48 || message.distance.length > 32) return null;
   if (maneuvers.indexOf(message.maneuver) < 0) message.maneuver = 'unknown';
   if (message.keepScreenOn !== undefined && typeof message.keepScreenOn !== 'boolean') return null;
+  if (message.phoneExitId !== undefined && (typeof message.phoneExitId !== 'string' || !message.phoneExitId || message.phoneExitId.length > 80)) return null;
+  // Optional v1 extensions: old phones keep rendering normally but never trigger haptics.
+  if (message.actionId !== undefined && (typeof message.actionId !== 'string' || !message.actionId || message.actionId.length > 80)) return null;
+  if (message.mode !== undefined && message.mode !== 'walk' && message.mode !== 'cycle') return null;
+  if (message.vibrationEnabled !== undefined && typeof message.vibrationEnabled !== 'boolean') return null;
+  if (message.reminderEnabled !== undefined && typeof message.reminderEnabled !== 'boolean') return null;
+  if (message.navigationId !== undefined && (typeof message.navigationId !== 'string' || !message.navigationId || message.navigationId.length > 80)) return null;
+  if (message.navigationEnded !== undefined && typeof message.navigationEnded !== 'boolean') return null;
   return message;
 }
 

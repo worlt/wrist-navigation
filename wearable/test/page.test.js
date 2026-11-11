@@ -10,12 +10,15 @@ const source = fs.readFileSync(path.join(__dirname, '../src/pages/index/index.ux
   .match(/<script>([\s\S]*?)<\/script>/)[1].replace('export default', 'module.exports =');
 
 function launch(options = {}) {
+  const hapticClock = require('./helpers/clock')();
   let now = 100000;
   let loads = 0;
   let tick;
   let due = 0;
   let timerRuns = 0;
   const sent = [];
+  const vibrations = [];
+  let vibratorLoads = 0;
   const pending = [];
   const screenRequests = [];
   const screenCallbacks = [];
@@ -45,12 +48,23 @@ function launch(options = {}) {
     setTimeout: (callback, delay) => { tick = callback; due = now + delay; return 1; },
     clearTimeout: () => { tick = null; },
     require(name) {
+      if (name === '@system.vibrator') {
+        vibratorLoads++;
+        if (options.vibratorMissing) throw new Error('vibrator unavailable');
+        return { vibrate(request) {
+          if (options.vibratorThrows) throw new Error('unsupported vibration');
+          vibrations.push(request.mode);
+          if (options.onVibrate) options.onVibrate();
+        } };
+      }
       if (name === '@system.storage') {
         if (options.storageMissing) throw new Error('storage unavailable');
         return { get(callbacks) {
+          if (callbacks.key === 'navigation.haptics.v1') { callbacks.success(options.hapticProfile || ''); return; }
           storageRead = callbacks;
           if (!options.storagePending) callbacks.success(options.settings || '');
         }, set(callbacks) {
+          if (callbacks.key === 'navigation.haptics.v1') { callbacks.success(); return; }
           if (options.storageFails) callbacks.fail('full');
           else { stored.push(JSON.parse(callbacks.value)); callbacks.success(); }
         } };
@@ -76,9 +90,17 @@ function launch(options = {}) {
   };
   vm.runInNewContext(source, context);
   const definition = context.module.exports;
-  const page = Object.assign({}, definition.private, definition);
+  let receive;
+  Object.defineProperty(connection, 'onmessage', { get: () => receive, set(fn) {
+    receive = event => { fn(event); if (!options.manualHaptics) hapticClock.advance(2400); };
+  } });
+  const navigationSession = require('../src/common/session').createSession({ load: context.require, now: () => now,
+    schedule: hapticClock.schedule, unschedule: hapticClock.unschedule });
+  const appOwner = { navigationSession };
+  const page = Object.assign({}, definition.private, definition, { $app: { $def: appOwner } });
   page.onInit();
-  return { page, connection, sent, pending, screenRequests, screenCallbacks, stored, storageRead: () => storageRead, loads: () => loads,
+  return { page, connection, sent, vibrations, navigationSession, advanceHaptics: hapticClock.advance, shutdown: () => navigationSession.dispose(),
+    recreatePage() { const next = Object.assign({}, definition.private, definition, { $app: { $def: appOwner } }); next.onInit(); return next; }, vibratorLoads: () => vibratorLoads, pending, screenRequests, screenCallbacks, stored, storageRead: () => storageRead, loads: () => loads,
     advance(ms) { now += ms; if (tick && now >= due) { const run = tick; tick = null; timerRuns++; run(); } },
     timerRuns: () => timerRuns, running: () => !!tick };
 }
@@ -194,7 +216,7 @@ test('send exceptions do not abort opening the page', () => {
   assert.match(app.page.rawLines.join(''), /发送失败/);
 });
 
-test('late callbacks after page destruction do not update or send', () => {
+test('page destruction stops UI but App owns transport until App disposal', () => {
   const app = launch({ pending: true });
   app.page.onReady();
   app.page.onShow();
@@ -205,7 +227,10 @@ test('late callbacks after page destruction do not update or send', () => {
   app.pending.forEach(callback => callback.success({ status: 1 }));
   message({ data: JSON.stringify(navigation(1)) });
   assert.equal(app.page.status, status);
-  assert.equal(app.sent.length, 0);
+  assert.equal(app.sent.at(-1).type, 'ack');
+  const count = app.sent.length; app.shutdown();
+  message({ data: JSON.stringify(navigation(2)) });
+  assert.equal(app.sent.length, count);
 });
 
 test('fixed rows preserve long navigation text, line breaks and Unicode pairs', () => {
@@ -455,4 +480,110 @@ test('font selection, typography and defaults survive storage and every display 
   assert.deepEqual(app.stored.at(-1), settings.DEFAULTS);
   app.page.onBackPress();
   assert.equal(app.page.settingsOpen, false);
+});
+
+
+const haptic = (seq, extra = {}) => ({ ...navigation(seq), actionId: 'turn-1', mode: 'walk', vibrationEnabled: true, ...extra });
+test('haptic picker, test pair and reset work independently of display preferences', () => {
+  const app = launch({ connected: true, hapticProfile: 'gentle', manualHaptics: true });
+  app.page.onReady(); app.page.onShow(); app.page.openSettings();
+  assert.equal(app.page.hapticName, '轻柔');
+  app.page.toggleHaptic(); assert.equal(app.page.hapticEnabled, false);
+  app.page.testHaptic(); assert.equal(app.page.hapticStatus, '请先开启振动提醒');
+  assert.equal(app.vibrations.length, 0); app.page.toggleHaptic();
+  app.page.openPicker('haptic'); assert.equal(app.page.settingsTitle, '提醒震感');
+  app.page.selectOption('noticeable'); assert.equal(app.page.hapticName, '明显');
+  app.page.testHaptic(); app.page.testHaptic(); app.advanceHaptics(2400);
+  assert.deepEqual(app.vibrations, ['long', 'long']);
+  app.page.openPicker('haptic'); app.page.selectOption('gentle');
+  app.page.onDestroy(); const next = app.recreatePage(); next.onReady(); next.onShow();
+  assert.equal(next.hapticName, '轻柔');
+  next.openSettings(); next.testHaptic(); next.onHide(); app.advanceHaptics(2400);
+  assert.deepEqual(app.vibrations, ['long', 'long', 'short']);
+  next.onShow(); next.resetSettings(); assert.equal(next.hapticName, '明显');
+  assert.equal(next.fontSize, settings.DEFAULTS.fontSize); app.shutdown();
+});
+
+test('hiding or destroying the page between navigation pulses keeps the second pulse', () => {
+  for (const close of ['onHide', 'onDestroy']) {
+    const app = launch({ connected: true, manualHaptics: true });
+    app.page.onReady(); app.page.onShow();
+    app.connection.onmessage({ data: JSON.stringify(haptic(1)) });
+    app.page[close](); app.advanceHaptics(2400);
+    assert.deepEqual(app.vibrations, ['long', 'long'], close); app.shutdown();
+  }
+});
+
+test('real visible turns vibrate twice then twice near and always acknowledge', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  assert.equal(app.vibratorLoads(), 0);
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) });
+  assert.deepEqual(app.vibrations, ['long', 'long']);
+  app.page.paint(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) });
+  app.connection.onmessage({ data: JSON.stringify(haptic(2, { distance: '30 米' })) });
+  app.connection.onmessage({ data: JSON.stringify(haptic(3, { distance: '20 米' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long']);
+  assert.equal(app.sent.at(-1).seq, 3);
+});
+test('missing or throwing vibration API leaves display and ACK intact without retries', () => {
+  for (const failure of [{ vibratorMissing: true }, { vibratorThrows: true }]) {
+    const app = launch({ connected: true, ...failure }); app.page.onReady(); app.page.onShow();
+    assert.doesNotThrow(() => app.connection.onmessage({ data: JSON.stringify(haptic(1)) }));
+    assert.equal(app.page.status, '高德导航'); assert.equal(app.sent.at(-1).type, 'ack');
+    app.connection.onmessage({ data: JSON.stringify(haptic(2)) });
+    assert.equal(app.vibratorLoads(), 1);
+  }
+});
+test('hidden or destroyed pages still remind while muted/demo/old phone/App shutdown stay silent', () => {
+  const app = launch({ connected: true }); app.page.onReady();
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) }); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(haptic(2)) });
+  app.page.onHide();
+  app.connection.onmessage({ data: JSON.stringify(haptic(3, { distance: '20 米' })) });
+  app.page.onShow(); app.connection.onmessage({ data: JSON.stringify(haptic(4, { distance: '20 米' })) });
+  for (const message of [haptic(5, { actionId: 'turn-2', vibrationEnabled: false }),
+    haptic(6, { actionId: 'turn-2' }), haptic(7, { status: 'demo', actionId: 'turn-3' }), navigation(8)]) {
+    app.connection.onmessage({ data: JSON.stringify(message) });
+  }
+  const callback = app.connection.onmessage; app.page.onDestroy();
+  callback({ data: JSON.stringify(haptic(9, { actionId: 'turn-4' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long', 'long', 'long']);
+  app.shutdown(); callback({ data: JSON.stringify(haptic(10, { actionId: 'turn-5' })) });
+  assert.equal(app.vibratorLoads(), 3);
+});
+test('expiry and reconnect never replay a turn, but a fresh near update still reminds', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) });
+  app.advance(20000); app.connection.onclose(''); app.connection.onopen();
+  app.connection.onmessage({ data: JSON.stringify(haptic(2)) });
+  assert.deepEqual(app.vibrations, ['long', 'long']);
+  app.connection.onmessage({ data: JSON.stringify(haptic(3, { distance: '30 米' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long']);
+});
+
+
+test('ACK precedes vibration and settings do not interrupt application reminders', () => {
+  const app = launch({ connected: true, onVibrate: () => assert.equal(app.sent.at(-1).type, 'ack') });
+  app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) });
+  app.page.openSettings();
+  app.connection.onmessage({ data: JSON.stringify(haptic(2, { distance: '20 米' })) });
+  app.page.closeSettings();
+  app.connection.onmessage({ data: JSON.stringify(haptic(3, { distance: '20 米' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long']);
+  app.connection.onmessage({ data: JSON.stringify(haptic(4, { actionId: 'turn-2', mode: 'cycle', distance: '100 米' })) });
+  app.connection.onmessage({ data: JSON.stringify(haptic(5, { actionId: 'turn-2', mode: 'cycle', distance: '80 米' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long', 'long', 'long'], 'first-near turn merges both opportunities');
+});
+
+test('recreated page reads App snapshot and reuses transport/history without replay', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(haptic(1)) }); app.page.onDestroy();
+  app.connection.onmessage({ data: JSON.stringify(haptic(2, { distance: '30 米' })) });
+  const next = app.recreatePage(); next.onReady(); next.onShow();
+  assert.equal(next.distance, '30 米');
+  app.connection.onmessage({ data: JSON.stringify(haptic(3, { distance: '20 米' })) });
+  assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long']); assert.equal(app.loads(), 1);
+  next.onDestroy(); app.shutdown();
 });

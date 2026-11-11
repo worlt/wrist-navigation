@@ -13,11 +13,13 @@ public final class NavigationParser {
     private static final Pattern NAV = Pattern.compile("导航|直行|左转|右转|掉头|调头|行驶|步行|骑行|沿.{1,20}(?:路|街)|进入.{1,20}(?:路|街)");
     private static final Pattern VEHICLE_NAV = Pattern.compile("(?s)(?:驾车|汽车|开车|驾驶|车行).{0,8}(?:导航|路线|行驶).{0,8}(?:中|剩余|预计|到达|抵达|目的地)|(?:导航|路线|行驶).{0,8}(?:驾车|汽车|开车|驾驶|车行)");
     private static final Pattern TRIP_PROGRESS = Pattern.compile("(?s)(?=.*(?:剩余|还剩|还有)\\s*\\d{1,4}\\s*(?:分钟|小时))(?=.*(?:剩余|还剩|还有|全程)\\s*\\d+(?:\\.\\d+)?\\s*(?:公里|千米|米|km|m)(?![a-z])).*|预计\\s*\\d{1,4}\\s*(?:分钟|小时).{0,8}(?:到达|抵达)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern TURN = Pattern.compile("左前方|右前方|左后方|右后方|向左转|向右转|左转|右转|掉头|调头|直行|靠左|靠右|进入环岛|驶出环岛");
+    static final Pattern TURN = Pattern.compile("左前方|右前方|左后方|右后方|向左转|向右转|左转|右转|掉头|调头|直行|靠左|靠右|进入环岛|驶出环岛");
     private static final Pattern DISTANCE = Pattern.compile("(\\d+(?:\\.\\d+)?)[\\s]*(公里|千米|米|km|m)(?![a-z])", Pattern.CASE_INSENSITIVE);
 
     public static final class Result {
         public final String status, title, rawText, maneuver, instruction, distance;
+        public final String roadName;
+        public final Integer exitNumber;
         public Result(String status, String title, String rawText, String maneuver, String instruction, String distance) {
             this.status = status;
             this.title = clip(title, 80);
@@ -25,6 +27,8 @@ public final class NavigationParser {
             this.maneuver = maneuver;
             this.instruction = clip(instruction, 48);
             this.distance = distance;
+            this.roadName = "active".equals(status) && !"unknown".equals(maneuver) ? InstructionMetadata.roadName(this.rawText) : null;
+            this.exitNumber = "active".equals(status) && "roundabout".equals(maneuver) ? InstructionMetadata.exitNumber(this.rawText) : null;
         }
         public String fingerprint() { return status + '\n' + title + '\n' + rawText; }
     }

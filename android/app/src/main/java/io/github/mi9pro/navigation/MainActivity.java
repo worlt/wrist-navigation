@@ -2,6 +2,7 @@ package io.github.mi9pro.navigation;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.KeyguardManager;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -38,6 +39,7 @@ public final class MainActivity extends Activity {
     private TextView status, syncDetail, connectionDetail, action;
     private Switch sync;
     private Dialog sheet;
+    private boolean leavingForSettings;
     private boolean dark;
     private int background, surface, ink, muted, line, accent, accentInk;
     private final Runnable refreshUi = this::render;
@@ -135,7 +137,7 @@ public final class MainActivity extends Activity {
         connectionDetail = (TextView) ((LinearLayout) connectionRow.getChildAt(1)).getChildAt(1);
         links.addView(connectionRow);
         divider(links, 64);
-        links.addView(entry("sliders", "导航偏好", "自动打开 · 屏幕常亮", view -> settings()));
+        links.addView(entry("sliders", "导航偏好", "手机联动 · 自动打开 · 屏幕常亮", view -> settings()));
         content.addView(links, space(-1, -2, 16));
 
         action = filledButton("完成连接设置", view -> completeSetup());
@@ -146,8 +148,22 @@ public final class MainActivity extends Activity {
         setContentView(root);
     }
 
+    @Override public void onStart() {
+        super.onStart();
+        bridge.phoneAppVisible();
+    }
+    @Override public void onStop() {
+        PowerManager power = getSystemService(PowerManager.class);
+        KeyguardManager keyguard = getSystemService(KeyguardManager.class);
+        if (PhoneAppLinkPolicy.shouldExit(isFinishing(), isChangingConfigurations(), leavingForSettings,
+                power == null || power.isInteractive(), keyguard != null && keyguard.isKeyguardLocked())) {
+            bridge.phoneAppHidden();
+        }
+        super.onStop();
+    }
     @Override public void onResume() {
         super.onResume();
+        leavingForSettings = false;
         bridge.setUiListener(refreshUi);
         NavigationSyncService.start(this);
         if (NavigationSyncService.hasNotificationAccess(this) && !bridge.listenerConnected) {
@@ -207,7 +223,7 @@ public final class MainActivity extends Activity {
             LinearLayout options = sheetContent("允许读取导航通知", "仅处理高德导航通知，发送至配对手环。");
             options.addView(filledButton("去授权", view -> {
                 dismissSheet();
-                startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+                openSystemSettings(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
             }), space(-1, -2, 22));
             showSheet(options);
             return;
@@ -233,9 +249,17 @@ public final class MainActivity extends Activity {
 
     private void settings() {
         LinearLayout options = sheetContent("导航偏好", "按你的习惯，调整腕上体验");
+        preference(options, "打开手机应用时打开手环", "进入本应用时打开一次；先完成互联授权", bridge.openWithPhoneEnabled(), bridge::setOpenWithPhoneEnabled);
+        divider(options, 0);
+        preference(options, "退出手机应用时退出手环", "返回、回桌面或切换应用时退出；锁屏不退出", bridge.closeWithPhoneEnabled(), bridge::setCloseWithPhoneEnabled);
+        divider(options, 0);
         preference(options, "自动打开手环导航", "每次开始导航时打开一次", bridge.autoOpenEnabled(), bridge::setAutoOpenEnabled);
         divider(options, 0);
         preference(options, "导航时手环常亮", "关闭后可减少屏幕耗电", bridge.keepScreenOnEnabled(), bridge::setKeepScreenOnEnabled);
+        divider(options, 0);
+        preference(options, "手环振动提醒", "开始、结束、转向、临近、暂停和断连；震感在手环设置", bridge.vibrationEnabled(), bridge::setVibrationEnabled);
+        divider(options, 0);
+        preference(options, "骑行临近提醒", "开启：100 米内；关闭：步行 30 米内", bridge.cyclingReminders(), bridge::setCyclingReminders);
         TextView version = label("腕上导航  " + BuildConfig.VERSION_NAME, 12, muted, false);
         options.addView(version, space(-1, -2, 16));
         showSheet(options);
@@ -249,7 +273,7 @@ public final class MainActivity extends Activity {
             dismissSheet();
             PowerManager power = getSystemService(PowerManager.class);
             if (!power.isIgnoringBatteryOptimizations(getPackageName())) {
-                try { startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()))); }
+                try { openSystemSettings(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()))); }
                 catch (android.content.ActivityNotFoundException error) { appSettings(); }
             } else appSettings();
         }));
@@ -311,7 +335,12 @@ public final class MainActivity extends Activity {
     }
 
     private void dismissSheet() { if (sheet != null) { sheet.dismiss(); sheet = null; } }
-    private void appSettings() { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
+    private void openSystemSettings(Intent intent) {
+        leavingForSettings = true;
+        try { startActivity(intent); }
+        catch (RuntimeException error) { leavingForSettings = false; throw error; }
+    }
+    private void appSettings() { openSystemSettings(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
     private interface Preference { void set(boolean value); }
     private void preference(LinearLayout parent, String title, String detail, boolean checked, Preference preference) {
         LinearLayout container = row();
