@@ -6,7 +6,7 @@
 
 ## 开始工作
 
-2026-11-11发布轮：用户明确要求分步推送并将v0.4.6作为正式Release设为Latest，不用预发布状态。必须在正文说明新功能尚未真机验收、手机0.3.0/code15与手环0.4.6/code20需一起更新、APK/RPK仍为原签名debug构建。签名口令改用被忽略的signing/passwords.properties或WRIST_SIGNING_PASSWORD，不轮换原身份；推送只到mine（worlt/wrist-navigation），不得推原作者origin。发布前附件白名单/完整许可/本地与远端SHA-256复核，实际状态以HANDOVER顶部为准。下面保留当时开发记录。
+2026-11-11发布轮已完成：用户明确要求分步推送并将v0.4.6作为正式Release设为Latest，不用预发布状态。三步推送c96a2ec/2621262/520ea10及v0.4.6标签均在mine；Release id441600950，GitHub Latest已核对，五附件公开下载哈希一致，四组源码CI通过。设备传输/安装/本版真机验收未进行。必须在正文说明新功能尚未真机验收、手机0.3.0/code15与手环0.4.6/code20需一起更新、APK/RPK仍为原签名debug构建。签名口令改用被忽略的signing/passwords.properties或WRIST_SIGNING_PASSWORD，不轮换原身份；推送只到mine（worlt/wrist-navigation），不得推原作者origin。发布前附件白名单/完整许可/本地与远端SHA-256复核，实际状态以HANDOVER顶部为准。下面保留当时开发记录。
 
 2026-11-11当前本地候选为手机0.3.0(code15) / 手环0.4.6(code20)。新增两个独立、默认关闭且持久保存的「打开手机应用时打开手环」「退出手机应用时退出手环」开关，位于手机导航偏好。打开联动不依赖同步总开关或高德状态，需已有互联授权；可见进入打开一次，有限重试。返回、回桌面和切换应用触发退出，锁屏、配置重建和主动打开权限设置不触发。退出通过v1可选phoneExitId，手环先ACK，300ms后调用system.app.terminate；重入的新帧可取消待退出。收到ACK后不发正常帧取消退出，手机后台且退出联动开启时抑制通知自动重开；后台同步服务保持运行。118项Node、63项Android、Lint及双端构建、RPK编译后退出/ACK/取消/去重/API缺失检查、原签名检查通过；详见docs/phone-app-link-046.md。交付outputs/releases/v0.4.6/，尚未提交推送、发布、传包、安装或真机验证。强杀/强停、断连及固件时序不保证退出；ACK不等于实际退出成功。
 
