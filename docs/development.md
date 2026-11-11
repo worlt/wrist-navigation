@@ -69,11 +69,12 @@ macOS/Linux 使用 sh android/gradlew 替换 .\android\gradlew.bat，其余参�
 
 ~~~text
 signing/development.p12
+signing/passwords.properties
 wearable/sign/debug/private.pem
 wearable/sign/debug/certificate.pem
 ~~~
 
-不要用新签名替代原身份。已安装包不能还原签名私钥。tools/prepare-signing.ps1 仅从现有手环 PEM 导入手机密钥库，不生成新身份；缺少手环原证书时会停止。私钥始终被 Git 忽略。
+不要用新签名替代原身份。已安装包不能还原签名私钥。tools/prepare-signing.ps1 仅从现有手环 PEM 导入手机密钥库，不生成新身份；缺少手环原证书时会停止。私钥和口令配置始终被 Git 忽略。`signing/passwords.properties` 只在本机保存 `password=<原密钥库口令>`，也可由 `WRIST_SIGNING_PASSWORD` 环境变量提供；勿把真实口令放进命令行、文档或提交。缺少口令时使用 `-Punsigned` 做编译检查；不要轮换原证书。
 
 ~~~sh
 npm run deps:wearable
@@ -84,7 +85,7 @@ node tools/check-wearable-package.cjs
 
 依赖由 wearable/package-lock.json 锁定（aiot-toolkit 2.0.5）。prebuild 在缺少原手环证书时停止，避免 toolkit 回退到自带证书；start 和 release 也有签名前置检查。检查确认文件完整和密钥配对，不代替 APK/RPK 身份一致性及真机验证。发布包需另按 toolkit 约定恢复原发布签名，并与 debug 证书保持同一身份。
 
-RPK 输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk（当前源码版本；v0.4.0 Release 以 NAV-BAND-040.rpk 提供，已设为 Latest，安装包仍为原有签名调试构建）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.4.0.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
+RPK 当前源码输出为 wearable/dist/io.github.mi9pro.navigation.debug.0.4.6.rpk（手机 0.3.0 / 手环 0.4.6，为 v0.4.6 Latest 的源码配套；正式发布不代表本版真机验收，见 [发布介绍](releases/v0.4.6.md)）。可使用 `node tools/verify-rpk-signature.cjs wearable/dist/io.github.mi9pro.navigation.debug.0.4.6.rpk` 检查包内签名与摘要。仅通过 AstroBox「快应用」安装至手环，方法见 [安装指南](band-install.md)。手机 APK 与手环 RPK 不可互换。
 
 0.2.4 附加字体 TTF、许可和字符覆盖信息已经放入 wearable/src/common/，普通开发与打包仍只需 Node.js，不读取电脑安装字体。只有重新制作字体子集才需要 Python/fontTools 和原字体文件；来源、哈希及重建方式见 [显示设置记录](display-settings-024.md)。
 

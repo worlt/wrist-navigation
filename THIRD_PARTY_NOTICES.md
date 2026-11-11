@@ -24,7 +24,7 @@ OFL 允许按条款使用、嵌入、修改及随商业或非商业软件分发�
 
 - 小米 `xms-wearable-lib_1.4_release.aar`：从小米官方示例包单独获取并校验哈希，源码仓库不分发该 AAR；获取入口见 [开发文档](docs/development.md)。手机 APK 内含此互联组件，其权利归原权利人所有，不适用本项目 MIT 许可。已检查的官方文档与示例包未提供可确认的独立再分发条款，本项目不据此声称已取得额外授权或该 SDK 可以任意再分发。
 - `aiot-toolkit` 2.0.5 及依赖：由 `wearable/package-lock.json` 锁定，仅构建时安装；许可见各依赖包。`node_modules/` 不随源码提交。
-- 手机 0.2.5 的运行时依赖解析包含 AndroidX Annotation / annotation-jvm 1.8.2（Android Open Source Project）、Kotlin stdlib / stdlib-common 1.7.10（JetBrains 与 Kotlin 贡献者）、JetBrains annotations 13.0。对应 POM 均声明 Apache-2.0；APK 的 DEX 中可见 AndroidX、Kotlin 和 JetBrains 注解类。完整 [Apache-2.0 文本](licenses/Apache-2.0.txt) 随 v0.4.0 的 THIRD_PARTY_NOTICES.txt 一起分发；这些组件保留各自权利，不改用项目 MIT。
+- 手机 0.3.0（与此前 0.2.5 相同声明依赖）的运行时依赖解析包含 AndroidX Annotation / annotation-jvm 1.8.2（Android Open Source Project）、Kotlin stdlib / stdlib-common 1.7.10（JetBrains 与 Kotlin 贡献者）、JetBrains annotations 13.0。对应 POM 均声明 Apache-2.0；APK 的 DEX 中可见 AndroidX、Kotlin 和 JetBrains 注解类。完整 [Apache-2.0 文本](licenses/Apache-2.0.txt) 随 v0.4.6 的 THIRD_PARTY_NOTICES.txt 一起分发；这些组件保留各自权利，不改用项目 MIT。
 - Android Gradle Plugin 8.7.3、Gradle 和 JUnit 4.13.2 为构建 / 测试工具，按各自许可使用。上述清单来自当前构建配置、缓存的依赖 POM 和 APK 类目录核对，不表示已独立审计小米 SDK 的全部内部实现。
 
 ## 图片与名称
