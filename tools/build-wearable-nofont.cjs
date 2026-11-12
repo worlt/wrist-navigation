@@ -27,7 +27,8 @@ function noFontSources(settings, page) {
   for (const family of ['BandSong', 'BandKai', 'BandRound']) {
     page = replaceOnce(page, new RegExp('@font-face \\{ font-family: ' + family + ';[^\\n]+\\}\\n'), '', family + ' font face');
   }
-  page = replaceOnce(page, /腕上导航 v\{\{ versionName \}\}/, '腕上导航 v{{ versionName }} 无字体版', 'variant label');
+  // Keep the variant label within the 288px row even at the largest text size.
+  page = replaceOnce(page, /腕上导航 v\{\{ versionName \}\}/, 'v{{ versionName }} 无字体版', 'variant label');
   assert.doesNotMatch(settings + page, /BandSong|BandKai|BandRound|font-coverage|@font-face|common\/fonts/);
   return { settings, page };
 }

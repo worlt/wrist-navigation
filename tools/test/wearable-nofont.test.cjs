@@ -35,7 +35,7 @@ test('no-font settings remove font picker but retain colors and arrow styles', (
   assert.equal(settings.optionsFor('font').length, 0);
   for (const kind of ['textColor', 'arrowColor', 'arrowStyle']) assert.ok(settings.optionsFor(kind).length > 1);
   assert.doesNotMatch(transformed.page, /<list-item type="font"|@font-face|\.ttf/);
-  assert.match(transformed.page, /无字体版/);
+  assert.match(transformed.page, />v\{\{ versionName \}\} 无字体版<\/text>/);
   assert.match(regularPage, /<list-item type="font"/);
   assert.equal(require('../../wearable/src/common/settings').FONTS.length, 4);
 });
