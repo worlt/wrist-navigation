@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const assetNames = ['NAV-PHONE-030.apk', 'NAV-BAND-046.rpk', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
+const assetNames = ['NAV-PHONE-030.apk', 'NAV-BAND-046.rpk', 'NAV-BAND-046-NOFONT.rpk', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
 function checkRelease(directory) {
   const actual = fs.readdirSync(directory);
   for (const name of actual) if (!assetNames.includes(name)) throw new Error('Unexpected release attachment: ' + name);

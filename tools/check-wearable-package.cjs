@@ -7,11 +7,19 @@ const vm = require('node:vm');
 const Zip = require('../wearable/node_modules/adm-zip');
 const project = path.resolve(__dirname, '..');
 const sourceManifest = JSON.parse(fs.readFileSync(path.join(project, 'wearable/src/manifest.json'), 'utf8'));
-const rpk = path.resolve(process.argv[2] || path.join(project, 'wearable/dist', sourceManifest.package + '.debug.' + sourceManifest.versionName + '.rpk'));
+const noFonts = process.argv.includes('--no-fonts');
+const rpk = path.resolve(process.argv.slice(2).find(arg => arg !== '--no-fonts') || path.join(project, 'wearable/dist', sourceManifest.package + '.debug.' + sourceManifest.versionName + '.rpk'));
 const archive = new Zip(rpk);
 const manifest = JSON.parse(archive.readAsText('manifest.json'));
 assert.equal(manifest.versionName, sourceManifest.versionName);
 assert.equal(manifest.versionCode, sourceManifest.versionCode);
+assert.equal(manifest.package, sourceManifest.package);
+if (noFonts) {
+  for (const entry of archive.getEntries()) {
+    assert.doesNotMatch(entry.entryName, /(?:^|\/)fonts\/|font-coverage|\.(?:ttf|otf|woff2?)$/i);
+    if (/\.js$/.test(entry.entryName)) assert.doesNotMatch(entry.getData().toString(), /BandSong|BandKai|BandRound|common\/fonts/);
+  }
+}
 let apiLoads = 0;
 let available = false;
 const sent = [];
@@ -27,12 +35,13 @@ const screenRequests = [];
 const saved = [];
 const hapticClock = require('../wearable/test/helpers/clock')();
 let storedHaptic = '', allowTestVibration = false;
+let storedDisplay = '';
 const system = {
   setInterval: () => 1, clearInterval() {}, setTimeout: hapticClock.schedule, clearTimeout: hapticClock.unschedule,
   $app_require$(name) {
     apiLoads++;
     if (name === '@app-module/system.storage') return {
-      get: callbacks => callbacks.success(callbacks.key === 'navigation.haptics.v1' ? storedHaptic : ''),
+      get: callbacks => callbacks.success(callbacks.key === 'navigation.haptics.v1' ? storedHaptic : storedDisplay),
       set: callbacks => {
         if (callbacks.key === 'navigation.haptics.v1') storedHaptic = callbacks.value;
         else saved.push(JSON.parse(callbacks.value));
@@ -136,23 +145,42 @@ for (let i = 0; i < 6; i++) click('increase', byClass(page.template(page), 'font
 assert.equal(page.fontSize, 42);
 assert.equal(saved.at(-1).fontSize, 42);
 assert.equal(page.versionName, manifest.versionName);
-click('picker-selector');
-assert.equal(page.pickerOpen, true);
-assert.equal(page.settingsTitle, '选择字体');
-assert.equal(byClass(page.template(page), 'settings-list'), null);
-const fontChoices = byClass(page.template(page), 'option-list').children;
-for (let i = 1; i <= 3; i++) {
-  if (!page.pickerOpen) click('picker-selector');
-  click('option-card', byClass(page.template(page), 'option-list').children[i]);
-  assert.equal(page.font, ['default', 'song', 'kai', 'round'][i]);
-  assert.equal(saved.at(-1).font, page.font);
-  assert.equal(page.pickerOpen, false);
-  const family = page.fontFamily;
-  assert.ok(archive.getEntry('common/fonts/' + family + '.ttf'));
-  assert.ok(archive.getEntry('common/fonts/' + family + '-OFL.txt'));
-  assert.ok(styles[family].fontface, 'compiled font-face definition: ' + family);
-  assert.ok(archive.readFile('common/fonts/' + family + '.ttf').equals(
-    fs.readFileSync(path.join(project, 'wearable/src/common/fonts', family + '.ttf'))));
+if (noFonts) {
+  assert.ok(!Object.values(styles).some(style => style.fontface), 'no compiled custom font faces');
+  assert.ok(!settingsTree.children.some(node => node.options.type === 'font'));
+  const settingsList = byClass(page.template(page), 'settings-list');
+  assert.ok(!settingsList.children.some(node => node.options.type === 'font'), 'font settings row removed');
+  page.openPicker('font');
+  assert.equal(page.pickerOpen, false, 'removed font picker cannot open');
+  for (const font of ['song', 'kai', 'round']) {
+    page.saveSettings({ ...page.currentSettings(), font });
+    assert.equal(page.font, 'default');
+    assert.equal(page.fontFamily, 'sans-serif');
+    assert.equal(page.guidanceFontFamily, 'sans-serif');
+    assert.equal(saved.at(-1).font, 'default');
+    assert.equal(page.fontSize, 42, 'font fallback retains font size');
+  }
+  const version = byClass(page.template(page), 'version');
+  assert.ok(version);
+  assert.match(archive.readAsText('pages/index/index.js'), /无字体版/);
+} else {
+  click('picker-selector');
+  assert.equal(page.pickerOpen, true);
+  assert.equal(page.settingsTitle, '选择字体');
+  assert.equal(byClass(page.template(page), 'settings-list'), null);
+  for (let i = 1; i <= 3; i++) {
+    if (!page.pickerOpen) click('picker-selector');
+    click('option-card', byClass(page.template(page), 'option-list').children[i]);
+    assert.equal(page.font, ['default', 'song', 'kai', 'round'][i]);
+    assert.equal(saved.at(-1).font, page.font);
+    assert.equal(page.pickerOpen, false);
+    const family = page.fontFamily;
+    assert.ok(archive.getEntry('common/fonts/' + family + '.ttf'));
+    assert.ok(archive.getEntry('common/fonts/' + family + '-OFL.txt'));
+    assert.ok(styles[family].fontface, 'compiled font-face definition: ' + family);
+    assert.ok(archive.readFile('common/fonts/' + family + '.ttf').equals(
+      fs.readFileSync(path.join(project, 'wearable/src/common/fonts', family + '.ttf'))));
+  }
 }
 for (const [kind, value] of [['textColor', 'mint'], ['arrowColor', 'amber'], ['arrowStyle', 'solid']]) {
   page.openPicker(kind);
@@ -214,7 +242,17 @@ for (const [seq, maneuver, rawText, expected] of [
 page.onDestroy();
 assert.deepEqual(screenRequests, [true, false, true, false, true, false, true, false, true, false]);
 // Run the haptic checks against the bundled/transpiled modules, not source-only imports.
+if (noFonts) storedDisplay = JSON.stringify({ font: 'kai', fontSize: 40, arrowSize: 200, textColor: 'sky' });
 page.onInit(); page.onReady(); page.onShow();
+if (noFonts) {
+  assert.equal(page.font, 'default', 'startup restores old font as system font');
+  assert.equal(page.fontFamily, 'sans-serif');
+  assert.equal(page.fontSize, 40);
+  assert.equal(page.arrowSize, 200);
+  assert.equal(page.textColor, 'sky');
+  storedDisplay = '';
+  page.resetSettings();
+}
 const haptic = (seq, extra = {}) => ({ v: 1, type: 'navigation', session: 'haptic-package', seq,
   status: 'active', title: '高德地图', rawText: '前方200米右转', maneuver: 'right', instruction: '右转',
   distance: '200 米', actionId: 'turn-1', mode: 'walk', vibrationEnabled: true, ...extra });

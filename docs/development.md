@@ -66,6 +66,8 @@ macOS/Linux 使用 sh android/gradlew 替换 .\android\gradlew.bat，其余参�
 
 ## 生成可安装包
 
+手环提供完整字体与无字体两种构建。`npm run build:wearable` 保持完整字体构建；`npm run build:wearable:nofont` 从临时源码副本生成仅系统字体的包，并自动检查编译后行为和原签名。两版共用包名、版本与手机配套，具体输出和复现方法见 [手环两版构建说明](wearable-variants.md)。
+
 原签名代表应用身份，不绑定电脑。可以通过可信的私下备份迁移至新电脑，也可以将打包集中在持有原签名的构建机；本仓库尚未配置远程签名服务。
 
 恢复原文件：
