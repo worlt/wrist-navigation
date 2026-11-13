@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.ComponentName;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -30,6 +32,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -39,6 +42,11 @@ public final class MainActivity extends Activity {
     private WearBridge bridge;
     private TextView status, syncDetail, connectionDetail, action;
     private Switch sync;
+    private boolean diagnosticsExpanded;
+    private LinearLayout diagnosticsToggle;
+    private TextView diagnosticsIndicator;
+    private LinearLayout diagnosticsBody;
+    private final TextView[] diagnosticValues = new TextView[4];
     private Dialog sheet;
     private OnBackInvokedCallback backCallback;
     private boolean dark;
@@ -48,6 +56,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         bridge = ((NavigationApp) getApplication()).bridge();
+        diagnosticsExpanded = savedInstanceState != null && savedInstanceState.getBoolean("diagnosticsExpanded", false);
         dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
             == Configuration.UI_MODE_NIGHT_YES;
         background = color(dark ? "#111713" : "#F4F6F0");
@@ -143,6 +152,7 @@ public final class MainActivity extends Activity {
 
         action = filledButton("完成连接设置", view -> completeSetup());
         content.addView(action, space(-1, -2, 16));
+        content.addView(diagnosticsPanel(), space(-1, -2, 8));
         TextView privacy = label("仅同步高德导航通知", 12, muted, false);
         privacy.setGravity(Gravity.CENTER);
         content.addView(privacy, space(-1, -2, 24));
@@ -189,9 +199,14 @@ public final class MainActivity extends Activity {
         if (sheet != null) sheet.dismiss();
         super.onDestroy();
     }
+    @Override protected void onSaveInstanceState(Bundle state) {
+        state.putBoolean("diagnosticsExpanded", diagnosticsExpanded);
+        super.onSaveInstanceState(state);
+    }
     @Override public void dump(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) { bridge.dump(writer); }
 
     private void render() {
+        renderDiagnostics();
         if (sync.isChecked() != bridge.enabled()) sync.setChecked(bridge.enabled());
         String state;
         boolean setup = false;
@@ -224,6 +239,72 @@ public final class MainActivity extends Activity {
             setText(syncDetail, "通知服务未连接 · 正在自动重连，也可到系统设置重新开关「通知使用权」");
         }
         action.setVisibility(setup ? View.VISIBLE : View.GONE);
+    }
+
+    private LinearLayout diagnosticsPanel() {
+        LinearLayout panel = column();
+        panel.setBackground(shape(surface, 16));
+        diagnosticsToggle = row();
+        diagnosticsToggle.setPadding(dp(16), 0, dp(16), 0);
+        diagnosticsToggle.addView(label("同步诊断", 13, muted, false), new LinearLayout.LayoutParams(0, -2, 1));
+        diagnosticsIndicator = label("", 13, muted, false);
+        diagnosticsToggle.addView(diagnosticsIndicator, new LinearLayout.LayoutParams(-2, -2));
+        diagnosticsToggle.setBackground(ripple(surface, 16));
+        diagnosticsToggle.setOnClickListener(view -> {
+            diagnosticsExpanded = !diagnosticsExpanded;
+            renderDiagnostics();
+        });
+        panel.addView(diagnosticsToggle, new LinearLayout.LayoutParams(-1, dp(48)));
+        diagnosticsBody = column();
+        diagnosticsBody.setPadding(dp(16), 0, dp(16), dp(16));
+        TextView copy = label("复制当前诊断", 13, ink, true);
+        copy.setGravity(Gravity.CENTER_VERTICAL);
+        copy.setPadding(dp(12), 0, dp(12), 0);
+        copy.setBackground(ripple(background, 10));
+        copy.setOnClickListener(view -> {
+            ClipboardManager clipboard = getSystemService(ClipboardManager.class);
+            clipboard.setPrimaryClip(ClipData.newPlainText("腕上导航诊断", diagnosticsReport()));
+            Toast.makeText(this, "已复制，分享前请隐藏路线信息", Toast.LENGTH_SHORT).show();
+        });
+        diagnosticsBody.addView(copy, new LinearLayout.LayoutParams(-1, dp(48)));
+        String[] labels = { "读取到的文字", "解析结果", "发送状态", "手环确认状态" };
+        for (int i = 0; i < labels.length; i++) {
+            diagnosticsBody.addView(label(labels[i], 13, ink, true), space(-1, -2, 16));
+            diagnosticValues[i] = label("", 12, muted, false);
+            diagnosticValues[i].setTextIsSelectable(true);
+            diagnosticValues[i].setLineSpacing(dp(3), 1);
+            diagnosticsBody.addView(diagnosticValues[i], space(-1, -2, 5));
+        }
+        panel.addView(diagnosticsBody);
+        renderDiagnostics();
+        return panel;
+    }
+
+    private void renderDiagnostics() {
+        if (diagnosticsToggle == null) return;
+        setText(diagnosticsIndicator, diagnosticsExpanded ? "收起 ⌃" : "展开 ⌄");
+        diagnosticsToggle.setContentDescription(diagnosticsExpanded ? "同步诊断，已展开，点击收起" : "同步诊断，已折叠，点击展开");
+        if (Build.VERSION.SDK_INT >= 30) diagnosticsToggle.setStateDescription(diagnosticsExpanded ? "已展开" : "已折叠");
+        diagnosticsBody.setVisibility(diagnosticsExpanded ? View.VISIBLE : View.GONE);
+        if (!diagnosticsExpanded) return;
+        setText(diagnosticValues[0], bridge.diagnostics.readText());
+        setText(diagnosticValues[1], bridge.diagnostics.parseText());
+        setText(diagnosticValues[2], "连接：" + bridge.statusText + "\n同步：" + (bridge.enabled() ? "开启" : "暂停")
+            + "\n" + bridge.diagnostics.sendText());
+        setText(diagnosticValues[3], bridge.diagnostics.ackText());
+    }
+
+    private String diagnosticsReport() {
+        return "腕上导航 " + BuildConfig.VERSION_NAME + " / code " + BuildConfig.VERSION_CODE
+            + "\n采集时间：" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.ROOT).format(new java.util.Date())
+            + "\n手机：" + Build.MANUFACTURER + " " + Build.MODEL + " · Android " + Build.VERSION.RELEASE
+            + "\n通知监听：" + (bridge.listenerConnected ? "已连接" : "未连接")
+            + "\n" + bridge.notificationStatus()
+            + "\n\n读取到的文字\n" + bridge.diagnostics.readText()
+            + "\n\n解析结果\n" + bridge.diagnostics.parseText()
+            + "\n\n发送状态\n连接：" + bridge.statusText + "\n同步：" + (bridge.enabled() ? "开启" : "暂停")
+            + "\n" + bridge.diagnostics.sendText()
+            + "\n\n手环确认状态\n" + bridge.diagnostics.ackText();
     }
 
     private void completeSetup() {

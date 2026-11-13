@@ -2,12 +2,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const assetNames = ['NAV-PHONE-031.apk', 'NAV-BAND-046.rpk', 'NAV-BAND-046-NOFONT.rpk', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
+const assetNames = ['NAV-PHONE-032.apk', 'NAV-BAND-046.rpk', 'NAV-BAND-046-NOFONT.rpk', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
 const releaseAssetNames = {
-  'v0.4.6': assetNames.map(name => name === 'NAV-PHONE-031.apk' ? 'NAV-PHONE-030.apk' : name),
-  'v0.4.7': assetNames
+  'v0.4.6': assetNames.map(name => name === 'NAV-PHONE-032.apk' ? 'NAV-PHONE-030.apk' : name),
+  'v0.4.7': assetNames.map(name => name === 'NAV-PHONE-032.apk' ? 'NAV-PHONE-031.apk' : name),
+  'v0.4.8': assetNames
 };
-function checkRelease(directory, version = path.basename(directory) === 'v0.4.6' ? 'v0.4.6' : 'v0.4.7') {
+function checkRelease(directory, version = releaseAssetNames[path.basename(directory)] ? path.basename(directory) : 'v0.4.8') {
   const assetNames = releaseAssetNames[version];
   if (!assetNames) throw new Error('Unknown release attachment profile: ' + version);
   const actual = fs.readdirSync(directory);
@@ -34,7 +35,7 @@ function checkRelease(directory, version = path.basename(directory) === 'v0.4.6'
   });
 }
 if (require.main === module) {
-  try { console.log(JSON.stringify(checkRelease(path.resolve(process.argv[2] || path.join(__dirname, '../outputs/releases/v0.4.7'))), null, 2)); }
+  try { console.log(JSON.stringify(checkRelease(path.resolve(process.argv[2] || path.join(__dirname, '../outputs/releases/v0.4.8'))), null, 2)); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }
 module.exports = { checkRelease, assetNames, releaseAssetNames };

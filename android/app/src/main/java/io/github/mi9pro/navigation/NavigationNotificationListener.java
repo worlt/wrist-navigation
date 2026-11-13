@@ -51,7 +51,8 @@ public final class NavigationNotificationListener extends NotificationListenerSe
         try {
             NavigationParser.Result best = null;
             long newest = Long.MIN_VALUE;
-            String lastRaw = "";
+            String lastRaw = "", selectedEvidence = "";
+            List<String> evidence = new ArrayList<>();
             long rawTime = Long.MIN_VALUE;
             int count = 0, readable = 0;
             StatusBarNotification[] active = getActiveNotifications();
@@ -65,6 +66,9 @@ public final class NavigationNotificationListener extends NotificationListenerSe
                 Notification notification = sbn.getNotification();
                 if ((notification.flags & Notification.FLAG_GROUP_SUMMARY) != 0) continue;
                 String[] fields = fields(notification);
+                String record = "通知 · " + NavigationDiagnostics.time(sbn.getPostTime())
+                    + " · ongoing=" + sbn.isOngoing() + "\n" + diagnosticFields(notification);
+                if (evidence.size() < 6 && fields.length > 0) evidence.add(record);
                 if (fields.length > 0) readable++;
                 if (sbn.getPostTime() >= rawTime) {
                     lastRaw = NavigationParser.clip(String.join("\n", fields), 1000);
@@ -74,9 +78,17 @@ public final class NavigationNotificationListener extends NotificationListenerSe
                 if (result != null && sbn.getPostTime() >= newest) {
                     best = result;
                     newest = sbn.getPostTime();
+                    selectedEvidence = record;
                 }
             }
             bridge().lastAmapText = lastRaw.isEmpty() ? "没有可读取的高德通知文字" : lastRaw;
+            StringBuilder rawEvidence = new StringBuilder();
+            if (!selectedEvidence.isEmpty()) rawEvidence.append("解析采用的通知\n").append(selectedEvidence).append("\n");
+            for (String record : evidence) {
+                if (!record.equals(selectedEvidence)) rawEvidence.append("其他高德通知\n").append(record).append("\n");
+            }
+            if (readable > evidence.size()) rawEvidence.append("（仅展示最多6条其他通知，解析来源单独保留）");
+            bridge().diagnostics.read(rawEvidence.toString().trim(), System.currentTimeMillis());
             bridge().notificationChecked(count, readable, best);
             bridge().updateFromNotifications(best);
         } catch (SecurityException | IllegalStateException error) {
@@ -100,6 +112,28 @@ public final class NavigationNotificationListener extends NotificationListenerSe
         }
         if (notification.tickerText != null) fields.add(notification.tickerText.toString());
         return fields.toArray(new String[0]);
+    }
+
+    private static String diagnosticFields(Notification notification) {
+        StringBuilder text = new StringBuilder();
+        Bundle extras = notification.extras;
+        String[] keys = { Notification.EXTRA_TITLE, Notification.EXTRA_TEXT, Notification.EXTRA_BIG_TEXT,
+            Notification.EXTRA_SUB_TEXT, Notification.EXTRA_SUMMARY_TEXT };
+        if (extras != null) {
+            for (String key : keys) {
+                CharSequence value = extras.getCharSequence(key);
+                if (value != null && value.length() > 0)
+                    text.append(key).append(": ").append(NavigationParser.clip(value.toString(), 512)).append("\n");
+            }
+            CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+            if (lines != null) for (int i = 0; i < Math.min(lines.length, 8); i++) {
+                if (lines[i] != null) text.append("android.textLines[").append(i).append("]: ")
+                    .append(NavigationParser.clip(lines[i].toString(), 512)).append("\n");
+            }
+        }
+        if (notification.tickerText != null) text.append("tickerText: ")
+            .append(NavigationParser.clip(notification.tickerText.toString(), 512));
+        return text.toString().trim();
     }
 
     @Override public void onListenerDisconnected() {

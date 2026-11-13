@@ -8,7 +8,7 @@
 
 源码仓库不附带安装包或签名。`outputs/` 是维护者本地目录，克隆源码不会下载其中的文件。请从 [GitHub Releases](https://github.com/worlt/wrist-navigation/releases) 阅读发布说明，取得标明兼容的 APK、RPK，并核对发布正文或随附校验表中的 SHA-256。v0.2.5 的校验值写在发布正文，未单独附校验表。不要把无签名检查产物作为安装包。
 
-[`v0.4.7（Latest）`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.7) 配套手机 0.3.1 / code 16、手环 0.4.6 / code 20，**已有手环 0.4.6 只需更新手机；首次使用需双端配套安装**，附 TESTING.txt、完整许可与校验表。Latest 是分发状态，不表示本版联动、双振、后台或耗电已真机验证；此前 K80U / 10 Pro 试用不能扩展为本版验收。其他手机未测试，9 Pro 自 0.3.3 起未回归。请阅读 [发布介绍](releases/v0.4.7.md) 和 [项目声明](../DISCLAIMER.md)。
+[`v0.4.8（Latest）`](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.8) 配套手机 0.3.2 / code 17、手环 0.4.6 / code 20，**已有手环 0.4.6 只需更新手机；首次使用需双端配套安装**，附 TESTING.txt、完整许可与校验表。Latest 是分发状态，不表示本版联动、双振、后台或耗电已真机验证；此前 K80U / 10 Pro 试用不能扩展为本版验收。其他手机未测试，9 Pro 自 0.3.3 起未回归。请阅读 [发布介绍](releases/v0.4.8.md) 和 [项目声明](../DISCLAIMER.md)。
 
 旧 [v0.4.0](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.0) 与 [v0.2.5](https://github.com/worlt/wrist-navigation/releases/tag/v0.2.5) 保留作历史版本，不混用不同签名；低版本降级可能需要卸载并丢失设置。
 
@@ -24,6 +24,8 @@
 手机有两个独立的进出联动开关，默认关闭。手机 0.3.1 中，开启退出联动后仅在主页面返回退出时请求退出手环；回桌面、切高德/其他应用、锁屏、配置重建和进入系统权限设置均不退出手环，后台同步继续。只需更新手机，可沿用手环 0.4.6 两种版本，详见 [后台与退出修复](phone-background-exit-031.md)。历史手机 0.3.0 仍会在切后台时触发退出，使用该版本时需关闭退出联动才能持续后台导航。
 
 如只显示等待状态，依次核对高德是否有导航通知、通知使用权、手机同步开关、运动健康连接与手环应用是否同签名。错误反馈请使用 [贡献指南](../CONTRIBUTING.md)，不要上传真实路线或设备凭据。
+
+问题反馈时展开手机首页「同步诊断」，复制读取文字、解析、发送和手环确认；先保留故障现场再重连，分享前隐藏路线。诊断默认折叠，详见[说明](phone-diagnostics-032.md)。
 
 ## 开发者自行编译
 

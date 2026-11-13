@@ -27,6 +27,7 @@ public final class WearBridge {
     private String nodeId;
     private boolean discovering;
     private final SendFlight sendFlight = new SendFlight();
+    final NavigationDiagnostics diagnostics = new NavigationDiagnostics();
     private long sequence, nextConnect, connectGeneration;
     private NavigationParser.Result latest = state("idle", "请在高德地图开始导航");
     private NavigationParser.Result realLatest = latest;
@@ -87,7 +88,7 @@ public final class WearBridge {
     }
 
     public void dump(PrintWriter writer) {
-        writer.println("WristNavigation diagnostics (phone 0.2.0)");
+        writer.println("WristNavigation diagnostics (phone " + BuildConfig.VERSION_NAME + ")");
         writer.println("enabled=" + enabled() + " listenerConnected=" + listenerConnected);
         writer.println("notification=" + notificationState + " checkedAt=" + lastNotificationCheck);
         writer.println("status=" + statusText);
@@ -234,6 +235,7 @@ public final class WearBridge {
         realLatest = result == null ? new NavigationParser.Result("idle", "高德地图",
                 notificationCount > 0 ? NavigationParser.clip(lastAmapText, 480) : "",
                 "unknown", "等待导航", "") : result;
+        diagnostics.parsed(result);
         turnIdentity.update(realLatest);
         // Unrecognized Gaode text is not evidence that all navigation notifications disappeared.
         navigationLifecycle.update("idle".equals(realLatest.status) && notificationCount != 0
@@ -243,9 +245,11 @@ public final class WearBridge {
         latest = realLatest;
         if (nodeId == null) connect(false);
         sendLatest();
+        notifyUi();
     }
 
     public void unavailable(String reason) {
+        diagnostics.readFailed(reason, System.currentTimeMillis());
         navigationLifecycle.update("unavailable", SystemClock.elapsedRealtime());
         notificationCount = -1;
         readableNotificationCount = 0;
@@ -255,6 +259,7 @@ public final class WearBridge {
         if (!enabled()) return;
         latest = realLatest;
         sendLatest();
+        notifyUi();
     }
 
     public void connect(boolean requestPermission) {
@@ -379,6 +384,7 @@ public final class WearBridge {
             if ("ack".equals(packet.optString("type")) && session.equals(packet.optString("session"))
                     && packet.optLong("seq") == sequence) {
                 lastAckAt = System.currentTimeMillis();
+                diagnostics.ack(sequence, lastAckAt);
                 long exit = appLink.exitId(SystemClock.elapsedRealtime());
                 if (exit != 0 && (session + ":" + exit).equals(packet.optString("phoneExitId"))) {
                     appLink.ackExit(exit);
@@ -437,20 +443,31 @@ public final class WearBridge {
                 packet.put("navigationEnded", navigationLifecycle.ended());
             }
             byte[] data = packet.toString().getBytes(StandardCharsets.UTF_8);
-            if (data.length > 4096) { statusText = "通知过长，发送已跳过"; return; }
+            if (data.length > 4096) { statusText = "通知过长，发送已跳过"; notifyUi(); return; }
+            final long sentSequence = sequence;
             final long generation = sendFlight.start(sequence);
+            diagnostics.sending(sentSequence, outgoing, System.currentTimeMillis());
             sendPolicy.sent(fingerprint, SystemClock.elapsedRealtime());
             statusText = "正在发送到手环…";
             event("send sequence=" + sequence + " status=" + outgoing.status + " bytes=" + data.length);
-            main.postDelayed(() -> { if (sendFlight.current(generation)) lost("发送超时，请检查手环应用是否打开"); }, 10000);
+            main.postDelayed(() -> {
+                if (sendFlight.current(generation)) {
+                    diagnostics.failed(sentSequence, "发送超时");
+                    lost("发送超时，请检查手环应用是否打开");
+                }
+            }, 10000);
             messages.sendMessage(nodeId, data).addOnSuccessListener(ignored -> main.post(() -> {
-                if (!sendFlight.complete(generation)) return;
+                diagnostics.sent(sentSequence);
+                if (!sendFlight.complete(generation)) { notifyUi(); return; }
                 event("SDK send succeeded");
                 if (!"手环已确认收到".equals(statusText)) statusText = "已发送，等待手环确认";
                 // A changed snapshot during an in-flight send supersedes the old one immediately.
                 sendLatest();
             })).addOnFailureListener(error -> main.post(() -> {
-                if (sendFlight.current(generation)) lost("发送失败：" + error.getMessage());
+                if (sendFlight.current(generation)) {
+                    diagnostics.failed(sentSequence, "发送失败：" + error.getMessage());
+                    lost("发送失败：" + error.getMessage());
+                }
             }));
         } catch (Exception error) { lost("无法发送：" + error.getMessage()); }
     }
