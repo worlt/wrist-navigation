@@ -1,10 +1,10 @@
 # 腕上导航维护交接
 
-## 2026-11-13 · v0.4.7发布准备
+## 2026-11-13 · v0.4.7正式发布完成
 
 用户授权推送和Release，按正式Latest发布v0.4.7：手机0.3.1/code16，手环0.4.6/code20完整版/无字体版沿用原字节，已有手环0.4.6只需更新手机。发布目录outputs/releases/v0.4.7/含NAV-PHONE-031.apk、两份NAV-BAND-046 RPK、TESTING.txt、完整许可及SHA256SUMS.txt；原v0.4.6标签与Release不移动或替换。新增按版本区分的附件门禁，131项Node通过，网站10文件一致；67项Android/Lint及原签名构建在11月12日已通过。发布日期为11月13日，手机包仍为11月12日已验证原字节。
 
-发布准备中：仅允许推送mine/main，推送后须核对当前提交CI，再创建v0.4.7标签和六附件正式Latest，未完成前不得写成已发布。设备未传输/安装/真机验收；维护交接会在公开下载核对完成后更新。
+已完成：修复提交dae58daedbfa47d5b0fe51bec63b692063abfb6c推送mine/main；仅推mine、未推origin。GitHub Actions 43344899672对该提交的Windows/Linux × Node22/24四组均成功；v0.4.7附注标签指向该提交，原标签不移动。Release id443709698于2026-11-13 09:42（北京时间）正式公开并设为Latest，已核对draft=false/prerelease=false及latest端点。六附件未登录公开下载均200，大小与SHA-256同本地；原v0.4.6全部附件id/大小/摘要保持不变。README、发布说明及源码归档公开下载通过；匿名GitHub API一度403，改用raw/codeload与公开Release页面核对，不视为私有仓库。源码与可达历史gitleaks通过，编译RPK泛用KEY规则4处命中均为固定本地设置键navigation.haptics.v1，逐项复核并仅对该行排除；没有新增凭据发现。检查记录在被忽略的.local/release-047/。设备未传输/安装/真机验收，正式Latest不代表修复已实测。
 
 ## 2026-11-12 · 修复切后台误退出（手机 0.3.1）
 
