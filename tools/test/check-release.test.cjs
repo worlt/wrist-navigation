@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { checkRelease, assetNames } = require('../check-release.cjs');
-function fixture(t) {
+const { checkRelease, assetNames, releaseAssetNames } = require('../check-release.cjs');
+function fixture(t, assetNames = releaseAssetNames['v0.4.7']) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrist-release-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   for (const name of assetNames) if (name !== 'SHA256SUMS.txt') fs.writeFileSync(path.join(dir, name), name.endsWith('.txt') ? 'Synthetic fixture: MIT License, SIL OPEN FONT LICENSE, Apache License' : Buffer.from([0, 1, 2]));
@@ -29,6 +29,16 @@ test('release gate rejects changed files and unsafe checksum paths', t => {
 test('release gate requires full license headings and rejects missing assets', t => {
   const dir = fixture(t); fs.writeFileSync(path.join(dir, 'THIRD_PARTY_NOTICES.txt'), 'MIT License');
   assert.throws(() => checkRelease(dir), /license/);
-  fs.unlinkSync(path.join(dir, 'NAV-PHONE-030.apk'));
+  fs.unlinkSync(path.join(dir, 'NAV-PHONE-031.apk'));
   assert.throws(() => checkRelease(dir), /Missing/);
+});
+
+test('release gate keeps the historical v0.4.6 attachment set separate from v0.4.7', t => {
+  const old = fixture(t, releaseAssetNames['v0.4.6']);
+  assert.equal(checkRelease(old, 'v0.4.6').length, assetNames.length);
+  assert.throws(() => checkRelease(old, 'v0.4.7'), /Unexpected/);
+  assert.throws(() => checkRelease(fixture(t), 'v0.4.6'), /Unexpected/);
+});
+test('release gate rejects an unknown release profile', t => {
+  assert.throws(() => checkRelease(fixture(t), 'unknown'), /Unknown release/);
 });

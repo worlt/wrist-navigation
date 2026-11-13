@@ -129,8 +129,10 @@ public final class WearBridge {
         appLink.setForeground(true, SystemClock.elapsedRealtime());
         sendPolicy.reset(); retryAppLink();
     }
-    public void phoneAppHidden() {
-        appLink.setForeground(false, SystemClock.elapsedRealtime());
+    public void phoneAppHidden(boolean exiting) {
+        long now = SystemClock.elapsedRealtime();
+        appLink.setForeground(false, now);
+        if (exiting) appLink.requestExit(now);
         if (appLink.blocksNavigationLaunch()) autoLaunch.disconnected(SystemClock.elapsedRealtime());
         sendPolicy.reset(); retryAppLink();
     }

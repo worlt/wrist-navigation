@@ -8,7 +8,7 @@
 | 小米手环 10 Pro 适配与真机验证清单 | [10 Pro 移植](port-10pro.md) |
 | 通知监听与自动重连 | [通知监听与重连](listener-recovery.md) |
 | 本地预览、测试与构建 | [开发指南](development.md) |
-| 手机打开/退出联动、开关与限制 | [0.4.6 手机联动](phone-app-link-046.md) |
+| 手机后台退出修复、开关与限制 | [手机0.3.1后台与退出](phone-background-exit-031.md) |
 | 后台同步与自动打开的实现 | [后台同步](background-sync.md) |
 | 字体、显示设置与资源来源 | [显示设置](display-settings-024.md) |
 | 文字颜色、箭头颜色与样式、状态提示 | [0.4.0 显示设置](display-settings-040.md) |
@@ -20,7 +20,8 @@
 
 旧设计方案与维护者原始联调流水留在本地归档，不作为安装或开发的前置材料。
 
-当前源码与 [v0.4.6（Latest）](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.6) 配套为手机 0.3.0 / 手环 0.4.6，双端需一起更新。正式 Release / Latest 是分发状态，本版新联动、全部双振、后台与耗电尚未真机验收；此前 K80U / 10 Pro 试用不能扩展为本版通过。其他手机未测，9 Pro 自 0.3.3 起未回归。旧 v0.4.0 和 v0.2.5 保留为历史版本。安装包、演示、开发记录和真机证据应分别阅读；文档截图来源见 [截图记录](images/README.md)。
+当前源码与 [v0.4.7（Latest）](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.7) 配套为手机 0.3.1 / 手环 0.4.6，已有手环0.4.6只需更新手机，首次使用需双端配套安装。正式 Release / Latest 是分发状态，本版新联动、全部双振、后台与耗电尚未真机验收；此前 K80U / 10 Pro 试用不能扩展为本版通过。其他手机未测，9 Pro 自 0.3.3 起未回归。旧 v0.4.0 和 v0.2.5 保留为历史版本。安装包、演示、开发记录和真机证据应分别阅读；文档截图来源见 [截图记录](images/README.md)。
 
-- [v0.4.6 Latest 发布介绍与验证边界](releases/v0.4.6.md)
+- [v0.4.7 Latest 发布介绍与验证边界](releases/v0.4.7.md)
+- [历史v0.4.6发布介绍](releases/v0.4.6.md)
 - [项目与使用声明](../DISCLAIMER.md)

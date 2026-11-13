@@ -2,7 +2,6 @@ package io.github.mi9pro.navigation;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.KeyguardManager;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -24,6 +23,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -39,7 +40,7 @@ public final class MainActivity extends Activity {
     private TextView status, syncDetail, connectionDetail, action;
     private Switch sync;
     private Dialog sheet;
-    private boolean leavingForSettings;
+    private OnBackInvokedCallback backCallback;
     private boolean dark;
     private int background, surface, ink, muted, line, accent, accentInk;
     private final Runnable refreshUi = this::render;
@@ -146,6 +147,11 @@ public final class MainActivity extends Activity {
         privacy.setGravity(Gravity.CENTER);
         content.addView(privacy, space(-1, -2, 24));
         setContentView(root);
+        if (Build.VERSION.SDK_INT >= 33) {
+            backCallback = this::finish;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        }
     }
 
     @Override public void onStart() {
@@ -153,17 +159,18 @@ public final class MainActivity extends Activity {
         bridge.phoneAppVisible();
     }
     @Override public void onStop() {
-        PowerManager power = getSystemService(PowerManager.class);
-        KeyguardManager keyguard = getSystemService(KeyguardManager.class);
-        if (PhoneAppLinkPolicy.shouldExit(isFinishing(), isChangingConfigurations(), leavingForSettings,
-                power == null || power.isInteractive(), keyguard != null && keyguard.isKeyguardLocked())) {
-            bridge.phoneAppHidden();
+        if (!isChangingConfigurations()) {
+            bridge.phoneAppHidden(PhoneAppLinkPolicy.shouldExit(isFinishing(), isChangingConfigurations()));
         }
         super.onStop();
     }
+    @SuppressWarnings("deprecation")
+    @Override public void onBackPressed() {
+        // Back explicitly closes this page; Home and app switching only put it in the background.
+        finish();
+    }
     @Override public void onResume() {
         super.onResume();
-        leavingForSettings = false;
         bridge.setUiListener(refreshUi);
         NavigationSyncService.start(this);
         if (NavigationSyncService.hasNotificationAccess(this) && !bridge.listenerConnected) {
@@ -176,6 +183,9 @@ public final class MainActivity extends Activity {
     }
     @Override public void onPause() { bridge.setUiListener(null); super.onPause(); }
     @Override public void onDestroy() {
+        if (Build.VERSION.SDK_INT >= 33 && backCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+        }
         if (sheet != null) sheet.dismiss();
         super.onDestroy();
     }
@@ -251,7 +261,7 @@ public final class MainActivity extends Activity {
         LinearLayout options = sheetContent("导航偏好", "按你的习惯，调整腕上体验");
         preference(options, "打开手机应用时打开手环", "进入本应用时打开一次；先完成互联授权", bridge.openWithPhoneEnabled(), bridge::setOpenWithPhoneEnabled);
         divider(options, 0);
-        preference(options, "退出手机应用时退出手环", "返回、回桌面或切换应用时退出；锁屏不退出", bridge.closeWithPhoneEnabled(), bridge::setCloseWithPhoneEnabled);
+        preference(options, "退出手机应用时退出手环", "返回退出本应用时联动；回桌面、切换应用和锁屏不退出", bridge.closeWithPhoneEnabled(), bridge::setCloseWithPhoneEnabled);
         divider(options, 0);
         preference(options, "自动打开手环导航", "每次开始导航时打开一次", bridge.autoOpenEnabled(), bridge::setAutoOpenEnabled);
         divider(options, 0);
@@ -336,9 +346,7 @@ public final class MainActivity extends Activity {
 
     private void dismissSheet() { if (sheet != null) { sheet.dismiss(); sheet = null; } }
     private void openSystemSettings(Intent intent) {
-        leavingForSettings = true;
-        try { startActivity(intent); }
-        catch (RuntimeException error) { leavingForSettings = false; throw error; }
+        startActivity(intent);
     }
     private void appSettings() { openSystemSettings(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
     private interface Preference { void set(boolean value); }

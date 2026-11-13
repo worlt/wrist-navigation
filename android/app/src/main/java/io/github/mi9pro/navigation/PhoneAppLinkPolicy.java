@@ -4,7 +4,7 @@ package io.github.mi9pro.navigation;
 final class PhoneAppLinkPolicy {
     static final long RETRY_MS = 5000, EXIT_WINDOW_MS = 10000;
     static final int MAX_ATTEMPTS = 3;
-    private boolean foreground, observed, openEnabled, closeEnabled, pending, opened;
+    private boolean foreground, exited, openEnabled, closeEnabled, pending, opened;
     private int attempts;
     private long token, exit, exitUntil, retryAt;
 
@@ -14,9 +14,15 @@ final class PhoneAppLinkPolicy {
     }
     void setForeground(boolean value, long now) {
         if (foreground == value) return;
-        foreground = value; observed = true;
-        resetLaunch(); clearExit();
-        if (!value && closeEnabled) { exit = ++token; exitUntil = now + EXIT_WINDOW_MS; }
+        foreground = value;
+        resetLaunch();
+        if (value) { exited = false; clearExit(); }
+        // Hiding the phone page only cancels entry retries; background navigation continues.
+    }
+    void requestExit(long now) {
+        setForeground(false, now);
+        if (!closeEnabled || exited) return;
+        exited = true; exit = ++token; exitUntil = now + EXIT_WINDOW_MS;
     }
     void setOpenEnabled(boolean value) {
         if (openEnabled == value) return;
@@ -24,13 +30,13 @@ final class PhoneAppLinkPolicy {
     }
     void setCloseEnabled(boolean value) {
         closeEnabled = value;
-        if (!value) clearExit();
+        if (!value) { exited = false; clearExit(); }
         // Enabling while already in the background waits for the next real exit.
     }
-    static boolean shouldExit(boolean finishing, boolean configuring, boolean settings, boolean interactive, boolean locked) {
-        return !configuring && (finishing || (!settings && interactive && !locked));
+    static boolean shouldExit(boolean finishing, boolean configuring) {
+        return finishing && !configuring;
     }
-    boolean blocksNavigationLaunch() { return observed && !foreground && closeEnabled; }
+    boolean blocksNavigationLaunch() { return exited && !foreground && closeEnabled; }
     boolean launchExpected() { return foreground && openEnabled && !opened && (pending || attempts < MAX_ATTEMPTS); }
     long claimLaunch(long now) {
         if (!launchExpected() || pending || now < retryAt) return 0;
