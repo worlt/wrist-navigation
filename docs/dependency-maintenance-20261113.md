@@ -24,7 +24,7 @@
 
 ## 安装脚本与兼容处理
 
-wearable/.npmrc 固定官方 registry 并设置 ignore-scripts=true；packageManager 记录 npm@11.19.0。首次安装先禁用生命周期脚本，不运行未经审查的安装动作。本轮未启用任何依赖安装脚本：@parcel/watcher 的本地编译 hook、protobufjs 的兼容提示 hook、仅 macOS 的 fsevents hook 均禁用。Windows 已验证 @parcel/watcher 预编译绑定可以接收文件事件；Ubuntu 和 Node22/24 纳入 CI。macOS 未验证。
+wearable/.npmrc 固定官方 registry 并设置 ignore-scripts=true；packageManager 记录 npm@11.19.0。首次安装先禁用生命周期脚本，不运行未经审查的安装动作。本轮未启用任何依赖安装脚本：@parcel/watcher 的本地编译 hook、protobufjs 的兼容提示 hook、仅 macOS 的 fsevents hook 均禁用。Windows/Ubuntu × Node22/24 的 CI 已验证 @parcel/watcher 预编译绑定可以接收文件事件。macOS 未验证。
 
 ignore-scripts 也会跳过 npm prebuild/prerelease/prestart。三个脚本现直接进入 tools/run-wearable.cjs，在执行工具前检查原签名；无字体入口也直接检查。缺少证书、密钥不配对或发布身份不一致时停止。回归测试以禁用生命周期脚本的真实 npm 命令确认 build/release/start 都不会进入 toolkit，更不会生成替代身份。
 
@@ -62,7 +62,7 @@ npm run build:wearable:nofont
 - 6 项工具链检查通过：ZIP 写/读/解压与路径穿越、预存符号链接拒绝；真实 toolkit 文件筛选与 rimraf glob 删除；external-editor 临时文件及非法路径拒绝；本地 Git 模板克隆与危险 sshCommand 配置拒绝；UX AST/循环绑定；预编译文件监听事件。
 - 完整字体和无字体两版均重新编译，通过编译后导航、ACK、退出取消/去重、振动、页面生命周期、资源/设置行为与原证书 RPK 签名验证。
 - 两版分别与维护前 RPK 解包比较：完整包 714 个条目、无字体包 707 个条目，业务代码、字体、箭头及其他资源逐项字节一致。仅 manifest.json 的 packageInfo.timeStamp、META-INF/build.txt 的 timeStamp 和对应 META-INF/CERT 签名内容变化；整包哈希因此不同，不声称 RPK 整包字节相同。
-- .github/workflows/checks.yml 新增 Windows/Ubuntu × Node22/24 四组工具链检查，干净安装、兼容测试和零审计为必过项；原四组无依赖源码检查继续保留。CI 不持有私有签名，不生成安装包，不验证真机。
+- .github/workflows/checks.yml 新增 Windows/Ubuntu × Node22/24 四组工具链检查，干净安装、兼容测试和零审计为必过项；原四组无依赖源码检查继续保留。维护代码提交 d678d6f 的八组 CI（43368210191）全部通过，含四组依赖签名检查。CI 不持有私有签名，不生成安装包，不验证真机。
 
 证据和重建包留在忽略的 outputs/maintenance/dependencies-20261113/ 与 .local/dependency-maintenance/。基线包和 v0.4.8 发布目录保留，避免把依赖维护包当成已发布包。
 
