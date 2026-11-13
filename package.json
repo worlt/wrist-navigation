@@ -20,6 +20,7 @@
     "deps:wearable": "npm --prefix wearable ci",
     "build:wearable": "npm --prefix wearable run build",
     "build:wearable:nofont": "node tools/build-wearable-nofont.cjs",
-    "check:site": "node tools/build-site.cjs --check"
+    "check:site": "node tools/build-site.cjs --check",
+    "check:toolchain": "node tools/check-wearable-toolchain.cjs"
   }
 }

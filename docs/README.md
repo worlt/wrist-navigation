@@ -9,6 +9,7 @@
 | 小米手环 10 Pro 适配与真机验证清单 | [10 Pro 移植](port-10pro.md) |
 | 通知监听与自动重连 | [通知监听与重连](listener-recovery.md) |
 | 本地预览、测试与构建 | [开发指南](development.md) |
+| 构建依赖安全修复、兼容补丁和验证 | [2026-11-13依赖维护](dependency-maintenance-20261113.md) |
 | 手机后台退出修复、开关与限制 | [手机0.3.1后台与退出](phone-background-exit-031.md) |
 | 后台同步与自动打开的实现 | [后台同步](background-sync.md) |
 | 字体、显示设置与资源来源 | [显示设置](display-settings-024.md) |

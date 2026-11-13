@@ -4,18 +4,31 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "prebuild": "node ../tools/check-signing.cjs",
-    "build": "aiot build",
-    "prerelease": "node ../tools/check-signing.cjs --release",
-    "release": "aiot release",
-    "prestart": "node ../tools/check-signing.cjs",
-    "start": "aiot server --watch",
-    "test": "node --test test/*.test.js"
+    "build": "node ../tools/run-wearable.cjs build",
+    "release": "node ../tools/run-wearable.cjs release",
+    "start": "node ../tools/run-wearable.cjs start",
+    "test": "node --test test/*.test.js",
+    "test:toolchain": "node ../tools/check-wearable-toolchain.cjs"
   },
   "devDependencies": {
     "aiot-toolkit": "2.0.5"
   },
   "browserslist": [
     "chrome 65"
-  ]
+  ],
+  "packageManager": "npm@11.19.0",
+  "overrides": {
+    "simple-git": "4.0.2",
+    "adm-zip": "0.6.1",
+    "tmp": "0.2.7",
+    "@grpc/grpc-js": "1.14.7",
+    "follow-redirects": "1.16.3",
+    "source-map-js": "1.2.2",
+    "fast-uri": "3.1.9",
+    "brace-expansion@^1": "1.1.22",
+    "brace-expansion@^2": "2.1.8",
+    "minimatch@>=7": "11.0.8",
+    "glob@>=9": "14.0.6",
+    "ts-morph": "27.0.2"
+  }
 }

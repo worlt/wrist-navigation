@@ -1,5 +1,13 @@
 # 腕上导航维护交接
 
+## 2026-11-13 · 手环构建依赖独立维护
+
+用户授权单独处理原28项npm审计。保留aiot-toolkit2.0.5，用明确overrides和锁文件修复传递依赖，官方审计归零（原critical2/high15/moderate8/low3）。npm11.19.0，wearable/.npmrc固定官方registry/ignore-scripts；依赖安装脚本均禁用。simple-git4默认导出变化用明确、可重复且遇版本/源码漂移拒绝执行的工具链准备补丁兼容，实际Git模板克隆及危险sshCommand拒绝通过。build/release/start的原签名保护移到直接入口，不依赖被跳过的pre钩子；无字体入口同样检查原签名。
+
+Windows Node24干净安装后133项源码与6项工具链测试、两版原签名构建、编译RPK行为和原证书/嵌套签名检查通过。703个已安装包registry签名、158项attestation校验通过。完整714条目/无字体707条目与原包逐项比较，业务代码/字体/箭头/资源一致；差异仅manifest的构建时间、build.txt与相应CERT数据，整包字节/哈希不同。新增Windows/Ubuntu×Node22/24四组依赖CI，保留四组无依赖源码CI；远端结果按本维护提交核对。8类deprecated上游提示仍保留，详见[维护报告](docs/dependency-maintenance-20261113.md)。
+
+手机0.3.2/code17、手环0.4.6/code20业务/协议/版本和签名身份不变。v0.4.8仍正式Latest，已只读核对Release443781004及六附件id/大小/digest；本轮没有修改已发布附件。交付outputs/maintenance/dependencies-20261113/，证据.local/dependency-maintenance/；验证包未发布/传输/安装/真机验收，不能当作一加故障已修复。本轮源码只向mine/main提交，不推origin，不移动发布标签。
+
 ## 2026-11-13 · v0.4.8手机同步诊断正式Latest
 
 用户要求四阶段诊断直接进入正式Latest，默认折叠且占位小。已实现首页48dp单行入口、展开实时读取字段/解析/发送/ACK、选择与复制。通知证据只读高德，优先保留解析来源，有长度/条数边界；只内存保存，点击才复制。消息编号与ACK绑定，旧确认/读取失败/新内容尚未发送明确区分，SDK成功不等于手环显示。解析、协议和手环未改，保留0.3.1后台修复。

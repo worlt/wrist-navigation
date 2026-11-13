@@ -31,3 +31,25 @@ jobs:
       - run: npm run preview
       - run: npm run check:site
       - run: git diff --check
+
+  toolchain:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install --global npm@11.19.0 --ignore-scripts --registry=https://registry.npmjs.org/
+      - run: npm --prefix wearable ci --ignore-scripts
+      - run: npm run check:toolchain
+      - run: npm --prefix wearable audit --audit-level=low
+      - run: npm --prefix wearable audit signatures
+      - run: git diff --exit-code -- wearable/package.json wearable/package-lock.json

@@ -6,6 +6,8 @@
 
 ## 开始工作
 
+2026-11-13独立依赖维护：保留aiot-toolkit2.0.5，明确overrides/锁文件把原28项官方npm审计归零；npm11.19.0与wearable/.npmrc禁用安装脚本。tools/prepare-wearable-toolchain.cjs兼容simple-git4 named工厂，漂移时停止；原签名保护在直接构建入口，不依赖pre钩子。133项源码、6项工具链、干净安装/两版原签名RPK及与原包代码资源字节一致检查通过；新增四组工具链CI，远端结果按维护提交核对。业务版本仍手机0.3.2/手环0.4.6，v0.4.8发布附件保持，维护包outputs/maintenance/dependencies-20261113/未发布/安装/真机验收。8类上游deprecated另记；见HANDOVER顶部与docs/dependency-maintenance-20261113.md。
+
 2026-11-13新增手机0.3.2/code17折叠诊断，配套手环0.4.6/code20两原包；已正式发布v0.4.8 Latest（Release443781004），源码ab105e1只推mine/main，四组CI43359279194及六附件公开下载哈希通过。74项Android、132项Node、Lint/原签名APK通过，未传设备/安装/真机验收，详见HANDOVER顶部。诊断字段只内存保存，用户点击才复制，不自动上传或日志原文。
 
 2026-11-13发布轮完成：修复提交dae58da推送mine/main，v0.4.7标签指向该提交；四组源码CI（43344899672）通过。Release id443709698正式公开并设Latest，六附件未登录下载大小/SHA-256一致，旧v0.4.6附件保持原id/字节。配套手机0.3.1/code16、手环0.4.6/code20，两RPK沿用旧原字节，已有手环0.4.6只需更新手机。仅推mine，未推origin；交付outputs/releases/v0.4.7/，完整状态见HANDOVER顶部。本版修复未传包/安装/真机验收，APK/RPK仍原签名debug。

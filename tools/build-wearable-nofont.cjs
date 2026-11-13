@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { checkSigning } = require('./check-signing.cjs');
+const { prepareToolchain } = require('./prepare-wearable-toolchain.cjs');
 
 function replaceOnce(source, pattern, replacement, label) {
   const matches = source.match(new RegExp(pattern.source, 'g')) || [];
@@ -35,6 +36,7 @@ function noFontSources(settings, page) {
 
 function build(root = path.resolve(__dirname, '..')) {
   checkSigning(root);
+  prepareToolchain(root);
   const wearable = fs.realpathSync(path.join(root, 'wearable'));
   const source = path.join(wearable, 'src');
   const manifest = JSON.parse(fs.readFileSync(path.join(source, 'manifest.json'), 'utf8'));
