@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { validateManifest } = require('./create-update-manifest.cjs');
 const assetNames = ['NAV-PHONE-032.apk', 'NAV-BAND-046.rpk', 'NAV-BAND-046-NOFONT.rpk', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
 const releaseAssetNames = {
   'v0.4.6': assetNames.map(name => name === 'NAV-PHONE-032.apk' ? 'NAV-PHONE-030.apk' : name),
@@ -9,7 +10,13 @@ const releaseAssetNames = {
   'v0.4.8': assetNames
 };
 function checkRelease(directory, version = releaseAssetNames[path.basename(directory)] ? path.basename(directory) : 'v0.4.8') {
-  const assetNames = releaseAssetNames[version];
+  let assetNames = releaseAssetNames[version];
+  const manifestPath = path.join(directory, 'update.json');
+  if (!assetNames && fs.existsSync(manifestPath)) {
+    const manifest = validateManifest(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), version);
+    assetNames = [manifest.phone.asset, manifest.band.fullAsset, manifest.band.noFontAsset,
+      'update.json', 'TESTING.txt', 'THIRD_PARTY_NOTICES.txt', 'SHA256SUMS.txt'];
+  }
   if (!assetNames) throw new Error('Unknown release attachment profile: ' + version);
   const actual = fs.readdirSync(directory);
   for (const name of actual) if (!assetNames.includes(name)) throw new Error('Unexpected release attachment: ' + name);
@@ -17,6 +24,12 @@ function checkRelease(directory, version = releaseAssetNames[path.basename(direc
   for (const name of assetNames) {
     const stat = fs.lstatSync(path.join(directory, name));
     if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Unsafe release attachment: ' + name);
+  }
+  if (assetNames.includes('update.json')) {
+    const manifest = validateManifest(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), version);
+    for (const name of [manifest.phone.asset, manifest.band.fullAsset, manifest.band.noFontAsset]) {
+      if (!assetNames.includes(name)) throw new Error('Update manifest package mismatch: ' + name);
+    }
   }
   const notices = fs.readFileSync(path.join(directory, 'THIRD_PARTY_NOTICES.txt'), 'utf8');
   for (const heading of ['MIT License', 'SIL OPEN FONT LICENSE', 'Apache License']) if (!notices.includes(heading)) throw new Error('Missing bundled license: ' + heading);
@@ -35,7 +48,7 @@ function checkRelease(directory, version = releaseAssetNames[path.basename(direc
   });
 }
 if (require.main === module) {
-  try { console.log(JSON.stringify(checkRelease(path.resolve(process.argv[2] || path.join(__dirname, '../outputs/releases/v0.4.8'))), null, 2)); }
+  try { console.log(JSON.stringify(checkRelease(path.resolve(process.argv[2] || path.join(__dirname, '../outputs/releases/v0.4.8')), process.argv[3]), null, 2)); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }
 module.exports = { checkRelease, assetNames, releaseAssetNames };

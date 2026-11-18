@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 
 public final class NavigationApp extends Application {
     private WearBridge bridge;
+    private UpdateChecker updates, bandUpdates;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -29,4 +30,14 @@ public final class NavigationApp extends Application {
         if (bridge == null) bridge = new WearBridge(this);
         return bridge;
     }
+    synchronized UpdateChecker updates() {
+        if (updates == null) updates = new UpdateChecker(this);
+        return updates;
+    }
+
+    synchronized UpdateChecker bandUpdates() {
+        if (bandUpdates == null) bandUpdates = new UpdateChecker(this, true);
+        return bandUpdates;
+    }
+
 }

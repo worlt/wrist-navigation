@@ -27,6 +27,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -40,6 +41,12 @@ import java.util.ArrayList;
 /** Event-driven daily controls. Permissions and preferences use compact, scrollable sheets. */
 public final class MainActivity extends Activity {
     private WearBridge bridge;
+    private UpdateChecker updates, bandUpdates;
+    private LinearLayout updateNotice, bandUpdateNotice;
+    private TextView updateNoticeTitle, updateNoticeDetail, bandNoticeTitle, bandNoticeDetail;
+    private TextView homeUpdateCheck, homeBandUpdateCheck;
+    private final TextView[] updateStatus = new TextView[2], updateDownload = new TextView[2], sheetUpdateCheck = new TextView[2];
+    private final Runnable refreshUpdates = this::renderUpdates;
     private TextView status, syncDetail, connectionDetail, action;
     private Switch sync;
     private boolean diagnosticsExpanded;
@@ -56,6 +63,8 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         bridge = ((NavigationApp) getApplication()).bridge();
+        updates = ((NavigationApp) getApplication()).updates();
+        bandUpdates = ((NavigationApp) getApplication()).bandUpdates();
         diagnosticsExpanded = savedInstanceState != null && savedInstanceState.getBoolean("diagnosticsExpanded", false);
         dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
             == Configuration.UI_MODE_NIGHT_YES;
@@ -122,6 +131,18 @@ public final class MainActivity extends Activity {
         deviceLabels.addView(watch, new LinearLayout.LayoutParams(0, -2, 1));
         hero.addView(deviceLabels);
         content.addView(hero, space(-1, -2, 26));
+        updateNotice = entry("bell", "发现新版本", "查看更新说明与下载", view -> updateSettings());
+        LinearLayout updateCopy = (LinearLayout) updateNotice.getChildAt(1);
+        updateNoticeTitle = (TextView) updateCopy.getChildAt(0);
+        updateNoticeDetail = (TextView) updateCopy.getChildAt(1);
+        updateNotice.setVisibility(View.GONE);
+        content.addView(updateNotice, space(-1, -2, 16));
+        bandUpdateNotice = entry("bell", "手环更新", "查看手环版本与下载", view -> updateSettings());
+        LinearLayout bandCopy = (LinearLayout) bandUpdateNotice.getChildAt(1);
+        bandNoticeTitle = (TextView) bandCopy.getChildAt(0);
+        bandNoticeDetail = (TextView) bandCopy.getChildAt(1);
+        bandUpdateNotice.setVisibility(View.GONE);
+        content.addView(bandUpdateNotice, space(-1, -2, 12));
 
         LinearLayout syncCard = row();
         syncCard.setPadding(dp(20), dp(19), dp(14), dp(19));
@@ -152,6 +173,21 @@ public final class MainActivity extends Activity {
 
         action = filledButton("完成连接设置", view -> completeSetup());
         content.addView(action, space(-1, -2, 16));
+        homeUpdateCheck = filledButton("检查手机更新", view -> {
+            updateSettings();
+            updates.check(true);
+        });
+        LinearLayout updateButtons = row();
+        updateButtons.addView(homeUpdateCheck, new LinearLayout.LayoutParams(0, -2, 1));
+        homeBandUpdateCheck = filledButton("检查手环更新", view -> {
+            updateSettings();
+            bridge.requestBandVersion();
+            bandUpdates.check(true);
+        });
+        LinearLayout.LayoutParams bandButtonSize = new LinearLayout.LayoutParams(0, -2, 1);
+        bandButtonSize.setMargins(dp(8), 0, 0, 0);
+        updateButtons.addView(homeBandUpdateCheck, bandButtonSize);
+        content.addView(updateButtons, space(-1, -2, 12));
         content.addView(diagnosticsPanel(), space(-1, -2, 8));
         TextView privacy = label("仅同步高德导航通知", 12, muted, false);
         privacy.setGravity(Gravity.CENTER);
@@ -182,6 +218,12 @@ public final class MainActivity extends Activity {
     @Override public void onResume() {
         super.onResume();
         bridge.setUiListener(refreshUi);
+        updates.setListener(refreshUpdates);
+        bandUpdates.setListener(refreshUpdates);
+        bandUpdates.installedBandCode(bridge.bandVersionCode());
+        bandUpdates.check(false);
+        updates.check(false);
+        renderUpdates();
         NavigationSyncService.start(this);
         if (NavigationSyncService.hasNotificationAccess(this) && !bridge.listenerConnected) {
             // Opening the page runs the fastest working attempt instead of waiting for the timer,
@@ -191,7 +233,7 @@ public final class MainActivity extends Activity {
         NavigationNotificationListener.requestRefresh();
         render();
     }
-    @Override public void onPause() { bridge.setUiListener(null); super.onPause(); }
+    @Override public void onPause() { bridge.setUiListener(null); updates.setListener(null); bandUpdates.setListener(null); super.onPause(); }
     @Override public void onDestroy() {
         if (Build.VERSION.SDK_INT >= 33 && backCallback != null) {
             getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
@@ -206,6 +248,7 @@ public final class MainActivity extends Activity {
     @Override public void dump(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) { bridge.dump(writer); }
 
     private void render() {
+        renderUpdates();
         renderDiagnostics();
         if (sync.isChecked() != bridge.enabled()) sync.setChecked(bridge.enabled());
         String state;
@@ -351,9 +394,99 @@ public final class MainActivity extends Activity {
         preference(options, "手环振动提醒", "开始、结束、转向、临近、暂停和断连；震感在手环设置", bridge.vibrationEnabled(), bridge::setVibrationEnabled);
         divider(options, 0);
         preference(options, "骑行临近提醒", "开启：100 米内；关闭：步行 30 米内", bridge.cyclingReminders(), bridge::setCyclingReminders);
+        divider(options, 0);
+        options.addView(entry("bell", "软件更新", "检查 GitHub 更新 · 可选择实验版", view -> updateSettings()));
         TextView version = label("腕上导航  " + BuildConfig.VERSION_NAME, 12, muted, false);
         options.addView(version, space(-1, -2, 16));
         showSheet(options);
+    }
+
+    private void updateSettings() {
+        LinearLayout options = sheetContent("软件更新", "手机与手环分别检查、分别选择 Preview");
+        updateSection(options, updates, false);
+        divider(options, 0);
+        updateSection(options, bandUpdates, true);
+        options.addView(entry("link", "查看 GitHub 发布页", "手机 APK / 手环 RPK；手环两版二选一", view -> openRelease(UpdateFeed.WEB + "/releases")), space(-1, -2, 12));
+        options.addView(label("只读取公开版本信息，不上传导航或诊断。手环版本由当前连接的应用报告；旧版或未连接时版本未知。不会自动下载安装，升级前核对发布页配套要求。", 12, muted, false), space(-1, -2, 12));
+        showSheet(options);
+        bridge.requestBandVersion();
+        renderUpdates();
+    }
+
+    private void updateSection(LinearLayout options, UpdateChecker checker, boolean band) {
+        int index = band ? 1 : 0;
+        String device = band ? "手环" : "手机";
+        options.addView(label(device + "更新", 18, ink, true), space(-1, -2, 18));
+        preference(options, "自动检查" + device + "更新", "每天打开时检查，可关闭后手动检查", checker.automatic(), checker::setAutomatic);
+        CheckBox preview = new CheckBox(this);
+        preview.setText(band ? R.string.receive_band_preview_updates : R.string.receive_phone_preview_updates);
+        preview.setTextSize(16); preview.setTextColor(ink); preview.setMinimumHeight(dp(56));
+        preview.setButtonTintList(new ColorStateList(new int[][] {{android.R.attr.state_checked}, {} }, new int[] {accent, muted}));
+        preview.setChecked(checker.experimental());
+        preview.setOnCheckedChangeListener((view, checked) -> checker.setExperimental(checked));
+        options.addView(preview, space(-1, -2, 4));
+        options.addView(label("默认不勾选；仅影响" + device + "，包含 GitHub Pre-release，可能不稳定", 12, muted, false), space(-1, -2, 2));
+        updateStatus[index] = label(checker.status(), 13, muted, false);
+        options.addView(updateStatus[index], space(-1, -2, 14));
+        sheetUpdateCheck[index] = filledButton("检查" + device + "更新", view -> {
+            if (band) bridge.requestBandVersion();
+            checker.check(true);
+        });
+        options.addView(sheetUpdateCheck[index], space(-1, -2, 12));
+        updateDownload[index] = filledButton("查看" + device + "版本与下载", view -> {
+            UpdateFeed.Version version = band ? checker.latestVersion() : checker.available();
+            if (version != null) openRelease(version.releaseUrl());
+        });
+        options.addView(updateDownload[index], space(-1, -2, 10));
+    }
+
+    private void checkButtonState(TextView button, UpdateChecker checker, String text) {
+        if (button == null) return;
+        button.setEnabled(!checker.running());
+        setText(button, checker.running() ? "正在检查…" : text);
+        button.setAlpha(checker.running() ? 0.6f : 1f);
+    }
+
+    private void renderUpdates() {
+        bandUpdates.installedBandCode(bridge.bandVersionCode());
+        checkButtonState(homeUpdateCheck, updates, "检查手机更新");
+        checkButtonState(homeBandUpdateCheck, bandUpdates, "检查手环更新");
+        renderUpdateSection(updates, false);
+        renderUpdateSection(bandUpdates, true);
+    }
+
+    private void renderUpdateSection(UpdateChecker checker, boolean band) {
+        int index = band ? 1 : 0;
+        String device = band ? "手环" : "手机";
+        checkButtonState(sheetUpdateCheck[index], checker, "检查" + device + "更新");
+        UpdateFeed.Version newer = checker.available();
+        LinearLayout notice = band ? bandUpdateNotice : updateNotice;
+        notice.setVisibility(newer == null ? View.GONE : View.VISIBLE);
+        if (newer != null) {
+            setText(band ? bandNoticeTitle : updateNoticeTitle, device + (newer.experimental ? " Preview 更新 · " : "正式版更新 · ")
+                + (band ? newer.bandVersion : newer.phoneVersion));
+            setText(band ? bandNoticeDetail : updateNoticeDetail, "点此查看" + device + "更新说明与下载；核对配套要求");
+        }
+        UpdateFeed.Version listed = band ? checker.latestVersion() : newer;
+        if (updateStatus[index] != null) {
+            String current = band ? (bridge.bandVersionCode() > 0 ? bridge.bandVersionName() : "未知；请连接并打开支持版本报告的手环应用") : BuildConfig.VERSION_NAME;
+            String text = "当前" + device + "版本：" + current + "\n" + checker.status();
+            if (band && bridge.bandVersionCode() == 0) text += "\n手环版本未知，发布版本仅供查看，不能判断是否需要升级。";
+            if (listed != null) text += "\n" + (listed.experimental ? "Preview 实验版" : "正式版")
+                + " · " + device + " " + (band ? listed.bandVersion : listed.phoneVersion)
+                + "\n此发布配套手机 " + listed.phoneVersion + " / 手环 " + listed.bandVersion
+                + (listed.notes.isEmpty() ? "" : "\n\n" + listed.notes);
+            setText(updateStatus[index], text);
+        }
+        // Unknown installed band: allow viewing published packages, never label it an upgrade.
+        if (updateDownload[index] != null) updateDownload[index].setVisibility(listed == null ? View.GONE : View.VISIBLE);
+    }
+
+    private void openRelease(String url) {
+        try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+        catch (android.content.ActivityNotFoundException error) {
+            Toast.makeText(this, "没有可打开 GitHub 的浏览器", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void connectionSettings() {

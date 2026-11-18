@@ -1,3 +1,5 @@
 <resources>
     <string name="connection_status">通知使用权：%1$s\n通知监听：%2$s\n%3$s\n%4$s</string>
+    <string name="receive_phone_preview_updates">接收手机 Preview 更新提示</string>
+    <string name="receive_band_preview_updates">接收手环 Preview 更新提示</string>
 </resources>
