@@ -1,5 +1,7 @@
 # v0.4.9-preview.1 发布暂停记录 · 2026-11-18
 
+> 本文是此前暂停时的历史快照。用户随后要求修复再发布，已采用审查过的第三方安全分支并通过本地审计/签名/回归；见 [修复记录](picomatch-maintenance-20261118.md)。实际CI和Release状态看HANDOVER顶部，不把下文历史“未修复”当实时状态。
+
 ## 结论
 
 双端独立更新提示功能和本地签名包已完成，源码已分步推送到 `mine/main`（worlt/wrist-navigation），没有推到原作者的 `origin`。**v0.4.9-preview.1 尚未创建标签、草稿或公开 Release，安装包没有上传。** 正式 Latest v0.4.8 和其六个附件保持；目标目录名及 update.json 的计划 tag 不代表已发布。
