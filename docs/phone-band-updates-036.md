@@ -31,7 +31,7 @@ node tools/check-release.cjs <交付目录> <实际Release标签>
 
 工具读取源码并要求对应交付文件名存在，拒绝覆盖；仍须核对APK/RPK**包内**name/code与原签名。上传APK、两RPK、update.json、TESTING.txt、完整第三方许可和SHA256SUMS共7附件，校验表包含元数据。实验版勾选GitHub Pre-release，保留正式Latest，双端code各自保持单调递增。
 
-本轮计划v0.4.9-preview.1 已完成[构建安全修复](picomatch-maintenance-20261118.md)，待全部8组CI通过后发布Pre-release；历史暂停记录保留。配套NAV-PHONE-036.apk / NAV-BAND-048.rpk或NAV-BAND-048-NOFONT.rpk。发布状态以HANDOVER顶部为准。旧035/047候选及正式v0.4.8（手机0.3.2/手环0.4.6）保持；更新按钮只能在安装带此功能的手机后使用。
+本轮[v0.4.9-preview.1已发布Pre-release](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.9-preview.1)，[构建安全修复](picomatch-maintenance-20261118.md)及最终标签各8组CI通过，七附件匿名下载核对通过；历史暂停记录保留。匿名API可能403限流，手机网络/控件真机仍待测试。配套NAV-PHONE-036.apk / NAV-BAND-048.rpk或NAV-BAND-048-NOFONT.rpk。发布状态以HANDOVER顶部为准。旧035/047候选及正式v0.4.8（手机0.3.2/手环0.4.6）保持；更新按钮只能在安装带此功能的手机后使用。
 
 ## 隐私和验证边界
 

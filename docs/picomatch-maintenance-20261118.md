@@ -35,3 +35,7 @@
 ## 修复提交 CI
 
 维护提交 `4b6b5ac65d90986a50206aff955ec67ae1b021db` 的 [Actions44304981188](https://github.com/worlt/wrist-navigation/actions/runs/44304981188) 已完成，4组源码+4组工具链 **全部8组通过**，工具链包含安全回归、npm audit及registry签名门禁。最终发布准备提交仍单独核对CI，Release实际结果见HANDOVER顶部。
+
+## 最终发布结果
+
+最终标签提交dd9726ea6ea59a7295d44123816f13d9f64d20e9的 [Actions44306028472](https://github.com/worlt/wrist-navigation/actions/runs/44306028472) 全8组通过。v0.4.9-preview.1已于2026-11-18本地20:54:34发布Pre-release449974357，七附件匿名下载字节一致，正式Latestv0.4.8/六附件保持。实际包SHA/CI/上传超时恢复/公开API限流和验证边界见HANDOVER顶部；旧“待发布”段保留为过程历史，未传设备/安装/本版真机验收。

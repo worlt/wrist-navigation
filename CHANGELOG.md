@@ -2,6 +2,8 @@
 
 ## v0.4.9-preview.1 · 双端独立更新提示与导航刷新
 
+**2026-11-18 已发布Pre-release**：Release449974357，tag指dd9726e；修复4b6b5ac和最终提交各8组CI通过，七附件匿名下载字节一致，正式Latest v0.4.8及六原附件保持。第三方安全分支非官方、未绕过audit，未传设备/安装/本版真机；匿名API实测限流403，元数据策略通过不等于在线/手机验收。见 [发布页](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.9-preview.1)；下文准备/暂停为历史。
+
 2026-11-18修复后恢复准备：4b6b5ac采用审查过的第三方安全分支修复picomatch，审计0/依赖签名、10项工具链安全与2004项分支测试通过；不绕过门禁/降级工具链。两RPK原签名重建，代码/资源一致，刷新未发布交付哈希；全部8组CI通过后才Pre-release，正式Latest保持。见 [修复记录](docs/picomatch-maintenance-20261118.md)，下段暂停是历史。
 
 **未发布，2026-11-18 暂停：** 源码三步已推送；CI四组源码通过、四组工具链安全审计失败，当前官方picomatch无已发布修复版本，未绕过门禁。尚无该标签或Release；见 [暂停记录](docs/release-blocked-20261118.md)。

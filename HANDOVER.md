@@ -1,5 +1,29 @@
 # 腕上导航维护交接
 
+## 2026-11-18 · v0.4.9-preview.1 已发布（最新状态）
+
+用户要求修复再Release，已分步推mine/main：安全维护4b6b5ac、修复交付/CI记录dd9726e；未推origin。原picomatch无官方修复，采用明确审查的第三方@ryotsu/picomatch4.0.7-a alias（非原维护者官方发布），源/provenance runtime一致、lock/integrity/代码SHA守卫，禁安装脚本；10项工具链安全/兼容与2004项分支测试通过，干净npm11.19.0审计0、704registry签名/162attestations通过，没有绕过门禁/降级aiot-toolkit。
+
+修复CI44304981188、最终标签CI44306028472均四组源码+四组工具链全部8组通过。annotated tag v0.4.9-preview.1 指向dd9726ea6ea59a7295d44123816f13d9f64d20e9，2026-11-18T12:54:34Z（本地20:54:34）发布Pre-release id449974357：[发布页](https://github.com/worlt/wrist-navigation/releases/tag/v0.4.9-preview.1)。明确draft:false/prerelease:true/make_latest:false。上传超时曾留无字体starter，检查后仅清理本草稿该失败starter并补传；没有动正式旧附件。最终七附件全部匿名公开下载与本地逐字节一致；正式Latest v0.4.8/id443781004及六旧附件id/大小/摘要保持。公开发布/下载不等于网站云端部署已核对。
+
+手机0.3.6/code21、手环0.4.8/code22，独立更新提示/按钮/自动/默认关闭Preview；手环提示在手机，未知版本不误报。APK原字节保持，双RPK原签名实际重建代码/资源一致，仅构建时间戳/相应CERT变化；旧未发布候选保留outputs/candidates/preview-049-before-picomatch-fix/。7附件许可/TESTING/SHA核对：
+
+| 文件 | 字节 | SHA-256 |
+| --- | --- | --- |
+| NAV-BAND-048-NOFONT.rpk | 3037677 | e83c06361670fd9b54c5add2f8bc8b50790f07948fac7e550abd8ee8eeff5f95 |
+| NAV-BAND-048.rpk | 11006155 | dc4d80d5abbcb91d9ef4c74b746ef5d8b859cbbd094598a3bbe68c855c1f3f9c |
+| NAV-PHONE-036.apk | 912790 | 2065ca4ebe679dc53536432eec888deb16defdd70f3b133a26730b276b412ade |
+| SHA256SUMS.txt | 503 | 4c96a38681b569e893928aa1008768c53845a8ae4e2b17bc153d5a3f06af5174 |
+| TESTING.txt | 4140 | ffccfcf44be7aa78e1ae5f435b1e4a280d792ff3d775e516c7010d0703b68515 |
+| THIRD_PARTY_NOTICES.txt | 56642 | 06653e81c13615e78ee5bee419d9431ba86df159fd1f6c6f585e80a640a9e90e |
+| update.json | 701 | b53cd9d70eba079dd25cc0c2604e6cc9699fdd1055b384ba81c00048ffc623b0 |
+
+149项Node、122项Android及Lint0错误/3既有警告、APK及双RPK编译ready/版本查询/原证书和嵌套签名通过；本轮Android输入未改使用匹配缓存。gitleaks默认宽泛规则命中4个navigation.haptics.v1本地存储KEY，均为旧编译代码相同非凭据，使用仓库既有精确allowlist复核0 findings，不新增忽略规则；高置信度源码/历史/附件扫描未检出凭据，不保证任意秘密不存在。
+
+JVM真实元数据/公开update.json的双端Preview升级比较、未勾选不接收、同code/未知手环守卫通过；真实匿名在线检查失败，诊断为GitHub API403、Remaining0。此前部分Python匿名API200、公开七附件下载通过，但不能扩展为手机匿名联网/控件真机通过；不把凭据写入APK。未传设备/安装/本版真机验收；大TTF警告/固件息屏刷新/耗电/机型与双端控件仍待设备实测，9 Pro自0.3.3未回归。
+
+记录docs/picomatch-maintenance-20261118.md与docs/releases/v0.4.9-preview.1.md；本地证据.local/release-049-fix/及.local/release-049-preview/verified-publication.json。下文准备/暂停段落均为历史，不当当前状态。没有创建定时监控。
+
 ## 2026-11-18 · 修复后恢复发布准备（尚未发布）
 
 用户要求修复再Release，维护4b6b5ac已分步推mine/main、未推origin。仍无官方picomatch修复，采用审查过的第三方@ryotsu/picomatch4.0.7-a alias（非官方），精确lock/integrity、源代码/来源证明一致，新增4项安全/文件选择测试，旧6项继续通过，分支2004项通过；干净npm11.19.0审计0、704registry签名/162attestations通过。aiot-toolkit2.0.5/原配对签名保持。修复CI44304981188已全部8组通过；最终发布准备CI仍须全部8组通过后才标签/Pre-release，不跳过门禁。
