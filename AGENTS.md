@@ -6,6 +6,8 @@
 
 ## 开始工作
 
+2026-11-18发布暂停（最新状态）：f57743d/2b55a69/f0fd611三步已推mine/main。CI44299055346四组源码通过、四组工具链npm audit失败；官方picomatch公告11月17日更新、11月18日latest4.0.7仍受影响且无first_patched_version。本机13/CI14高风险传递包，不是多个独立漏洞。未改依赖/降级aiot-toolkit/绕过门禁。v0.4.9-preview.1无标签/草稿/Release/上传；正式v0.4.8及六旧附件保持，outputs/releases中只是本地候选。继续前必须兼容修复和8组CI通过；当前复核测试/包通过不代表安全门禁或真机通过，未传设备/安装，匿名GitHub403。详见HANDOVER顶部及docs/release-blocked-20261118.md；下段是此前准备状态。
+
 2026-11-18双端独立更新发布准备：用户分步推送/Release途中追加手环分开提示/Preview，已完成手机0.3.6/code21、手环0.4.8/code22。两组检查/自动/默认关闭Preview独立，手环当前node ready/查询报告版本，断连清空/未知不误报；提示在手机软件，不手环联网。保留导航读取/刷新候选，双端配套、RPK二选一。122项Android/149项Node、Lint/原签名双端包/编译行为/高置信度扫描通过；f57743d及2b55a69分步推mine/main，未推origin。交付outputs/releases/v0.4.9-preview.1/共7附件，元数据实际tag；拟Pre-release保留正式Latest v0.4.8。CI/公开下载实际状态看HANDOVER顶部，未传设备/安装/真机验收；旧035/047候选保持。见docs/phone-band-updates-036.md。
 
 2026-11-18更新提示候选：手机0.3.5/code20（保留直行补读/距离刷新）、配套手环0.4.7/code21两原候选包。首页检查更新按钮/更新页Preview原生勾选默认关闭、每天打开自动检查可关、GitHub Release同次update.json、按手机code防降级与渠道竞态保护实现；115项Android/147项Node、Lint0错误3既有警告、原签名APK与附件门禁通过。JVM真实GitHub请求本次非200，网络/手机UI未验收。交付outputs/candidates/updates-20261118/；元数据local-update-20261118占位，发布前必须按最终tag重生成并重算SHA。无服务器/账号/路线上传/自动安装，旧版需先手动装带此功能APK。未提交/推送/发布/部署/传设备/安装/真机验收；正式v0.4.8及旧候选保持。见HANDOVER顶部/docs/phone-updates-035.md。

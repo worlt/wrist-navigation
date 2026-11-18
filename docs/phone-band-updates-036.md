@@ -31,7 +31,7 @@ node tools/check-release.cjs <交付目录> <实际Release标签>
 
 工具读取源码并要求对应交付文件名存在，拒绝覆盖；仍须核对APK/RPK**包内**name/code与原签名。上传APK、两RPK、update.json、TESTING.txt、完整第三方许可和SHA256SUMS共7附件，校验表包含元数据。实验版勾选GitHub Pre-release，保留正式Latest，双端code各自保持单调递增。
 
-本轮拟发布v0.4.9-preview.1，配套NAV-PHONE-036.apk / NAV-BAND-048.rpk或NAV-BAND-048-NOFONT.rpk。发布状态以HANDOVER顶部为准。旧035/047候选及正式v0.4.8（手机0.3.2/手环0.4.6）保持；更新按钮只能在安装带此功能的手机后使用。
+本轮计划v0.4.9-preview.1 **已暂停发布**（CI构建依赖安全审计未通过，上游当前无官方修复版本，未绕过门禁；没有标签或Release），见 [暂停记录](release-blocked-20261118.md)。本地配套NAV-PHONE-036.apk / NAV-BAND-048.rpk或NAV-BAND-048-NOFONT.rpk。发布状态以HANDOVER顶部为准。旧035/047候选及正式v0.4.8（手机0.3.2/手环0.4.6）保持；更新按钮只能在安装带此功能的手机后使用。
 
 ## 隐私和验证边界
 
