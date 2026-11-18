@@ -38,6 +38,7 @@ outputs/archive/          历史安装包、截图和源码快照
 3. 审阅并提交 main，推送后检查 GitHub Actions。仓库源码包含构建所需资源，不包含签名与第三方 SDK AAR。
 4. 为对应提交创建版本标签，准备 GitHub Release。明确 APK 和 RPK 各自的版本、签名兼容性、是否为调试 / 测试构建，以及本次已验证与未验证的内容。网页演示版本不等于安装包已发布。
 5. 附该次发布的 APK、RPK、`SHA256SUMS.txt` 和 `THIRD_PARTY_NOTICES.txt`，按实际文件填写名称。核对上传文件的大小、哈希和所附第三方许可后发布，不能复用旧版校验表。
+   手机0.3.5起新增更新提示：新发布需把 `update.json` 作为同次Release附件，生成时使用最终实际tag，加入SHA256SUMS后用 `node tools/check-release.cjs <交付目录> <实际tag>` 校验。实验版本在GitHub勾选Pre-release，正式不勾选；手机code保持递增。完整流程见 [双端更新元数据](phone-band-updates-036.md)，不改写既有v0.4.6/7/8附件。
 6. 在未登录状态核对仓库、文档、源码下载和 Release 附件可访问。
 
 源码 ZIP 使用 GitHub 自动生成的对应标签归档，无需另外上传包含本机文件的源码压缩包。手机和手环安装包沿用已经验证的字节，不因整理文档而重新签名。

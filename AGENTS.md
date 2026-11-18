@@ -6,6 +6,14 @@
 
 ## 开始工作
 
+2026-11-18双端独立更新发布准备：用户分步推送/Release途中追加手环分开提示/Preview，已完成手机0.3.6/code21、手环0.4.8/code22。两组检查/自动/默认关闭Preview独立，手环当前node ready/查询报告版本，断连清空/未知不误报；提示在手机软件，不手环联网。保留导航读取/刷新候选，双端配套、RPK二选一。122项Android/149项Node、Lint/原签名双端包/编译行为/高置信度扫描通过；f57743d及2b55a69分步推mine/main，未推origin。交付outputs/releases/v0.4.9-preview.1/共7附件，元数据实际tag；拟Pre-release保留正式Latest v0.4.8。CI/公开下载实际状态看HANDOVER顶部，未传设备/安装/真机验收；旧035/047候选保持。见docs/phone-band-updates-036.md。
+
+2026-11-18更新提示候选：手机0.3.5/code20（保留直行补读/距离刷新）、配套手环0.4.7/code21两原候选包。首页检查更新按钮/更新页Preview原生勾选默认关闭、每天打开自动检查可关、GitHub Release同次update.json、按手机code防降级与渠道竞态保护实现；115项Android/147项Node、Lint0错误3既有警告、原签名APK与附件门禁通过。JVM真实GitHub请求本次非200，网络/手机UI未验收。交付outputs/candidates/updates-20261118/；元数据local-update-20261118占位，发布前必须按最终tag重生成并重算SHA。无服务器/账号/路线上传/自动安装，旧版需先手动装带此功能APK。未提交/推送/发布/部署/传设备/安装/真机验收；正式v0.4.8及旧候选保持。见HANDOVER顶部/docs/phone-updates-035.md。
+
+2026-11-18距离刷新后续候选：手机0.3.4/code19、手环0.4.7/code21；保留直行补读，活动1秒补读与8秒发送心跳分离，ready优先新读取，ACK先页面通知、唤醒合并、相同箭头/字体等去重赋值；增加可选页面模型报告，不能证明物理屏幕刷新。92项Android、140项Node、Lint/原签名APK、两版RPK编译行为/原签名检查通过，交付outputs/candidates/realtime-20261118/。双端需配套，完整版/无字体二选一；未提交/推送/发布/传设备/安装/真机验收，正式v0.4.8保持，旧033候选保留。上游通知频率、固件暂停/息屏与耗电待实机验证，详见HANDOVER顶部和docs/navigation-realtime-047.md。
+
+2026-11-18一加13（Android16/ColorOS16、高德17.02.0.2010）直行读取候选：手机0.3.3/code18增加仅在标准无方向时的高德自定义视图补读/来源诊断，手环0.4.6沿用，原签名/协议保持。88项Android、133项Node、Lint/原签名APK及公开文件检查通过；交付outputs/candidates/phone-v0.3.3/，未提交/推送/发布/传设备/安装/真机验收。流体云具体结构未知，不声称一加已修复，详见HANDOVER顶部和docs/phone-custom-notification-033.md。
+
 2026-11-13独立依赖维护：保留aiot-toolkit2.0.5，明确overrides/锁文件把原28项官方npm审计归零；npm11.19.0与wearable/.npmrc禁用安装脚本。tools/prepare-wearable-toolchain.cjs兼容simple-git4 named工厂，漂移时停止；原签名保护在直接构建入口，不依赖pre钩子。133项源码、6项工具链、干净安装/两版原签名RPK及与原包代码资源字节一致检查通过；维护代码d678d6f推mine/main，四组工具链+四组源码CI43368210191全部通过。业务版本仍手机0.3.2/手环0.4.6，v0.4.8发布附件保持，维护包outputs/maintenance/dependencies-20261113/未发布/安装/真机验收。8类上游deprecated另记；见HANDOVER顶部与docs/dependency-maintenance-20261113.md。
 
 2026-11-13新增手机0.3.2/code17折叠诊断，配套手环0.4.6/code20两原包；已正式发布v0.4.8 Latest（Release443781004），源码ab105e1只推mine/main，四组CI43359279194及六附件公开下载哈希通过。74项Android、132项Node、Lint/原签名APK通过，未传设备/安装/真机验收，详见HANDOVER顶部。诊断字段只内存保存，用户点击才复制，不自动上传或日志原文。
@@ -52,7 +60,7 @@
 | 文件 | 作用 |
 | --- | --- |
 | `android/app/src/main/java/io/github/mi9pro/navigation/NavigationParser.java` | 纯 Java 通知文字解析 |
-| 同目录 `NavigationNotificationListener.java` | 通知监听、150 毫秒去抖、活动心跳补读、监听掉线自动重连 |
+| 同目录 `NavigationNotificationListener.java` | 通知监听、150 毫秒去抖、活动1秒补读、监听掉线自动重连 |
 | 同目录 `WearBridge.java`、`SendPolicy.java` | XMS 授权、连接、发送去重/节流、手动打开调试、诊断 |
 | 同目录 `MainActivity.java` | 手机设置及诊断页面 |
 | 同目录 `NavigationSyncService.java`、`SyncRestoreReceiver.java` | 后台同步、唤醒锁、停止和恢复、监听重连退避（`ListenerRecovery`） |
