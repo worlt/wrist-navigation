@@ -65,3 +65,10 @@ test('optional haptic metadata preserves old packets and rejects malformed exten
   }
   assert.equal(decode(JSON.stringify({ ...haptic, reminderEnabled: false })).reminderEnabled, false);
 });
+
+
+test('optional display diagnostics request keeps legacy messages valid and rejects invalid types', () => {
+  assert.ok(decode(JSON.stringify(packet())));
+  assert.equal(decode(JSON.stringify({ ...packet(), displayDiagnostics: true })).displayDiagnostics, true);
+  assert.equal(decode(JSON.stringify({ ...packet(), displayDiagnostics: 'true' })), null);
+});

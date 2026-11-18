@@ -10,7 +10,7 @@ export default {
     this.navigationSession.retry()
   },
   onShow() {
-    if (this.navigationSession) this.navigationSession.retry()
+    if (this.navigationSession) this.navigationSession.resume()
   },
   onDestroy() {
     if (this.navigationSession) this.navigationSession.dispose()

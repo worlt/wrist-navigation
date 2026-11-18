@@ -18,7 +18,7 @@ function launch(options = {}) {
       if (callbacks.success) callbacks.success();
     }
   };
-  const session = createSession({ ...time, load(name) {
+  const session = createSession({ ...time, version: options.version, load(name) {
     if (name === '@system.app') return { terminate() { assert.equal(sent.at(-1).type, 'ack'); exits.push(sent.at(-1).phoneExitId); } };
     if (name === '@system.storage') return { get: cb => cb.success(''), set: cb => cb.success() };
     if (name === '@system.interconnect') return { instance() { instances++; return connection; } };
@@ -235,4 +235,54 @@ test('an exit ACK failing synchronously cannot produce a disconnect vibration', 
   a.connection.send = callbacks => callbacks.fail({ code: 1006 }, 1006);
   a.deliver(packet(2, { phoneExitId: 'exit-1', reminderEnabled: true })); a.advance(3000);
   assert.equal(a.vibrations.length, before);
+});
+
+
+test('ACK is dispatched before page observers process the current navigation', () => {
+  const app = launch({ manualTime: true }); app.session.retry();
+  const seen = [];
+  app.session.subscribe(state => {
+    if (state.latest) seen.push(app.sent.some(frame => frame.type === 'ack' && frame.seq === state.latest.seq));
+  });
+  app.deliver(packet(1, { vibrationEnabled: false }));
+  assert.ok(seen.length > 0); assert.ok(seen.every(Boolean));
+});
+
+test('duplicate App/page resume events request one fresh snapshot without repeated connection queries', () => {
+  const app = launch({ manualTime: true });
+  const original = app.connection.getReadyState; let checks = 0;
+  app.connection.getReadyState = callbacks => { checks++; original(callbacks); };
+  app.session.retry();
+  app.session.resume(); app.session.resume();
+  assert.equal(checks, 1);
+  assert.equal(app.sent.filter(frame => frame.type === 'ready').length, 1);
+  app.advance(1100); app.session.resume(); app.session.resume();
+  assert.equal(checks, 1);
+  assert.equal(app.sent.filter(frame => frame.type === 'ready').length, 2);
+  app.connection.onclose('lost'); app.session.resume();
+  assert.equal(checks, 2);
+});
+
+
+test('ready and explicit version query report installed manifest without touching navigation or haptics', () => {
+  const version = { package: 'io.github.mi9pro.navigation', versionName: '0.4.8', versionCode: 22 };
+  const app = launch({ version }); app.session.retry();
+  const ready = app.sent.find(frame => frame.type === 'ready');
+  assert.deepEqual(ready.appVersion, { applicationId: version.package, versionName: version.versionName, versionCode: 22 });
+  app.deliver(packet(1)); const before = app.session.peek().latest; const pulses = app.vibrations.length;
+  app.deliver({ v: 1, type: 'version-query', requestId: 'probe-1' });
+  assert.deepEqual(app.sent.at(-1), { v: 1, type: 'app-version', requestId: 'probe-1', appVersion: ready.appVersion });
+  assert.equal(app.session.peek().latest, before); assert.equal(app.vibrations.length, pulses);
+  app.deliver({ v: 1, type: 'version-query', requestId: 'x'.repeat(81) });
+  assert.equal(app.sent.at(-1).requestId, 'probe-1');
+});
+
+test('ArrayBuffer version query reports version but optional send failure keeps navigation working', () => {
+  const app = launch(); app.session.retry(); app.deliver(packet(1));
+  const query = new TextEncoder().encode(JSON.stringify({ v: 1, type: 'version-query', requestId: 'binary' })).buffer;
+  app.connection.onmessage({ data: query });
+  assert.equal(app.sent.at(-1).type, 'app-version'); assert.equal(app.sent.at(-1).requestId, 'binary');
+  app.connection.send = callbacks => callbacks.fail('probe unavailable', 201);
+  app.connection.onmessage({ data: query });
+  assert.equal(app.session.peek().connected, true); assert.equal(app.session.peek().latest.seq, 1);
 });

@@ -7,7 +7,7 @@ import java.util.Locale;
 /** Bounded, in-memory evidence. SDK completion and peer ACK are independent facts. */
 final class NavigationDiagnostics {
     private String raw = "", readError = "", sendStatus = "尚未发送";
-    private long readAt, goodReadAt, sentAt, sequence, ackSequence, ackAt;
+    private long readAt, goodReadAt, sentAt, sequence, ackSequence, ackAt, displaySequence, displayAt;
     private NavigationParser.Result parsed, outgoing;
 
     void read(String text, long now) {
@@ -25,6 +25,11 @@ final class NavigationDiagnostics {
     void ack(long seq, long now) {
         if (seq != sequence) return;
         ackSequence = seq; ackAt = now;
+    }
+    void display(long seq, long now) {
+        if (seq <= displaySequence || seq <= 0 || seq > sequence) return;
+        // A model report can follow its ACK after the next outbound frame has already started.
+        displaySequence = seq; displayAt = now;
     }
     private boolean changed() {
         return parsed != null && outgoing != null && !parsed.fingerprint().equals(outgoing.fingerprint());
@@ -57,7 +62,14 @@ final class NavigationDiagnostics {
             : "未收到消息 #" + sequence + " 的手环确认";
         if (ackSequence != 0 && (!readError.isEmpty() || parsed == null || changed() || ackSequence != sequence))
             current += "\n上次确认：#" + ackSequence + " · " + time(ackAt) + "（历史消息）";
-        return current + "\n确认表示手环应用收到消息，不代表画面已显示";
+        boolean currentContent = readError.isEmpty() && parsed != null && !changed();
+        if (displaySequence == sequence && currentContent)
+            current += "\n当前消息的页面显示数据已更新 · #" + sequence + " · " + time(displayAt);
+        else {
+            if (currentContent) current += "\n尚未收到当前消息的页面更新报告（可能页面隐藏、设置页或旧版手环）";
+            if (displaySequence != 0) current += "\n历史页面报告：#" + displaySequence + " · " + time(displayAt);
+        }
+        return current + "\n确认表示手环应用收到消息；页面报告表示显示数据已提交，不代表物理屏幕已刷新";
     }
     static String time(long value) { return new SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new Date(value)); }
     private static String bound(String text, int limit) {

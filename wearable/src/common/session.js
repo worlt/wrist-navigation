@@ -3,11 +3,16 @@ const createAppExit = require('./app-exit').createAppExit;
 const presentation = require('./presentation');
 const createReminders = require('./reminders').createReminders;
 const createHaptics = require('./haptics').createHaptics;
+const installedManifest = require('../manifest.json');
 const createJourneyReminders = require('./journey-reminders').createJourneyReminders;
 
 // App-owned transport. Pages observe snapshots; they never own the native callbacks.
 function createSession(options) {
   const load = options.load;
+  const version = options.version || installedManifest;
+  function appVersion() {
+    return { applicationId: version.package, versionName: version.versionName, versionCode: version.versionCode };
+  }
   const now = options.now || (() => Date.now());
   const reminders = createReminders();
   const journeys = createJourneyReminders();
@@ -15,6 +20,8 @@ function createSession(options) {
   let latest = null, receivedAt = 0, connected = false, connectionError = '';
   let sendShape = 0, lastSend = '尚未发送';
   let listeners = [];
+  let lastReadyAt = -1, lastCheckAt = -1;
+  let displayedSession = null, displayedSequence = 0;
   let apkStatusText = '未检测', eventRevision = 0, queryRevision = 0;
   // Official interconnect: onclose, ready-state=2 or error code 1006 prove link loss.
   // https://iot.mi.com/vela/quickapp/zh/features/network/interconnect.html
@@ -49,6 +56,7 @@ function createSession(options) {
       linkLost(data); return;
     }
     connected = false; eventRevision++;
+    lastReadyAt = lastCheckAt = -1;
     if (interruption !== 'disconnect') haptics.cancel();
     connectionError = presentation.errorText(stage, data, code);
     notify();
@@ -79,11 +87,14 @@ function createSession(options) {
       const request = sendShape === 0 ? { data: payload } : { data: { data: payload } };
       request.success = () => {
         if (!alive || revision !== generation) return;
-        lastSend = '已发送 ' + (message.type || '') + (sendShape === 0 ? '' : '（嵌套）');
-        notify();
+        if (message.type !== 'display') lastSend = '已发送 ' + (message.type || '') + (sendShape === 0 ? '' : '（嵌套）');
+        // The packet handler notifies after dispatching ACK; display reports must not recurse into paint.
+        if (message.type !== 'ack' && message.type !== 'display') notify();
       };
       request.fail = (data, code) => {
         if (!alive || revision !== generation) return;
+        // Optional page diagnostics must not tear down working navigation/ACK transport.
+        if (message.type === 'display' || message.type === 'app-version') return;
         if (Number(code) === 202 && sendShape === 0) {
           sendShape = 1;
           lastSend = '字符串格式被拒，改用嵌套格式';
@@ -94,10 +105,32 @@ function createSession(options) {
         fail('发送失败', data, code);
       };
       connection.send(request);
-    } catch (error) { fail('发送失败', error); }
+    } catch (error) { if (message.type !== 'display' && message.type !== 'app-version') fail('发送失败', error); }
+  }
+  function sendReady() {
+    lastReadyAt = now();
+    send({ v: 1, type: 'ready', appVersion: appVersion() });
+  }
+  function resume() {
+    if (!alive) return;
+    const recent = Math.max(lastReadyAt, lastCheckAt), age = now() - recent;
+    // App and page can both receive show callbacks during the same wake.
+    if (recent >= 0 && age >= 0 && age < 1000) return;
+    if (connected) { sendReady(); notify(); }
+    else retry();
+  }
+  function reportDisplay(session, seq) {
+    if (!alive || !connected || !latest || latest.displayDiagnostics !== true || latest.phoneExitId
+        || latest.session !== session || latest.seq !== seq) return;
+    const age = now() - receivedAt;
+    if ((latest.status === 'active' || latest.status === 'demo') && (age < 0 || age >= protocol.EXPIRY_MS)) return;
+    if (displayedSession === session && displayedSequence === seq) return;
+    displayedSession = session; displayedSequence = seq;
+    send({ v: 1, type: 'display', session, seq, state: 'applied' });
   }
   function retry() {
     if (!alive) return;
+    lastCheckAt = now();
     connectionError = '';
     if (!connection) {
       try {
@@ -108,12 +141,29 @@ function createSession(options) {
           if (!current()) return;
           linkReady(); connectionError = ''; eventRevision++;
           apkStatusText = readApkStatus();
-          send({ v: 1, type: 'ready' }); notify();
+          sendReady(); notify();
         };
         connection.onclose = data => { if (current()) linkLost(data); };
         connection.onerror = data => { if (current()) fail('连接异常', data); };
         connection.onmessage = event => {
           if (!current()) return;
+          // Optional control query is independent from navigation sequence and haptics.
+          try {
+            let text = event && event.data;
+            if (typeof ArrayBuffer !== 'undefined' && text instanceof ArrayBuffer && text.byteLength <= 512) {
+              const bytes = new Uint8Array(text); let escaped = '';
+              for (let i = 0; i < bytes.length; i++) escaped += '%' + ('0' + bytes[i].toString(16)).slice(-2);
+              text = decodeURIComponent(escaped);
+            }
+            if (typeof text === 'string' && text.length <= 512) {
+              const query = JSON.parse(text);
+              if (query && query.v === 1 && query.type === 'version-query' && typeof query.requestId === 'string'
+                  && query.requestId.length > 0 && query.requestId.length <= 80) {
+                send({ v: 1, type: 'app-version', requestId: query.requestId, appVersion: appVersion() });
+                return;
+              }
+            }
+          } catch (ignored) { /* Normal protocol decoding still handles malformed inputs safely. */ }
           const packet = protocol.decode(event && event.data);
           if (!protocol.accept(latest, packet)) return;
           const previous = latest;
@@ -124,8 +174,8 @@ function createSession(options) {
             haptics.cancel(); interruption = '';
             reminders.consume(packet, false); journeys.consume(packet, false);
             appExit.consume(packet);
-            notify();
             send({ v: 1, type: 'ack', session: packet.session, seq: packet.seq, phoneExitId: packet.phoneExitId });
+            notify();
             return;
           }
           appExit.consume(packet);
@@ -143,8 +193,8 @@ function createSession(options) {
           const journey = journeys.consume(packet, eligible);
           const reminder = journey || turn;
           if (journey === 'end') haptics.cancel();
-          notify();
           send({ v: 1, type: 'ack', session: packet.session, seq: packet.seq });
+          notify();
           if (pauseTransition && paused && current() && connected) {
             haptics.play(() => current() && connected && latest && latest.session === packet.session &&
               latest.status === 'paused' && latest.reminderEnabled === true &&
@@ -174,7 +224,7 @@ function createSession(options) {
             linkLost(data); return;
           }
           connected = !!data && data.status === 1; connectionError = '';
-          if (connected) { linkReady(); send({ v: 1, type: 'ready' }); }
+          if (connected) { linkReady(); sendReady(); }
           notify();
         },
         fail(data, code) { if (alive && revision === generation && query === queryRevision && event === eventRevision) fail('连接检查失败', data, code); }
@@ -198,7 +248,7 @@ function createSession(options) {
     }
     connection = null; latest = null; connected = false;
   }
-  return { peek, retry, send, fail, dispose, isAlive: () => alive,
+  return { peek, retry, resume, reportDisplay, send, fail, dispose, isAlive: () => alive,
     selectHaptic(id) { if (alive) haptics.select(id); },
     setHapticEnabled(value) { if (alive) haptics.setEnabled(value); },
     testHaptic() { return alive && haptics.test(); },

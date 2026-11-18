@@ -46,9 +46,21 @@ public class SendPolicyTest {
     @Test public void notificationCallbacksCannotPostponeTheNextFreshHeartbeatRead() {
         SendPolicy policy = new SendPolicy();
         policy.sent("navigation", 1000);
-        assertEquals(8000, policy.nextReadDelay(1000));
-        assertEquals(3000, policy.nextReadDelay(6000));
+        assertEquals(1000, policy.nextReadDelay(1000));
+        assertEquals(1000, policy.nextReadDelay(6000));
         assertEquals(500, policy.nextReadDelay(9000));
     }
 
+    @Test public void missedDistanceCallbackIsRecoveredWithinOneSecondWithoutAWakeRequest() {
+        SendPolicy policy = new SendPolicy();
+        long firstNewDistance = -1;
+        for (long time = 0; time < 4000; time += policy.nextReadDelay(time)) {
+            String distance = time < 550 ? "100 米" : "90 米";
+            if (policy.delay(distance, true, time) == 0) {
+                policy.sent(distance, time);
+                if ("90 米".equals(distance) && firstNewDistance < 0) firstNewDistance = time;
+            }
+        }
+        assertEquals(1000, firstNewDistance);
+    }
 }

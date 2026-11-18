@@ -37,6 +37,8 @@ for (const name of ['protocol', 'presentation', 'settings', 'geometry', 'font-co
   bundle.modules['../../common/' + name] = fs.readFileSync(path.join(root, 'wearable/src/common', name + '.js'), 'utf8');
 }
 bundle.modules['../../manifest.json'] = 'module.exports = ' + JSON.stringify(manifest);
+// Session imports the manifest relative to common/; the preview loader preserves this name.
+bundle.modules['../manifest.json'] = bundle.modules['../../manifest.json'];
 bundle.modules['../../common/arrow-artwork.json'] = 'module.exports = ' + JSON.stringify(require('../wearable/src/common/arrow-artwork.json'));
 bundle.scenes = scenes;
 function images(directory) {

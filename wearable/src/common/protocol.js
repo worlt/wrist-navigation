@@ -24,6 +24,7 @@ function decode(input) {
   }
   if (message.title.length > 80 || message.rawText.length > 480 || message.instruction.length > 48 || message.distance.length > 32) return null;
   if (maneuvers.indexOf(message.maneuver) < 0) message.maneuver = 'unknown';
+  if (message.displayDiagnostics !== undefined && typeof message.displayDiagnostics !== 'boolean') return null;
   if (message.keepScreenOn !== undefined && typeof message.keepScreenOn !== 'boolean') return null;
   if (message.phoneExitId !== undefined && (typeof message.phoneExitId !== 'string' || !message.phoneExitId || message.phoneExitId.length > 80)) return null;
   // Optional v1 extensions: old phones keep rendering normally but never trigger haptics.

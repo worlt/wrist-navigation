@@ -78,4 +78,34 @@ public class NavigationDiagnosticsTest {
         assertTrue(d.parseText().contains("未识别"));
         assertTrue(d.ackText().contains("尚未发送"));
     }
+    @Test public void displayReportIsSeparateFromReceiptAndCannotConfirmAnotherFrame() {
+        var d = new NavigationDiagnostics();
+        d.parsed(straight()); d.sending(1, straight(), 1000); d.ack(1, 1100);
+        assertFalse(d.ackText().contains("页面显示数据已更新"));
+        d.display(1, 1150);
+        assertTrue(d.ackText().contains("页面显示数据已更新"));
+        d.sending(2, straight(), 2000); d.display(1, 2100);
+        assertFalse(d.ackText().contains("当前消息的页面显示数据已更新"));
+        assertTrue(d.ackText().contains("历史页面报告"));
+    }
+    @Test public void displayReportDoesNotClaimPixelsUpdatedOrOldContentIsCurrent() {
+        var d = new NavigationDiagnostics();
+        d.parsed(straight()); d.sending(1, straight(), 1000); d.display(1, 1100);
+        assertTrue(d.ackText().contains("不代表物理屏幕已刷新"));
+        d.parsed(left());
+        assertFalse(d.ackText().contains("当前消息的页面显示数据已更新"));
+        d.readFailed("读取不可用", 2000);
+        assertTrue(d.ackText().contains("历史页面报告"));
+    }
+    @Test public void laggedDisplayReportIsKeptAsHistoryWithoutClaimingTheNextFrameUpdated() {
+        var d = new NavigationDiagnostics();
+        d.parsed(straight()); d.sending(1, straight(), 1000);
+        d.sending(2, straight(), 2000); d.display(1, 2100);
+        assertTrue(d.ackText().contains("历史页面报告：#1"));
+        assertFalse(d.ackText().contains("当前消息的页面显示数据已更新"));
+        d.display(2, 2200); d.display(1, 2300);
+        assertTrue(d.ackText().contains("当前消息的页面显示数据已更新 · #2"));
+        d.display(3, 2400);
+        assertTrue(d.ackText().contains("当前消息的页面显示数据已更新 · #2"));
+    }
 }

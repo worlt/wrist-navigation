@@ -1,7 +1,6 @@
 package io.github.mi9pro.navigation;
 
 import android.app.Notification;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.service.notification.NotificationListenerService;
@@ -19,10 +18,10 @@ public final class NavigationNotificationListener extends NotificationListenerSe
     private final Runnable poll = this::refresh;
     private final Runnable refreshTask = this::refresh;
 
-    static void requestRefresh() {
-        if (instance == null) return;
+    static boolean requestRefresh() {
+        if (instance == null || !instance.connected || !instance.bridge().enabled()) return false;
         instance.handler.removeCallbacks(instance.refreshTask);
-        instance.handler.post(instance.refreshTask);
+        return instance.handler.post(instance.refreshTask);
     }
 
     @Override public void onListenerConnected() {
@@ -54,7 +53,7 @@ public final class NavigationNotificationListener extends NotificationListenerSe
             String lastRaw = "", selectedEvidence = "";
             List<String> evidence = new ArrayList<>();
             long rawTime = Long.MIN_VALUE;
-            int count = 0, readable = 0;
+            int count = 0, readable = 0, records = 0;
             StatusBarNotification[] active = getActiveNotifications();
             if (active == null) {
                 bridge().unavailable("暂时无法读取通知");
@@ -65,16 +64,18 @@ public final class NavigationNotificationListener extends NotificationListenerSe
                 count++;
                 Notification notification = sbn.getNotification();
                 if ((notification.flags & Notification.FLAG_GROUP_SUMMARY) != 0) continue;
-                String[] fields = fields(notification);
+                NavigationNotificationText.Read read = NavigationNotificationText.read(this, sbn.getPackageName(), sbn.isOngoing(), notification);
+                String[] fields = read.selection.fields;
                 String record = "通知 · " + NavigationDiagnostics.time(sbn.getPostTime())
-                    + " · ongoing=" + sbn.isOngoing() + "\n" + diagnosticFields(notification);
-                if (evidence.size() < 6 && fields.length > 0) evidence.add(record);
+                    + " · id=" + sbn.getId() + " · ongoing=" + sbn.isOngoing() + "\n" + read.evidence;
+                records++;
+                if (evidence.size() < 6) evidence.add(record);
                 if (fields.length > 0) readable++;
                 if (sbn.getPostTime() >= rawTime) {
                     lastRaw = NavigationParser.clip(String.join("\n", fields), 1000);
                     rawTime = sbn.getPostTime();
                 }
-                NavigationParser.Result result = NavigationParser.parse(sbn.getPackageName(), sbn.isOngoing(), fields);
+                NavigationParser.Result result = read.selection.result;
                 if (result != null && sbn.getPostTime() >= newest) {
                     best = result;
                     newest = sbn.getPostTime();
@@ -82,12 +83,13 @@ public final class NavigationNotificationListener extends NotificationListenerSe
                 }
             }
             bridge().lastAmapText = lastRaw.isEmpty() ? "没有可读取的高德通知文字" : lastRaw;
-            StringBuilder rawEvidence = new StringBuilder();
+            StringBuilder rawEvidence = new StringBuilder(NavigationNotificationText.environment(this));
+            if (records == 0) rawEvidence.append("没有可读取的高德通知文字\n");
             if (!selectedEvidence.isEmpty()) rawEvidence.append("解析采用的通知\n").append(selectedEvidence).append("\n");
             for (String record : evidence) {
                 if (!record.equals(selectedEvidence)) rawEvidence.append("其他高德通知\n").append(record).append("\n");
             }
-            if (readable > evidence.size()) rawEvidence.append("（仅展示最多6条其他通知，解析来源单独保留）");
+            if (records > evidence.size()) rawEvidence.append("（仅展示最多6条其他通知，解析来源单独保留）");
             bridge().diagnostics.read(rawEvidence.toString().trim(), System.currentTimeMillis());
             bridge().notificationChecked(count, readable, best);
             bridge().updateFromNotifications(best);
@@ -99,41 +101,7 @@ public final class NavigationNotificationListener extends NotificationListenerSe
     }
 
     static String[] fields(Notification notification) {
-        Bundle extras = notification.extras;
-        List<String> fields = new ArrayList<>();
-        if (extras != null) {
-            for (String key : new String[] { Notification.EXTRA_TITLE, Notification.EXTRA_TEXT,
-                    Notification.EXTRA_BIG_TEXT, Notification.EXTRA_SUB_TEXT, Notification.EXTRA_SUMMARY_TEXT }) {
-                CharSequence value = extras.getCharSequence(key);
-                if (value != null && value.length() > 0) fields.add(value.toString());
-            }
-            CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
-            if (lines != null) for (CharSequence line : lines) if (line != null) fields.add(line.toString());
-        }
-        if (notification.tickerText != null) fields.add(notification.tickerText.toString());
-        return fields.toArray(new String[0]);
-    }
-
-    private static String diagnosticFields(Notification notification) {
-        StringBuilder text = new StringBuilder();
-        Bundle extras = notification.extras;
-        String[] keys = { Notification.EXTRA_TITLE, Notification.EXTRA_TEXT, Notification.EXTRA_BIG_TEXT,
-            Notification.EXTRA_SUB_TEXT, Notification.EXTRA_SUMMARY_TEXT };
-        if (extras != null) {
-            for (String key : keys) {
-                CharSequence value = extras.getCharSequence(key);
-                if (value != null && value.length() > 0)
-                    text.append(key).append(": ").append(NavigationParser.clip(value.toString(), 512)).append("\n");
-            }
-            CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
-            if (lines != null) for (int i = 0; i < Math.min(lines.length, 8); i++) {
-                if (lines[i] != null) text.append("android.textLines[").append(i).append("]: ")
-                    .append(NavigationParser.clip(lines[i].toString(), 512)).append("\n");
-            }
-        }
-        if (notification.tickerText != null) text.append("tickerText: ")
-            .append(NavigationParser.clip(notification.tickerText.toString(), 512));
-        return text.toString().trim();
+        return NavigationNotificationText.standardFields(notification);
     }
 
     @Override public void onListenerDisconnected() {

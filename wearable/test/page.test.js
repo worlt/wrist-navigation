@@ -587,3 +587,66 @@ test('recreated page reads App snapshot and reuses transport/history without rep
   assert.deepEqual(app.vibrations, ['long', 'long', 'long', 'long']); assert.equal(app.loads(), 1);
   next.onDestroy(); app.shutdown();
 });
+
+
+test('unchanged heartbeats do not rewrite arrow, fonts or other unchanged native display fields', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(navigation(1)) });
+  let writes = 0;
+  for (const key of ['arrowSrc', 'demo', 'linkText', 'guidanceFontFamily', 'detailsFontFamily']) {
+    let value = app.page[key];
+    Object.defineProperty(app.page, key, { configurable: true, get: () => value,
+      set(next) { writes++; value = next; } });
+  }
+  app.connection.onmessage({ data: JSON.stringify(navigation(2)) });
+  assert.equal(writes, 0);
+  assert.equal(app.sent.filter(frame => frame.type === 'ack').at(-1).seq, 2);
+  app.advance(19999); assert.equal(app.page.status, '高德导航');
+});
+
+test('distance updates change text without reloading the same arrow or toggling screen brightness', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({ data: JSON.stringify(navigation(1)) });
+  let reloads = 0, arrow = app.page.arrowSrc;
+  Object.defineProperty(app.page, 'arrowSrc', { configurable: true, get: () => arrow,
+    set(next) { reloads++; arrow = next; } });
+  const screens = app.screenRequests.length;
+  app.connection.onmessage({ data: JSON.stringify({ ...navigation(2), distance: '190 米', rawText: '前方190米右转' }) });
+  assert.equal(app.page.distance, '190 米');
+  assert.match(app.page.guidanceLines.join(''), /190米/);
+  assert.equal(reloads, 0); assert.equal(app.screenRequests.length, screens);
+});
+
+test('requested display reports follow ACK and distinguish hidden receipt from foreground data update', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  const frame = seq => ({ ...navigation(seq), displayDiagnostics: true });
+  app.connection.onmessage({ data: JSON.stringify(frame(1)) });
+  const reports = () => app.sent.filter(message => message.type === 'display');
+  assert.equal(reports().length, 1); assert.equal(reports()[0].seq, 1);
+  assert.ok(app.sent.findIndex(message => message.type === 'ack' && message.seq === 1)
+    < app.sent.findIndex(message => message.type === 'display' && message.seq === 1));
+  app.page.paint(); assert.equal(reports().length, 1);
+  app.page.onHide();
+  app.connection.onmessage({ data: JSON.stringify(frame(2)) });
+  assert.equal(app.sent.filter(message => message.type === 'ack').at(-1).seq, 2);
+  assert.equal(reports().length, 1);
+  app.page.onShow(); assert.equal(reports().length, 2); assert.equal(reports()[1].seq, 2);
+});
+
+
+test('optional page report failures cannot disconnect navigation or change the ACK envelope', () => {
+  const app = launch({ connected: true }); app.page.onReady(); app.page.onShow();
+  const original = app.connection.send;
+  app.connection.send = request => {
+    const frame = JSON.parse(typeof request.data === 'object' ? request.data.data : request.data);
+    if (frame.type === 'display') { request.fail('unsupported diagnostic', 202); return; }
+    original(request);
+  };
+  app.connection.onmessage({ data: JSON.stringify({ ...navigation(1), displayDiagnostics: true }) });
+  assert.equal(app.navigationSession.peek().connected, true);
+  assert.equal(app.navigationSession.peek().sendShape, 0);
+  assert.equal(app.page.distance, '200 米');
+  app.connection.onmessage({ data: JSON.stringify({ ...navigation(2), distance: '190 米', displayDiagnostics: true }) });
+  assert.equal(app.page.distance, '190 米');
+  assert.equal(app.sent.filter(frame => frame.type === 'ack').at(-1).seq, 2);
+});

@@ -252,7 +252,7 @@ export default {
   // App owns the transport; onReady also supports standalone browser previews.
   onReady() {
     this.loadSettings()
-    this.retry()
+    this.resume()
   },
   loadSettings() {
     if (!alive || preferenceStore) return
@@ -391,7 +391,7 @@ export default {
   onShow() {
     visible = true
     this.syncSession(session.peek())
-    if (session.peek().hasConnection) this.retry()
+    this.resume()
   },
   onHide() {
     if (session) session.cancelHapticTest()
@@ -429,6 +429,12 @@ export default {
     apkStatus = state.apkStatus
     if (visible) this.paint()
   },
+  resume() {
+    if (!alive || !session) return
+    session.resume()
+    this.syncSession(session.peek())
+    if (!visible) this.paint()
+  },
   retry() {
     if (!alive || !session) return
     session.retry()
@@ -462,8 +468,9 @@ export default {
   paint() {
     const now = Date.now()
     const age = now - receivedAt
-    let view = protocol.present(latest, age, connected)
-    this.keepScreenOn(visible && !this.settingsOpen && !!view.live && latest.keepScreenOn !== false)
+    const rendered = latest
+    let view = protocol.present(rendered, age, connected)
+    this.keepScreenOn(visible && !this.settingsOpen && !!view.live && rendered.keepScreenOn !== false)
     apkStatus = session ? session.peek().apkStatus : '未检测'
     if (connectionError) {
       view.status = '连接不可用'
@@ -482,8 +489,10 @@ export default {
     if (this.distance !== view.distance) this.distance = view.distance
     if (this.instruction !== view.instruction) this.instruction = view.instruction
     const layout = presentation.layout(view)
-    this.demo = view.status === '演示 · 非真实导航'
-    this.arrowSrc = settings.arrowPath(this.arrowStyle, this.arrowColor, this.arrowWeight, view.icon)
+    const demo = view.status === '演示 · 非真实导航'
+    if (this.demo !== demo) this.demo = demo
+    const arrowSrc = settings.arrowPath(this.arrowStyle, this.arrowColor, this.arrowWeight, view.icon)
+    if (this.arrowSrc !== arrowSrc) this.arrowSrc = arrowSrc
     const navigation = presentation.navigationLayout(view, this, screenError)
     for (const field of ['arrowDrawSize', 'rowHeight', 'guidanceHeight', 'contentTop', 'contentHeight', 'arrowLeft', 'guidanceTop',
       'roundaboutExit', 'exitNumberLeft', 'exitNumberTop', 'exitNumberWidth', 'exitNumberHeight', 'exitNumberFontSize']) {
@@ -493,10 +502,13 @@ export default {
     for (const field of ['header', 'guidance', 'statusColor', 'distanceValue', 'distanceUnit', 'distanceSize', 'hint']) {
       if (this[field] !== layout[field]) this[field] = layout[field]
     }
-    this.linkText = (connected ? '互联已连接' : '互联未连接') + ' · ' + lastSend + ' · 手机端 ' + apkStatus
-    this.guidanceFontFamily = settings.fontForText(this.font, navigation.guidanceLines.join(''))
+    const linkText = (connected ? '互联已连接' : '互联未连接') + ' · ' + lastSend + ' · 手机端 ' + apkStatus
+    if (this.linkText !== linkText) this.linkText = linkText
+    const guidanceFont = settings.fontForText(this.font, navigation.guidanceLines.join(''))
+    if (this.guidanceFontFamily !== guidanceFont) this.guidanceFontFamily = guidanceFont
     const rest = presentation.restLayout(view, screenError, this)
-    this.detailsFontFamily = settings.fontForText(this.font, rest.rawLines.join(''))
+    const detailsFont = settings.fontForText(this.font, rest.rawLines.join(''))
+    if (this.detailsFontFamily !== detailsFont) this.detailsFontFamily = detailsFont
     if (rest.titleLines.join('\n') !== this.titleLines.join('\n')) this.titleLines = rest.titleLines
     for (const field of ['restTitleHeight', 'hintTop', 'hintsHeight', 'hasDetails', 'detailsTop', 'detailsHeight', 'restTop', 'restHeight']) {
       if (this[field] !== rest[field]) this[field] = rest[field]
@@ -504,6 +516,8 @@ export default {
     if (rest.hintLines.join('\n') !== this.hintLines.join('\n')) this.hintLines = rest.hintLines
     // Unchanged heartbeats renew expiry without rebuilding native views.
     if (rest.rawLines.join('\n') !== this.rawLines.join('\n')) this.rawLines = rest.rawLines
+    // This reports model assignment only, never a physical panel refresh.
+    if (visible && !this.settingsOpen && rendered && session) session.reportDisplay(rendered.session, rendered.seq)
   }
 }
 </script>

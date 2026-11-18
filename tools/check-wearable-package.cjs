@@ -370,4 +370,47 @@ assert.match(application.navigationSession.peek().connectionError, /退出应用
 assert.equal(terminations.length, 1); appApiMissing = false;
 exitDeliver(6, 'close-4'); application.onDestroy(); hapticClock.advance(1000);
 assert.equal(terminations.length, 1, 'compiled App destroy cancels exit timer');
-console.log('RPK ' + manifest.versionName + ': startup, compiled click handlers, font/colour/style choices and resources, exclusive page trees, settings persistence/reset, navigation, screen lifecycle, assets and compiled App-session/double-vibration/dedup/hidden/page-recreation/App-shutdown/API-failure and compiled phone-exit ACK/delay/cancel/dedup/API-failure checks passed.');
+// Verify latency-related behavior in the actual compiled package, including the no-font build.
+application.onCreate(); page.onInit(); page.onReady(); page.onShow();
+const realtimeFrame = (seq, meters) => ({ v: 1, type: 'navigation', session: 'realtime-package', seq,
+  status: 'active', title: '高德地图', rawText: '直行' + meters + '米', instruction: '直行', maneuver: 'straight',
+  distance: meters + ' 米', vibrationEnabled: false, keepScreenOn: true, displayDiagnostics: true });
+connection.onmessage({ data: JSON.stringify(realtimeFrame(1, 200)) });
+const displayReports = () => sent.filter(frame => frame.type === 'display' && frame.session === 'realtime-package');
+assert.equal(displayReports().length, 1);
+assert.ok(sent.findIndex(frame => frame.type === 'ack' && frame.session === 'realtime-package' && frame.seq === 1)
+  < sent.findIndex(frame => frame.type === 'display' && frame.session === 'realtime-package' && frame.seq === 1));
+let arrowWrites = 0, currentArrow = page.arrowSrc;
+Object.defineProperty(page, 'arrowSrc', { configurable: true, get: () => currentArrow,
+  set(value) { arrowWrites++; currentArrow = value; } });
+const brightnessCount = screenRequests.length;
+connection.onmessage({ data: JSON.stringify(realtimeFrame(2, 190)) });
+assert.equal(page.distance, '190 米'); assert.match(page.guidanceLines.join(''), /190米/);
+assert.equal(arrowWrites, 0); assert.equal(screenRequests.length, brightnessCount);
+page.onHide(); connection.onmessage({ data: JSON.stringify(realtimeFrame(3, 180)) });
+assert.equal(page.distance, '190 米', 'hidden page only stores the new App snapshot');
+assert.equal(displayReports().length, 2);
+page.onShow(); assert.equal(page.distance, '180 米'); assert.equal(displayReports().at(-1).seq, 3);
+hapticClock.advance(1100);
+const readyCount = sent.filter(frame => frame.type === 'ready').length;
+application.onShow(); page.onShow();
+assert.equal(sent.filter(frame => frame.type === 'ready').length, readyCount + 1, 'one refresh for App/page wake burst');
+page.onDestroy(); application.onDestroy();
+console.log('RPK ' + manifest.versionName + ': startup, compiled click handlers, font/colour/style choices and resources, exclusive page trees, settings persistence/reset, navigation, screen lifecycle, assets and compiled App-session/double-vibration/dedup/hidden/page-recreation/App-shutdown/API-failure and compiled phone-exit ACK/delay/cancel/dedup/API-failure plus realtime ACK/display/wake/arrow-stability checks passed.');
+
+// Installed version reporting is independent from the navigation sequence and view model.
+const versionApp = load('app.js'); versionApp.onCreate();
+const beforeQueryReady = sent.filter(frame => frame.type === 'ready').at(-1);
+assert.deepEqual(JSON.parse(JSON.stringify(beforeQueryReady.appVersion)), {
+  applicationId: manifest.package, versionName: manifest.versionName, versionCode: manifest.versionCode
+});
+const beforeQueryPage = sent.length;
+connection.onmessage({ data: JSON.stringify({ v: 1, type: 'version-query', requestId: 'compiled-version-query' }) });
+assert.equal(sent.length, beforeQueryPage + 1);
+assert.equal(sent.at(-1).type, 'app-version');
+assert.equal(sent.at(-1).requestId, 'compiled-version-query');
+assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1).appVersion)), {
+  applicationId: manifest.package, versionName: manifest.versionName, versionCode: manifest.versionCode
+});
+versionApp.onDestroy();
+console.log('Compiled installed-version ready/query report passed.');

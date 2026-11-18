@@ -4,6 +4,7 @@ package io.github.mi9pro.navigation;
 final class SendPolicy {
     static final long HEARTBEAT_MS = 8000;
     static final long MIN_UPDATE_MS = 500;
+    static final long ACTIVE_READ_MS = 1000;
     private String sentFingerprint;
     private long sentAt = -1;
 
@@ -15,6 +16,10 @@ final class SendPolicy {
     }
 
     void sent(String fingerprint, long now) { sentFingerprint = fingerprint; sentAt = now; }
-    long nextReadDelay(long now) { return sentAt < 0 ? HEARTBEAT_MS : Math.max(500, HEARTBEAT_MS - (now - sentAt)); }
+    long nextReadDelay(long now) {
+        // Read independently of send heartbeats: OEMs may update a distance without a callback.
+        long heartbeat = sentAt < 0 ? HEARTBEAT_MS : Math.max(MIN_UPDATE_MS, HEARTBEAT_MS - (now - sentAt));
+        return Math.min(ACTIVE_READ_MS, heartbeat);
+    }
     void reset() { sentFingerprint = null; sentAt = -1; }
 }

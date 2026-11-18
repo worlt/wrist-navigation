@@ -25,6 +25,22 @@ public final class WearBridge {
     private final MessageApi messages;
     private final String session = UUID.randomUUID().toString();
     private String nodeId;
+    private final BandVersion bandVersion = new BandVersion();
+    private long lastVersionQuery;
+    public int bandVersionCode() { return bandVersion.code(); }
+    public String bandVersionName() { return bandVersion.name(); }
+    public void requestBandVersion() {
+        if (nodeId == null) return;
+        long now = SystemClock.elapsedRealtime();
+        if (lastVersionQuery != 0 && now - lastVersionQuery < 2000) return;
+        lastVersionQuery = now;
+        String id = UUID.randomUUID().toString();
+        bandVersion.request(id);
+        try {
+            byte[] bytes = new JSONObject().put("v", 1).put("type", "version-query").put("requestId", id).toString().getBytes(StandardCharsets.UTF_8);
+            messages.sendMessage(nodeId, bytes).addOnFailureListener(error -> { /* Optional probe must not break navigation. */ });
+        } catch (Exception ignored) { /* Old applications may ignore this optional probe. */ }
+    }
     private boolean discovering;
     private final SendFlight sendFlight = new SendFlight();
     final NavigationDiagnostics diagnostics = new NavigationDiagnostics();
@@ -306,6 +322,7 @@ public final class WearBridge {
                     }
                     if (nodeId != null) messages.removeListener(nodeId);
                     nodeId = null;
+                    bandVersion.clear(); lastVersionQuery = 0;
                     messages.addListener(selected, (source, bytes) -> main.post(() -> receive(source, bytes)))
                         .addOnSuccessListener(ignored -> main.post(() -> connected(selected, generation, false)))
                         .addOnFailureListener(error -> main.post(() -> failConnect(generation, "接收监听失败：" + error.getMessage())));
@@ -322,6 +339,7 @@ public final class WearBridge {
         NavigationSyncService.refresh();
         sendPolicy.reset();
         sendLatest();
+        requestBandVersion();
     }
 
     public void openWearApp() {
@@ -380,7 +398,17 @@ public final class WearBridge {
         try {
             JSONObject packet = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
             if (packet.optInt("v") != 1) return;
-            if ("ready".equals(packet.optString("type"))) { event("wear app ready"); sendPolicy.reset(); sendLatest(); }
+            if (bandVersion.accept(packet)) notifyUi();
+            if ("ready".equals(packet.optString("type"))) {
+                event("wear app ready"); sendPolicy.reset();
+                // A wake/reconnect must reread Gaode before replying, rather than replaying cached distance.
+                if (!NavigationNotificationListener.requestRefresh()) sendLatest();
+            }
+            if ("display".equals(packet.optString("type")) && "applied".equals(packet.optString("state"))
+                    && session.equals(packet.optString("session")) && packet.optLong("seq") > 0 && packet.optLong("seq") <= sequence) {
+                diagnostics.display(packet.optLong("seq"), System.currentTimeMillis());
+                notifyUi();
+            }
             if ("ack".equals(packet.optString("type")) && session.equals(packet.optString("session"))
                     && packet.optLong("seq") == sequence) {
                 lastAckAt = System.currentTimeMillis();
@@ -431,6 +459,7 @@ public final class WearBridge {
                 .put("status", outgoing.status).put("title", outgoing.title).put("rawText", outgoing.rawText)
                 .put("maneuver", outgoing.maneuver).put("instruction", outgoing.instruction)
                 .put("distance", outgoing.distance).put("sentAt", System.currentTimeMillis())
+                .put("displayDiagnostics", true)
                 .put("keepScreenOn", exit == 0 && keepScreenOnEnabled())
                 .put("mode", cyclingReminders() ? "cycle" : "walk")
                 .put("vibrationEnabled", allowVibration)
@@ -478,6 +507,7 @@ public final class WearBridge {
         sendPolicy.reset();
         String old = nodeId;
         nodeId = null;
+        bandVersion.clear(); lastVersionQuery = 0;
         discovering = false;
         sendFlight.cancel();
         connectGeneration++;
