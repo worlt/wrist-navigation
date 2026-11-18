@@ -31,3 +31,7 @@
 修复源码分步推mine/main后，仍须核对Ubuntu/Windows × Node22/24全部8组CI通过，才给相应提交创建v0.4.9-preview.1标签和GitHub Pre-release。旧失败运行44299055346保留作历史，不能删除失败历史来声称通过。实际CI、交付哈希、公开下载与Release状态以HANDOVER顶部为准；本文件不能把“准备”解读成已发布。
 
 发布只上传APK、两个RPK、update.json、TESTING.txt、完整许可、SHA256SUMS七个明确附件；Preview不替代正式Latest v0.4.8。未传设备、安装或本版真机验收，手机匿名网络/独立Preview持久化/固件物理刷新与耗电仍待用户设备验证。
+
+## 修复提交 CI
+
+维护提交 `4b6b5ac65d90986a50206aff955ec67ae1b021db` 的 [Actions44304981188](https://github.com/worlt/wrist-navigation/actions/runs/44304981188) 已完成，4组源码+4组工具链 **全部8组通过**，工具链包含安全回归、npm audit及registry签名门禁。最终发布准备提交仍单独核对CI，Release实际结果见HANDOVER顶部。

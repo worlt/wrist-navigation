@@ -1,5 +1,11 @@
 # 腕上导航维护交接
 
+## 2026-11-18 · 修复后恢复发布准备（尚未发布）
+
+用户要求修复再Release，维护4b6b5ac已分步推mine/main、未推origin。仍无官方picomatch修复，采用审查过的第三方@ryotsu/picomatch4.0.7-a alias（非官方），精确lock/integrity、源代码/来源证明一致，新增4项安全/文件选择测试，旧6项继续通过，分支2004项通过；干净npm11.19.0审计0、704registry签名/162attestations通过。aiot-toolkit2.0.5/原配对签名保持。修复CI44304981188已全部8组通过；最终发布准备CI仍须全部8组通过后才标签/Pre-release，不跳过门禁。
+
+149Node/122Android及Lint0错误3既有警告、原签名APK和实际重建双RPK编译/版本报告/原证书通过。重建代码/资源字节一致，只manifest/packageInfo与build时间戳及CERT变化。旧未发布七附件另存outputs/candidates/preview-049-before-picomatch-fix/；新七附件仍outputs/releases/v0.4.9-preview.1/，许可/TESTING/SHA更新。没有替换正式v0.4.8附件。未传设备/安装/真机验收，大TTF/耗电/匿名联网待实测。详见docs/picomatch-maintenance-20261118.md。最终CI/Release/公开下载随后记录；下文暂停段是历史。
+
 ## 2026-11-18 · 发布暂停：上游 picomatch 尚无官方修复版本
 
 双端独立提示已实现，源码 f57743d / 2b55a69 / f0fd611 三步均已推 mine/main；未推 origin。CI44299055346 对 f0fd611：四组源码通过、四组工具链在 npm audit 失败（14 高风险传递包）；本机复核13，均不合格。官方公告 GHSA-fc5q-39xc-vjpf 于11月17日更新，11月18日 registry latest4.0.7仍受影响、first_patched_version为null；不能简单override归零，未降级aiot-toolkit、未绕过门禁。

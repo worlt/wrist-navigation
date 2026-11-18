@@ -6,6 +6,8 @@
 
 ## 开始工作
 
+2026-11-18修复恢复准备（当前）：用户要求修复再Release，4b6b5ac已推mine/main；审查过的第三方picomatch安全分支alias4.0.7-a（非官方）、精确lock/代码哈希与来源/签名，10工具链安全/2004分支测试、干净审计0/704签名/162证明通过；原aiot-toolkit2.0.5保持。双RPK原证书重建代码/资源一致，仅时间戳/对应签名变化，APK不变。旧候选另存、七附件许可/TESTING/SHA刷新，8组CI全通过才打tag/发布Pre-release；最新结果见HANDOVER顶部。未安装/真机，正式v0.4.8不改；下段暂停为历史。
+
 2026-11-18发布暂停（最新状态）：f57743d/2b55a69/f0fd611三步已推mine/main。CI44299055346四组源码通过、四组工具链npm audit失败；官方picomatch公告11月17日更新、11月18日latest4.0.7仍受影响且无first_patched_version。本机13/CI14高风险传递包，不是多个独立漏洞。未改依赖/降级aiot-toolkit/绕过门禁。v0.4.9-preview.1无标签/草稿/Release/上传；正式v0.4.8及六旧附件保持，outputs/releases中只是本地候选。继续前必须兼容修复和8组CI通过；当前复核测试/包通过不代表安全门禁或真机通过，未传设备/安装，匿名GitHub403。详见HANDOVER顶部及docs/release-blocked-20261118.md；下段是此前准备状态。
 
 2026-11-18双端独立更新发布准备：用户分步推送/Release途中追加手环分开提示/Preview，已完成手机0.3.6/code21、手环0.4.8/code22。两组检查/自动/默认关闭Preview独立，手环当前node ready/查询报告版本，断连清空/未知不误报；提示在手机软件，不手环联网。保留导航读取/刷新候选，双端配套、RPK二选一。122项Android/149项Node、Lint/原签名双端包/编译行为/高置信度扫描通过；f57743d及2b55a69分步推mine/main，未推origin。交付outputs/releases/v0.4.9-preview.1/共7附件，元数据实际tag；拟Pre-release保留正式Latest v0.4.8。CI/公开下载实际状态看HANDOVER顶部，未传设备/安装/真机验收；旧035/047候选保持。见docs/phone-band-updates-036.md。
