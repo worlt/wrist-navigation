@@ -126,8 +126,14 @@ test('prebuilt file watcher loads and receives changes with install scripts disa
     if (error) return reject(error);
     if (events.some(item => path.basename(item.path) === 'probe.txt')) accept();
   });
-  t.after(async () => { clearTimeout(timer); await subscription.unsubscribe(); });
-  timer = setTimeout(() => reject(new Error('Watcher did not report the file change')), 8000);
-  fs.writeFileSync(path.join(dir, 'probe.txt'), 'navigation');
-  await event;
+  // The directory's t.after hook is registered first. Unsubscribe before that
+  // hook deletes the directory: Linux inotify rejects removing a deleted watch.
+  try {
+    timer = setTimeout(() => reject(new Error('Watcher did not report the file change')), 8000);
+    fs.writeFileSync(path.join(dir, 'probe.txt'), 'navigation');
+    await event;
+  } finally {
+    clearTimeout(timer);
+    await subscription.unsubscribe();
+  }
 });
