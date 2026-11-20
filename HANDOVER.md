@@ -1,5 +1,11 @@
 # 腕上导航维护交接
 
+## 2026-11-20 · 9 Pro / 10 Pro 共用兼容 Preview 准备
+
+用户没有9 Pro或日志，要求先试修复、诊断只在手机。独立工作区/分支preview/band9-band10-compat从ad80126开始，原main未提交手机037/038/039/手环049候选保留；本次仅复用已测试的PeerPacket单层解析器，不整批纳入。手机0.4.0/code25、手环0.5.0/code24。首屏onReady延后native初始化、状态字符串/缺失检查、可选查询失败不清有效导航、202版本/诊断回程；手机显式读取、5秒/请求/peer限制、无路线复制，手环无新增排查UI。
+
+156Node/129Android、Lint0错误3既有警告、工具链10项/audit0/704签名/162attestations；双RPK实际编译/原签名、精确native-wire→JVM和七附件通过。独立反证审查发现页面重建P2，先红后绿修复并复核1006/明确断连保持。字体大TTF警告保留。outputs/releases/v0.5.0-preview.1/；用户定位/反馈模板docs/band9-band10-compatibility.md，版本说明docs/releases/v0.5.0-preview.1.md。准备仅推mine实验分支，现有8组CI通过后才打标签/Pre-release，make_latest=false，正式Latestv0.4.8及旧附件必须保持。没有设备传输/安装/双机真机验收。当前云端结果另记，不把准备写成发布完成。
+
 ## 2026-11-18 · v0.4.9-preview.1 已发布（最新状态）
 
 用户要求修复再Release，已分步推mine/main：安全维护4b6b5ac、修复交付/CI记录dd9726e；未推origin。原picomatch无官方修复，采用明确审查的第三方@ryotsu/picomatch4.0.7-a alias（非原维护者官方发布），源/provenance runtime一致、lock/integrity/代码SHA守卫，禁安装脚本；10项工具链安全/兼容与2004项分支测试通过，干净npm11.19.0审计0、704registry签名/162attestations通过，没有绕过门禁/降级aiot-toolkit。
