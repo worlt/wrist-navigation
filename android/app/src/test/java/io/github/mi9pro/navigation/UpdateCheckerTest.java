@@ -45,11 +45,11 @@ public class UpdateCheckerTest {
     }
     @Test public void switchingOffPreviewDropsBannerAndLateResultCannotRestoreIt() {
         var h = new Harness(); h.checker.setExperimental(true);
-        h.result.version = h.version(true, 22); h.finish(); assertNotNull(h.checker.available());
+        h.result.version = h.version(true, BuildConfig.VERSION_CODE + 1); h.finish(); assertNotNull(h.checker.available());
         h.checker.check(true); h.checker.setExperimental(false);
         assertNull(h.checker.available()); h.finish();
         assertNull(h.checker.available()); assertEquals(1, h.work.size());
-        h.result.version = h.version(false, 22); h.finish(); assertFalse(h.checker.available().experimental);
+        h.result.version = h.version(false, BuildConfig.VERSION_CODE + 1); h.finish(); assertFalse(h.checker.available().experimental);
         assertEquals(Arrays.asList(true, true, false), h.channels);
     }
     @Test public void repeatedManualClicksCoalesceAndDetachedUiIsNotCalled() {
@@ -58,7 +58,7 @@ public class UpdateCheckerTest {
         h.checker.setListener(null); h.finish(); h.finish(); assertEquals(2, h.channels.size()); assertEquals(1, events[0]);
     }
     @Test public void failurePreservesKnownNewerButSuccessfulWithdrawalClearsCache() {
-        var h = new Harness(); h.result.version = h.version(false, 22); h.checker.check(true); h.finish();
+        var h = new Harness(); h.result.version = h.version(false, BuildConfig.VERSION_CODE + 1); h.checker.check(true); h.finish();
         assertNotNull(h.checker.available()); assertTrue(h.saved.containsKey("cache.stable"));
         h.result = new GitHubUpdateClient.Result(); h.result.complete = false;
         h.checker.check(true); h.finish(); assertNotNull(h.checker.available()); assertTrue(h.checker.status().contains("未完成"));

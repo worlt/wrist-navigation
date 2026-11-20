@@ -58,7 +58,7 @@ button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default;o
 <div class="setting-block"><label class="setting-label" for="arrow-size">箭头大小</label><div class="stepper"><button data-field="arrowSize" data-step="-2" aria-label="缩小箭头">−</button><div class="value"><input id="arrow-size" data-value="arrowSize" type="number" min="32" max="232" step="2" inputmode="numeric" aria-label="箭头大小，32至232"><small>px</small></div><button data-field="arrowSize" data-step="2" aria-label="放大箭头">＋</button></div></div>
 <div class="setting-block"><label class="setting-label" for="arrow-weight">箭头粗细</label><div class="stepper"><button data-field="arrowWeight" data-step="-1" aria-label="减细箭头">−</button><div class="value"><input id="arrow-weight" data-value="arrowWeight" type="number" min="4" max="10" step="1" inputmode="numeric" aria-label="箭头粗细，4至10"><small>px</small></div><button data-field="arrowWeight" data-step="1" aria-label="加粗箭头">＋</button></div></div>
 </div>
-<div class="settings-footer"><p class="save-status" id="save-status" role="status" aria-live="polite">调整后自动保存</p><p class="version">腕上导航 v<span data-app-version>0.4.8</span></p></div>
+<div class="settings-footer"><p class="save-status" id="save-status" role="status" aria-live="polite">调整后自动保存</p><p class="version">腕上导航 v<span data-app-version>0.5.0</span></p></div>
 </section>
 </div></div><div class="strap bottom" aria-hidden="true"></div>
 <p class="caption">336 × 480 · 可操作设计预览<br>示例数据，非真机画面</p>
@@ -70,7 +70,7 @@ button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default;o
 <p class="note">本页保留四字体设计原型，调用电脑本地字体或浏览器回退字体，设置只保存在浏览器。查看项目实际内置字体、完整导航布局、颜色与样式，请打开<a href="preview.html">源码预览</a>；手环上的字体效果仍需真机验证。</p>
 <a id="design-link" href="preview.html">打开当前手环源码预览 →</a>
 </aside>
-</main><footer class="footer">设置页版本号来自手环项目配置，当前为 v0.4.8。</footer>
+</main><footer class="footer">设置页版本号来自手环项目配置，当前为 v0.5.0。</footer>
 </div>
 <script>
 const preferences = (function createPreferences() {
@@ -246,6 +246,12 @@ Android 通知使用权是系统级能力；应用收到通知回调后只处理
 当前 Android 清单没有申请 VIBRATE 权限，也没有新增手机振动；高德自身的手机提醒不由本项目控制。此次优化未新增定位、音频或下载能力，不借用这些能力保活。手环 App 仍运行且收到有效实时消息时才尝试振动，后台、熄屏和回表盘后的运行、收消息及振动仍取决于固件与互联，需真机测试。
 
 手机0.3.2首页诊断默认折叠，内存中有界保留高德通知字段、解析、提交发送和确认状态，不自动写文件、路线日志或上传。用户点击「复制当前诊断」后才写入系统剪贴板，包含手机型号、Android版本、应用版本、采集时间与通知文字；分享前需移除真实路线。
+
+## 兼容试验诊断（手机0.4.0 / 手环0.5.0）
+
+手环没有新增排查模式或诊断界面。内部只在内存保留最近16条阶段、错误类型与数值代码、有界计数，不保存原始封包、路线或错误message/stack，进程结束后丢失。手机用户点击“读取手环诊断”才发起一次查询，接收限定当前授权设备、当前请求和5秒时限；旧报告标为历史，不自动重试或上传。
+
+“复制兼容诊断（无路线）”只包含手机型号/系统/应用版本、手环应用版本、协议/收发计数和白名单阶段，不含通知和路线。用户点击后才写剪贴板，由用户决定是否分享。原“复制当前诊断”仍包含通知原文，分享前需脱敏。手机不能读取手环安装器和固件崩溃日志，无法启动时需用户工具日志或照片，不能以超时冒充已定位原因。详见[兼容反馈指南](docs/band9-band10-compatibility.md)。
 
 ## 分享反馈前
 

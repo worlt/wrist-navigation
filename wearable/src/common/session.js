@@ -1,4 +1,5 @@
 const protocol = require('./protocol');
+const createDiagnostics = require('./diagnostics').createDiagnostics;
 const createAppExit = require('./app-exit').createAppExit;
 const presentation = require('./presentation');
 const createReminders = require('./reminders').createReminders;
@@ -14,6 +15,9 @@ function createSession(options) {
     return { applicationId: version.package, versionName: version.versionName, versionCode: version.versionCode };
   }
   const now = options.now || (() => Date.now());
+  const diagnostic = createDiagnostics(now);
+  diagnostic.record('created');
+  let started = false, lastDiagnosticQuery = '', diagnosticQueryAt = -1;
   const reminders = createReminders();
   const journeys = createJourneyReminders();
   let alive = true, connection = null, generation = 0;
@@ -27,10 +31,9 @@ function createSession(options) {
   // https://iot.mi.com/vela/quickapp/zh/features/network/interconnect.html
   let linkEstablished = false, lossRevision = 0, interruption = '';
   const haptics = createHaptics({ load, now, schedule: options.schedule,
-    unschedule: options.unschedule, changed: notify });
-  haptics.load();
+    unschedule: options.unschedule, changed: notify, onError: diagnostic.record });
   const appExit = createAppExit({ load, schedule: options.schedule, unschedule: options.unschedule,
-    onError(error) { connectionError = presentation.errorText('退出应用失败', error); notify(); } });
+    onError(error) { diagnostic.record('terminate', error); connectionError = presentation.errorText('退出应用失败', error); notify(); } });
 
   function readApkStatus() {
     if (!connection) return '未检测';
@@ -55,6 +58,8 @@ function createSession(options) {
     if (stage !== '连接断开' && (Number(code) === 1006 || Number(data && data.code) === 1006)) {
       linkLost(data); return;
     }
+    if (stage === '连接检查失败' && linkEstablished) { diagnostic.record('ready-fail', data, code); notify(); return; }
+    diagnostic.record(stage === '互联初始化失败' ? 'link-init' : stage === '连接检查失败' ? 'ready-fail' : 'link-error', data, code);
     connected = false; eventRevision++;
     lastReadyAt = lastCheckAt = -1;
     if (interruption !== 'disconnect') haptics.cancel();
@@ -69,6 +74,7 @@ function createSession(options) {
     linkEstablished = true; connected = true;
   }
   function linkLost(data) {
+    diagnostic.record('link-close', data);
     const transition = linkEstablished;
     linkEstablished = false;
     if (transition) { lossRevision++; haptics.cancel(); interruption = 'disconnect'; }
@@ -82,6 +88,7 @@ function createSession(options) {
   function send(message) {
     if (!alive || !connection) return;
     const revision = generation;
+    diagnostic.increment('tx');
     try {
       const payload = JSON.stringify(message);
       const request = sendShape === 0 ? { data: payload } : { data: { data: payload } };
@@ -93,26 +100,30 @@ function createSession(options) {
       };
       request.fail = (data, code) => {
         if (!alive || revision !== generation) return;
-        // Optional page diagnostics must not tear down working navigation/ACK transport.
-        if (message.type === 'display' || message.type === 'app-version') return;
+        diagnostic.increment('txfail');
+        diagnostic.record('send-fail', data, code);
+        if (message.type === 'display') return;
         if (Number(code) === 202 && sendShape === 0) {
+          diagnostic.record('send-202', data, code);
           sendShape = 1;
           lastSend = '字符串格式被拒，改用嵌套格式';
           send(message);
           return;
         }
+        if (message.type === 'display' || message.type === 'app-version' || message.type === 'band-diagnostics') return;
         lastSend = '发送失败 ' + (code === undefined ? '' : code);
         fail('发送失败', data, code);
       };
       connection.send(request);
-    } catch (error) { if (message.type !== 'display' && message.type !== 'app-version') fail('发送失败', error); }
+    } catch (error) { diagnostic.increment('txfail'); diagnostic.record('send-fail', error);
+      if (message.type !== 'display' && message.type !== 'app-version' && message.type !== 'band-diagnostics') fail('发送失败', error); }
   }
   function sendReady() {
     lastReadyAt = now();
     send({ v: 1, type: 'ready', appVersion: appVersion() });
   }
   function resume() {
-    if (!alive) return;
+    if (!alive || !started) return;
     const recent = Math.max(lastReadyAt, lastCheckAt), age = now() - recent;
     // App and page can both receive show callbacks during the same wake.
     if (recent >= 0 && age >= 0 && age < 1000) return;
@@ -130,6 +141,7 @@ function createSession(options) {
   }
   function retry() {
     if (!alive) return;
+    if (!started) { started = true; diagnostic.record('page-ready'); haptics.load(); }
     lastCheckAt = now();
     connectionError = '';
     if (!connection) {
@@ -139,6 +151,7 @@ function createSession(options) {
         const current = () => alive && revision === generation;
         connection.onopen = () => {
           if (!current()) return;
+          diagnostic.record('link-open');
           linkReady(); connectionError = ''; eventRevision++;
           apkStatusText = readApkStatus();
           sendReady(); notify();
@@ -147,6 +160,7 @@ function createSession(options) {
         connection.onerror = data => { if (current()) fail('连接异常', data); };
         connection.onmessage = event => {
           if (!current()) return;
+          diagnostic.increment('rx');
           // Optional control query is independent from navigation sequence and haptics.
           try {
             let text = event && event.data;
@@ -157,6 +171,16 @@ function createSession(options) {
             }
             if (typeof text === 'string' && text.length <= 512) {
               const query = JSON.parse(text);
+              if (query && query.v === 1 && query.type === 'diagnostics-query' && typeof query.requestId === 'string'
+                  && /^[A-Za-z0-9-]{1,80}$/.test(query.requestId)) {
+                const age = now() - diagnosticQueryAt;
+                if (query.requestId !== lastDiagnosticQuery && (diagnosticQueryAt < 0 || age >= 1000 || age < 0)) {
+                  lastDiagnosticQuery = query.requestId; diagnosticQueryAt = now(); diagnostic.record('query');
+                  send(Object.assign({v:1,type:'band-diagnostics',requestId:query.requestId,appVersion:appVersion(),
+                    connected,sendShape}, diagnostic.snapshot()));
+                }
+                return;
+              }
               if (query && query.v === 1 && query.type === 'version-query' && typeof query.requestId === 'string'
                   && query.requestId.length > 0 && query.requestId.length <= 80) {
                 send({ v: 1, type: 'app-version', requestId: query.requestId, appVersion: appVersion() });
@@ -165,7 +189,8 @@ function createSession(options) {
             }
           } catch (ignored) { /* Normal protocol decoding still handles malformed inputs safely. */ }
           const packet = protocol.decode(event && event.data);
-          if (!protocol.accept(latest, packet)) return;
+          if (!protocol.accept(latest, packet)) { diagnostic.increment('rejected'); diagnostic.record('rx-reject'); return; }
+          diagnostic.increment('accepted'); diagnostic.record('rx-accept');
           const previous = latest;
           const previousSession = previous && previous.session;
           linkReady();
@@ -216,14 +241,18 @@ function createSession(options) {
     }
     const revision = generation, query = ++queryRevision, event = eventRevision;
     apkStatusText = readApkStatus();
+    if (typeof connection.getReadyState !== 'function') {
+      diagnostic.record('ready-missing'); notify(); return;
+    }
+    diagnostic.record('ready-check');
     try {
       connection.getReadyState({
         success(data) {
           if (!alive || revision !== generation || query !== queryRevision || event !== eventRevision) return;
-          if (data && data.status === 2 && (linkEstablished || interruption === 'disconnect')) {
+          if (data && Number(data.status) === 2 && (linkEstablished || interruption === 'disconnect')) {
             linkLost(data); return;
           }
-          connected = !!data && data.status === 1; connectionError = '';
+          connected = !!data && Number(data.status) === 1; connectionError = '';
           if (connected) { linkReady(); sendReady(); }
           notify();
         },
@@ -237,6 +266,7 @@ function createSession(options) {
   }
   function dispose() {
     if (!alive) return;
+    diagnostic.record('disposed');
     alive = false; generation++; listeners = [];
     appExit.dispose();
     haptics.dispose();
@@ -249,6 +279,7 @@ function createSession(options) {
     connection = null; latest = null; connected = false;
   }
   return { peek, retry, resume, reportDisplay, send, fail, dispose, isAlive: () => alive,
+    recordDiagnostic: diagnostic.record, diagnosticLines: diagnostic.lines,
     selectHaptic(id) { if (alive) haptics.select(id); },
     setHapticEnabled(value) { if (alive) haptics.setEnabled(value); },
     testHaptic() { return alive && haptics.test(); },

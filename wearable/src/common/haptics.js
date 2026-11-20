@@ -13,6 +13,7 @@ function createHaptics(options) {
   const unschedule = options.unschedule || (id => clearTimeout(id));
   const now = options.now || (() => Date.now());
   const changed = options.changed || (() => {});
+  const onError = options.onError || (() => {});
   let alive = true, selected = DEFAULT, enabled = true, ready = false, status = '调整后自动保存';
   let storage = null, revision = 0, writing = false, pendingSave = null;
   let timer = null, generation = 0, busy = false, queued = null, activeKind = '';
@@ -27,8 +28,8 @@ function createHaptics(options) {
       if (alive && revision === job.revision) report(ok ? '已保存' : '保存失败，本次仍有效');
       flush();
     }
-    try { storage.set({ key: KEY, value: job.value, success: () => finish(true), fail: () => finish(false) }); }
-    catch (error) { finish(false); }
+    try { storage.set({ key: KEY, value: job.value, success: () => finish(true), fail: (error, code) => { onError('storage-write', error, code); finish(false); } }); }
+    catch (error) { onError('storage-write', error); finish(false); }
   }
   function cancel() {
     generation++;
@@ -46,7 +47,7 @@ function createHaptics(options) {
     const chosen = profile(selected), token = ++generation;
     let vibrator;
     try { vibrator = options.load('@system.vibrator'); vibrator.vibrate({ mode: chosen.mode }); }
-    catch (error) { return false; }
+    catch (error) { onError('vibrate', error); report('振动接口不可用，导航继续'); return false; }
     busy = true; activeKind = kind;
     function finish() {
       const next = queued; queued = null; busy = false; activeKind = '';
@@ -59,7 +60,7 @@ function createHaptics(options) {
       if (!alive || token !== generation) return;
       if (now() - due > 2000) { cancel(); return; }
       if (!allowed()) { finish(); return; }
-      try { vibrator.vibrate({ mode: chosen.mode }); } catch (error) { cancel(); return; }
+      try { vibrator.vibrate({ mode: chosen.mode }); } catch (error) { onError('vibrate', error); report('振动接口不可用，导航继续'); cancel(); return; }
       timer = schedule(() => {
         timer = null;
         if (!alive || token !== generation) return;
@@ -84,8 +85,8 @@ function createHaptics(options) {
           enabled = !(saved && typeof saved === 'object' && saved.enabled === false);
           if (!enabled) cancel();
           changed();
-        }, fail() { if (alive && revision === started) { ready = true; report('读取失败，使用当前震感'); } } });
-      } catch (error) { ready = true; report('本次震感调整无法保存'); }
+        }, fail(error, code) { onError('storage-read', error, code); if (alive && revision === started) { ready = true; report('读取失败，使用当前震感'); } } });
+      } catch (error) { onError('storage-read', error); ready = true; report('本次震感调整无法保存'); }
     },
     select(id) {
       if (!alive) return;

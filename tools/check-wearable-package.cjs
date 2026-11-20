@@ -84,6 +84,7 @@ const application = load('app.js');
 assert.ok(application);
 assert.doesNotThrow(() => application.onCreate());
 const startupLoads = apiLoads;
+assert.equal(startupLoads, 0, 'App creation must not initialize native APIs before the page is ready');
 const definition = load('pages/index/index.js');
 const page = Object.assign({}, definition.data, definition, { $app: { $def: application } });
 page.onInit();
@@ -354,6 +355,8 @@ application.onDestroy(); hapticClock.advance(10000); allowTestVibration = false;
 // Test the actual compiled optional v1 exit command, not a substitute source module.
 assert.ok(manifest.features.some(feature => feature.name === 'system.app'));
 application.onCreate();
+// Simulate the first page becoming ready, then test transport without a visible page.
+application.navigationSession.retry();
 const exitFrame = (seq, phoneExitId) => ({ v: 1, type: 'navigation', session: 'exit-package', seq,
   status: 'paused', title: '', rawText: '', instruction: '手机应用已退出', maneuver: 'unknown', distance: '',
   keepScreenOn: false, vibrationEnabled: false, reminderEnabled: true, ...(phoneExitId ? { phoneExitId } : {}) });
@@ -399,7 +402,11 @@ page.onDestroy(); application.onDestroy();
 console.log('RPK ' + manifest.versionName + ': startup, compiled click handlers, font/colour/style choices and resources, exclusive page trees, settings persistence/reset, navigation, screen lifecycle, assets and compiled App-session/double-vibration/dedup/hidden/page-recreation/App-shutdown/API-failure and compiled phone-exit ACK/delay/cancel/dedup/API-failure plus realtime ACK/display/wake/arrow-stability checks passed.');
 
 // Installed version reporting is independent from the navigation sequence and view model.
-const versionApp = load('app.js'); versionApp.onCreate();
+const versionApp = load('app.js');
+const beforeCreate = apiLoads; versionApp.onCreate(); versionApp.onShow();
+assert.equal(apiLoads, beforeCreate, 'App show before first page cannot touch native transport');
+const versionPage = Object.assign({}, definition.data, definition, { $app: { $def: versionApp } });
+versionPage.onInit(); versionPage.onReady();
 const beforeQueryReady = sent.filter(frame => frame.type === 'ready').at(-1);
 assert.deepEqual(JSON.parse(JSON.stringify(beforeQueryReady.appVersion)), {
   applicationId: manifest.package, versionName: manifest.versionName, versionCode: manifest.versionCode
@@ -414,3 +421,34 @@ assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1).appVersion)), {
 });
 versionApp.onDestroy();
 console.log('Compiled installed-version ready/query report passed.');
+
+// Exercise the exact send.data object serialized by native interconnect, not a mock-unwrapped payload.
+const nativeWires = {};
+const originalSend = connection.send, originalCheck = connection.getReadyState;
+for (const profile of ['normal', 'nested']) {
+  const wires = nativeWires[profile] = [];
+  connection.getReadyState = cb => cb.success({status:'1'});
+  connection.send = cb => {
+    if (profile === 'nested' && typeof cb.data === 'string') { cb.fail({},202); return; }
+    wires.push(typeof cb.data === 'string' ? cb.data : JSON.stringify(cb.data));
+    if (cb.success) cb.success();
+  };
+  const nativeApp = load('app.js'), nativePage = Object.assign({}, definition.data, definition, {$app:{$def:nativeApp}});
+  const before = apiLoads; nativeApp.onCreate(); nativeApp.onShow(); assert.equal(apiLoads,before);
+  nativePage.onInit(); nativePage.onReady();
+  assert.equal(nativeApp.navigationSession.peek().connected,true);
+  connection.onmessage({data:JSON.stringify({v:1,type:'version-query',requestId:'compiled-version-'+profile})});
+  connection.onmessage({data:JSON.stringify(realtimeFrame(1,200))});
+  connection.onmessage({data:JSON.stringify({v:1,type:'diagnostics-query',requestId:'compiled-diag-'+profile})});
+  const frames=wires.map(wire=>{const outer=JSON.parse(wire);return outer.v ? outer : JSON.parse(outer.data);});
+  assert.ok(frames.some(p=>p.type==='ack'&&p.seq===1&&p.session==='realtime-package'));
+  const report=frames.find(p=>p.type==='band-diagnostics');assert.ok(report);assert.equal(report.schema,1);
+  assert.equal(report.appVersion.versionCode,manifest.versionCode);assert.equal(report.requestId,'compiled-diag-'+profile);
+  assert.ok(report.events.length<=16);assert.ok(!JSON.stringify(report).includes('直行'));
+  assert.ok(wires.every(w=>Buffer.byteLength(w)<4096));
+  nativePage.onDestroy();nativeApp.onDestroy();
+}
+connection.send=originalSend;connection.getReadyState=originalCheck;
+const wireDir=path.join(project,'.local/compat-native-wire');fs.mkdirSync(wireDir,{recursive:true});
+fs.writeFileSync(path.join(wireDir,noFonts?'nofont.json':'full.json'),JSON.stringify(nativeWires,null,2)+'\n');
+console.log('Compiled deferred startup, string state and exact native-wire diagnostics/ACK checks passed.');

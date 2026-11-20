@@ -9,17 +9,17 @@ test('generates phone/band version metadata from source but requires matching de
   const root = path.resolve(__dirname, '../..');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrist-update-'));
   try {
-    for (const name of ['NAV-PHONE-036.apk', 'NAV-BAND-048.rpk', 'NAV-BAND-048-NOFONT.rpk']) fs.writeFileSync(path.join(dir, name), 'fixture');
-    const result = createManifest({ root, directory: dir, tag: 'v0.4.9-preview.1', notes: '实验版，未真机验收' });
+    for (const name of ['NAV-PHONE-040.apk', 'NAV-BAND-050.rpk', 'NAV-BAND-050-NOFONT.rpk']) fs.writeFileSync(path.join(dir, name), 'fixture');
+    const result = createManifest({ root, directory: dir, tag: 'v0.5.0-preview.1', notes: '实验版，未真机验收' });
     assert.equal(result.applicationId, 'io.github.mi9pro.navigation');
     assert.equal(result.schemaVersion, 1);
-    assert.deepEqual(result.phone, { versionName: '0.3.6', versionCode: 21, asset: 'NAV-PHONE-036.apk' });
-    assert.deepEqual(result.band, { versionName: '0.4.8', versionCode: 22, fullAsset: 'NAV-BAND-048.rpk', noFontAsset: 'NAV-BAND-048-NOFONT.rpk' });
-    assert.equal(result.releaseTag, 'v0.4.9-preview.1');
+    assert.deepEqual(result.phone, { versionName: '0.4.0', versionCode: 25, asset: 'NAV-PHONE-040.apk' });
+    assert.deepEqual(result.band, { versionName: '0.5.0', versionCode: 24, fullAsset: 'NAV-BAND-050.rpk', noFontAsset: 'NAV-BAND-050-NOFONT.rpk' });
+    assert.equal(result.releaseTag, 'v0.5.0-preview.1');
     assert.equal(result.notes, '实验版，未真机验收');
     assert.equal(result.prerelease, undefined, 'channel is authoritative from GitHub, not metadata');
     assert.throws(() => createManifest({ root, directory: dir, tag: '../evil' }), /tag/i);
-    fs.unlinkSync(path.join(dir, 'NAV-PHONE-036.apk'));
+    fs.unlinkSync(path.join(dir, 'NAV-PHONE-040.apk'));
     assert.throws(() => createManifest({ root, directory: dir, tag: 'v0.4.9' }), /Missing package/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

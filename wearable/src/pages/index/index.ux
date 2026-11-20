@@ -252,7 +252,8 @@ export default {
   // App owns the transport; onReady also supports standalone browser previews.
   onReady() {
     this.loadSettings()
-    this.resume()
+    if (session.peek().connected) this.resume()
+    else this.retry()
   },
   loadSettings() {
     if (!alive || preferenceStore) return
@@ -456,6 +457,7 @@ export default {
     const revision = ++screenRevision
     const fail = (data, code) => {
       if (!alive || revision !== screenRevision) return
+      if (session && session.recordDiagnostic) session.recordDiagnostic('screen', data, code)
       screenError = presentation.errorText(value ? '常亮开启失败' : '常亮关闭失败', data, code)
       this.paint()
     }

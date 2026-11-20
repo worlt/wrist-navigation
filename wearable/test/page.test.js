@@ -650,3 +650,12 @@ test('optional page report failures cannot disconnect navigation or change the A
   assert.equal(app.page.distance, '190 米');
   assert.equal(app.sent.filter(frame => frame.type === 'ack').at(-1).seq, 2);
 });
+
+test('optional state failure cannot erase active navigation on page recreation or manual retry', () => {
+  const app = launch({ connected: true, stateThrows: true }); app.page.onReady(); app.page.onShow();
+  app.connection.onmessage({data:JSON.stringify(navigation(1))});assert.equal(app.page.distance,'200 米');
+  app.page.onDestroy();const page=app.recreatePage();page.onReady();page.onShow();
+  assert.equal(page.status,'高德导航');assert.equal(page.distance,'200 米');
+  page.retry();assert.equal(page.status,'高德导航');assert.equal(page.distance,'200 米');
+  assert.equal(app.navigationSession.peek().connected,true);app.shutdown();
+});

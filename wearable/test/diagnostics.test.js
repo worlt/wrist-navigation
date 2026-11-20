@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');
+const {createDiagnostics}=require('../src/common/diagnostics');
+test('allowlist recorder keeps 16 events, bounded counters and no raw errors',()=>{const d=createDiagnostics(()=>1000);for(let i=0;i<100;i++)d.record('link-init',Object.assign(new TypeError('secret route token'),{code:202}));d.record('secret route');d.increment('rx');d.increment('secret');const p=d.snapshot();assert.equal(p.events.length,16);assert.equal(p.events[0].code,202);assert.equal(p.events[0].name,'TypeError');assert.equal(p.counters.rx,1);assert.ok(!JSON.stringify(p).includes('secret'));p.events.pop();assert.equal(d.snapshot().events.length,16);});

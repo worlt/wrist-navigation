@@ -19,8 +19,9 @@ function launch(missing = false) {
   } };
   vm.runInNewContext(source, context); return { app: context.module.exports, connection, sent, vibrations, advance: time.advance, instances: () => instances };
 }
-test('App starts transport without a page, does not double-create, and shuts down at App destruction', () => {
-  const run = launch(); run.app.onCreate(); run.app.onCreate(); assert.equal(run.instances(), 1);
+test('App defers native initialization until page readiness, shares transport and disposes it', () => {
+  const run = launch(); run.app.onCreate(); run.app.onCreate(); run.app.onShow(); assert.equal(run.instances(), 0);
+  run.app.navigationSession.retry(); assert.equal(run.instances(), 1);
   const message = run.connection.onmessage;
   const packet = seq => ({ v: 1, type: 'navigation', session: 'phone', seq, status: 'active', title: '高德地图',
     rawText: '前方200米右转', instruction: '右转', maneuver: 'right', distance: '200 米', actionId: 'turn-'+seq, mode: 'walk', vibrationEnabled: true });
@@ -32,6 +33,7 @@ test('App starts transport without a page, does not double-create, and shuts dow
 });
 test('missing native API never prevents App creation or a usable error snapshot', () => {
   const run = launch(true); assert.doesNotThrow(() => run.app.onCreate());
+  run.app.navigationSession.retry();
   assert.match(run.app.navigationSession.peek().connectionError, /API missing/);
   assert.doesNotThrow(() => run.app.onDestroy());
 });

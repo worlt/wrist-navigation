@@ -26,6 +26,26 @@ public final class WearBridge {
     private final String session = UUID.randomUUID().toString();
     private String nodeId;
     private final BandVersion bandVersion = new BandVersion();
+    private final CompatibilityDiagnostics compatibility = new CompatibilityDiagnostics();
+    public String compatibilityReport() { return "互联接收监听：" + (nodeId == null ? "未就绪" : "已注册（不代表物理连接持续在线）")
+        + "\n" + compatibility.text(SystemClock.elapsedRealtime()); }
+    public void requestBandDiagnostics() {
+        long now = SystemClock.elapsedRealtime();
+        if (compatibility.waiting(now)) return;
+        String id = UUID.randomUUID().toString();
+        compatibility.request(id, now);
+        if (nodeId == null) { compatibility.failed(id); notifyUi(); return; }
+        long generation = connectGeneration;
+        try {
+            byte[] query = new JSONObject().put("v", 1).put("type", "diagnostics-query").put("requestId", id).toString().getBytes(StandardCharsets.UTF_8);
+            messages.sendMessage(nodeId, query).addOnFailureListener(error -> main.post(() -> {
+                if (generation != connectGeneration) return;
+                compatibility.failed(id); notifyUi();
+            }));
+        } catch (Exception ignored) { compatibility.failed(id); }
+        main.postDelayed(() -> { if (generation == connectGeneration) { compatibility.text(SystemClock.elapsedRealtime()); notifyUi(); } }, 5100);
+        notifyUi();
+    }
     private long lastVersionQuery;
     public int bandVersionCode() { return bandVersion.code(); }
     public String bandVersionName() { return bandVersion.name(); }
@@ -322,7 +342,7 @@ public final class WearBridge {
                     }
                     if (nodeId != null) messages.removeListener(nodeId);
                     nodeId = null;
-                    bandVersion.clear(); lastVersionQuery = 0;
+                    bandVersion.clear(); lastVersionQuery = 0; compatibility.reset();
                     messages.addListener(selected, (source, bytes) -> main.post(() -> receive(source, bytes)))
                         .addOnSuccessListener(ignored -> main.post(() -> connected(selected, generation, false)))
                         .addOnFailureListener(error -> main.post(() -> failConnect(generation, "接收监听失败：" + error.getMessage())));
@@ -394,10 +414,18 @@ public final class WearBridge {
 
     private void receive(String source, byte[] bytes) {
         event("message received, matchingNode=" + (nodeId != null && nodeId.equals(source)) + " bytes=" + (bytes == null ? 0 : bytes.length));
-        if (nodeId == null || !nodeId.equals(source) || bytes == null || bytes.length > 4096) return;
+        boolean samePeer = nodeId != null && nodeId.equals(source);
+        compatibility.received(samePeer);
+        if (!samePeer) { compatibility.rejected("非当前授权设备"); return; }
+        if (bytes == null || bytes.length > 4096) { compatibility.rejected("空消息或过大"); return; }
         try {
-            JSONObject packet = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
-            if (packet.optInt("v") != 1) return;
+            JSONObject packet = PeerPacket.decode(bytes);
+            compatibility.decoded();
+            if (packet.optInt("v") != 1) { compatibility.rejected("协议版本"); return; }
+            if ("band-diagnostics".equals(packet.optString("type"))) {
+                if (!compatibility.accept(packet, SystemClock.elapsedRealtime())) compatibility.rejected("诊断字段、请求或时限");
+                notifyUi(); return;
+            }
             if (bandVersion.accept(packet)) notifyUi();
             if ("ready".equals(packet.optString("type"))) {
                 event("wear app ready"); sendPolicy.reset();
@@ -425,7 +453,7 @@ public final class WearBridge {
                 if (packet.has("phoneExitId")) sendPolicy.reset();
                 sendLatest();
             }
-        } catch (Exception ignored) { /* Ignore malformed peer frames, never log navigation contents. */ }
+        } catch (Exception ignored) { compatibility.rejected("JSON或封包格式"); /* Never log peer contents. */ }
     }
 
     private void sendLatest() {
@@ -507,7 +535,7 @@ public final class WearBridge {
         sendPolicy.reset();
         String old = nodeId;
         nodeId = null;
-        bandVersion.clear(); lastVersionQuery = 0;
+        bandVersion.clear(); lastVersionQuery = 0; compatibility.reset();
         discovering = false;
         sendFlight.cancel();
         connectGeneration++;

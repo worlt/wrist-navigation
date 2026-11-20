@@ -7,7 +7,8 @@ export default {
     if (this.navigationSession && this.navigationSession.isAlive()) return
     this.navigationSession = sessions.createSession({ load: nativeApi.loadNative, now: () => Date.now(),
       schedule: (fn, delay) => setTimeout(fn, delay), unschedule: id => clearTimeout(id) })
-    this.navigationSession.retry()
+    // 040-compatible startup: the first page's onReady starts native APIs.
+    // Transport remains App-owned after that page has been opened.
   },
   onShow() {
     if (this.navigationSession) this.navigationSession.resume()

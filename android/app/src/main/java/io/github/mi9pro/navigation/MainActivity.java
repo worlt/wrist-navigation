@@ -310,6 +310,21 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, "已复制，分享前请隐藏路线信息", Toast.LENGTH_SHORT).show();
         });
         diagnosticsBody.addView(copy, new LinearLayout.LayoutParams(-1, dp(48)));
+        TextView readBand = label("读取手环诊断", 13, ink, true);
+        readBand.setGravity(Gravity.CENTER_VERTICAL);
+        readBand.setPadding(dp(12), 0, dp(12), 0);
+        readBand.setBackground(ripple(background, 10));
+        readBand.setOnClickListener(view -> { bridge.requestBandDiagnostics(); renderDiagnostics(); });
+        diagnosticsBody.addView(readBand, space(-1, dp(48), 8));
+        TextView copySafe = label("复制兼容诊断（无路线）", 13, ink, true);
+        copySafe.setGravity(Gravity.CENTER_VERTICAL);
+        copySafe.setPadding(dp(12), 0, dp(12), 0);
+        copySafe.setBackground(ripple(background, 10));
+        copySafe.setOnClickListener(view -> {
+            getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("腕上导航兼容诊断", compatibilityReport()));
+            Toast.makeText(this, "已复制兼容诊断，请补充手环型号和固件版本", Toast.LENGTH_SHORT).show();
+        });
+        diagnosticsBody.addView(copySafe, space(-1, dp(48), 8));
         String[] labels = { "读取到的文字", "解析结果", "发送状态", "手环确认状态" };
         for (int i = 0; i < labels.length; i++) {
             diagnosticsBody.addView(label(labels[i], 13, ink, true), space(-1, -2, 16));
@@ -334,7 +349,15 @@ public final class MainActivity extends Activity {
         setText(diagnosticValues[1], bridge.diagnostics.parseText());
         setText(diagnosticValues[2], "连接：" + bridge.statusText + "\n同步：" + (bridge.enabled() ? "开启" : "暂停")
             + "\n" + bridge.diagnostics.sendText());
-        setText(diagnosticValues[3], bridge.diagnostics.ackText());
+        setText(diagnosticValues[3], bridge.diagnostics.ackText() + "\n\n兼容诊断\n" + bridge.compatibilityReport());
+    }
+
+    private String compatibilityReport() {
+        return "腕上导航兼容诊断（无路线）\n手机 " + BuildConfig.VERSION_NAME + " / code " + BuildConfig.VERSION_CODE
+            + "\n手机：" + Build.MANUFACTURER + " " + Build.MODEL + " · Android " + Build.VERSION.RELEASE
+            + "\n通知监听：" + (bridge.listenerConnected ? "已连接" : "未连接")
+            + "\n手环版本报告：" + bridge.bandVersionName() + " / code " + bridge.bandVersionCode()
+            + "\n" + bridge.compatibilityReport();
     }
 
     private String diagnosticsReport() {
@@ -347,7 +370,8 @@ public final class MainActivity extends Activity {
             + "\n\n解析结果\n" + bridge.diagnostics.parseText()
             + "\n\n发送状态\n连接：" + bridge.statusText + "\n同步：" + (bridge.enabled() ? "开启" : "暂停")
             + "\n" + bridge.diagnostics.sendText()
-            + "\n\n手环确认状态\n" + bridge.diagnostics.ackText();
+            + "\n\n手环确认状态\n" + bridge.diagnostics.ackText()
+            + "\n\n兼容诊断\n" + bridge.compatibilityReport();
     }
 
     private void completeSetup() {
