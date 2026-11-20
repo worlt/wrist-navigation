@@ -15,8 +15,10 @@
 - [x] 修复：保持基础导航、ACK、原签名和布局；只对已证实的问题做最小降级/适配，原有 10 Pro 行为回归。
 - [x] 检查点：npm test / check:public / preview / check:site、工具链审计与签名来源通过；双变体实际 RPK 编译/签名和行为检查。
 - [x] 交付：选唯一版本/code，生成许可、TESTING、update.json、SHA256SUMS；明确双机真机未验证的项目。
-- [ ] 发布：仅推 mine 实验分支，CI 通过后建新标签和 Pre-release；正式 Latest 不变；公开下载逐字节核对。
+- [x] 发布：仅推 mine 实验分支，CI 通过后建新标签和 Pre-release；正式 Latest 不变；公开下载逐字节核对。
 
 本地结果：156Node/129Android；Lint0错误3既有警告、工具链10项、audit0/704签名/162attestations，双RPK编译/原签名与真实native-wire→JVM通过；公开文件、站点及7附件门禁通过。没有传包/安装/真机验收。独立审查1个页面重建P2已先红后绿修复并复核明确断连仍有效。
 
 首次CI44755928377：7/8，Linux/Node24原有watcher清理顺序失败。已调整为finally取消监听后after删除临时目录，不跳过测试、不吞错误、不改依赖；等待新提交全部8组CI再发布。
+
+已于2026-11-20 22:56:10（Asia/Shanghai）发布 GitHub Pre-release `v0.5.0-preview.1`（id 452823680），不是 Latest；标签提交 `c3c25e78b73aa646ddbdc3242d8d9eebe01f6946`，CI44757089234全部8组成功。七附件匿名公开下载与本地大小/SHA-256全部匹配。正式Latest `v0.4.8`（id443781004）及原附件ID/大小/摘要保持。手机040/code25、手环050/code24，仍为原签名debug；没有传设备、安装或本轮双机真机验收。

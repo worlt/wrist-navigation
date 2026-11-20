@@ -3,6 +3,8 @@
 
 把 Android 高德地图的导航通知同步到小米手环 10 Pro，在手腕上查看转向和完整指引。
 
+> **本兼容实验分支已发布 [v0.5.0-preview.1（Pre-release）](https://github.com/worlt/wrist-navigation/releases/tag/v0.5.0-preview.1)，不设为 Latest。** 手机040/code25 + 手环050/code24，推荐先无字体版。诊断入口只在手机；[用户定位/反馈指南](docs/band9-band10-compatibility.md)。没有9 Pro实机或失败日志，两机本轮均未真机验收。
+
 个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。**当前发布 v0.4.8（Latest），配套手机 0.3.2 / 手环 0.4.6；已有手环 0.4.6 只需更新手机。** 正式 Release / Latest 仅代表分发状态，**本版新联动、双振事件、后台及耗电尚未真机验收**；此前红米 K80 Ultra（K80U）/小米手环 10 Pro 的试用和基础振动反馈不等于本版全部通过。其他手机未测试，9 Pro 自 0.3.3 起未回归。详见 [项目与使用声明](DISCLAIMER.md)、[发布介绍](docs/releases/v0.4.8.md) 和下文测试状态。
 
 **v0.4.7 修复后台退出：** 回桌面、切到高德或其他应用时继续同步，仅在主页面返回退出时按退出开关联动关闭手环。手机更新到 0.3.1/code16；手环 0.4.6 的完整字体与无字体两版沿用原包，本版修复尚未真机验收。详见 [后台与退出修复](docs/phone-background-exit-031.md)。

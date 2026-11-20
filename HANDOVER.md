@@ -1,5 +1,13 @@
 # 腕上导航维护交接
 
+## 2026-11-20 · 9 Pro / 10 Pro 兼容 Preview 已发布（最新）
+
+已于2026-11-20 22:56:10（Asia/Shanghai）发布 GitHub Pre-release `v0.5.0-preview.1`（id 452823680），不是 Latest；标签提交 `c3c25e78b73aa646ddbdc3242d8d9eebe01f6946`，CI44757089234全部8组成功。七附件匿名公开下载与本地大小/SHA-256全部匹配。正式Latest `v0.4.8`（id443781004）及原附件ID/大小/摘要保持。手机040/code25、手环050/code24，仍为原签名debug；没有传设备、安装或本轮双机真机验收。
+
+代码5dbe4bd、交付准备390d62e、CI工具测试清理顺序修复c3c25e7均只推mine实验分支preview/band9-band10-compat；未推main/origin，不整批纳入原main未提交手机037/038/039/手环049。手环首屏延后native初始化、状态兼容、可选检查失败不清已有导航与202单层回传；诊断操作仅在手机（读取/无路线复制），无手环排查模式。用户没有9 Pro或日志，不能将试修写为已证实根因或双机可用。156Node/129Android、Lint0错3既有警告，10工具链/audit0/704签名/162attestations、双RPK真实编译/原签名/native-wire→JVM与公开7附件通过。首轮CI7/8在原有watcher测试清理顺序失败，已修正并完整重跑8/8，不绕门禁。
+
+交付outputs/releases/v0.5.0-preview.1/；证据.local/publication-verified.json。用户指南docs/band9-band10-compatibility.md含安装/闪退/通信/显示分流与反馈模板；手机不能拉取固件安装/崩溃栈，需用户工具日志/照片。未部署站点或设备联调。以下准备段为历史。
+
 ## 2026-11-20 · 9 Pro / 10 Pro 共用兼容 Preview 准备
 
 用户没有9 Pro或日志，要求先试修复、诊断只在手机。独立工作区/分支preview/band9-band10-compat从ad80126开始，原main未提交手机037/038/039/手环049候选保留；本次仅复用已测试的PeerPacket单层解析器，不整批纳入。手机0.4.0/code25、手环0.5.0/code24。首屏onReady延后native初始化、状态字符串/缺失检查、可选查询失败不清有效导航、202版本/诊断回程；手机显式读取、5秒/请求/peer限制、无路线复制，手环无新增排查UI。

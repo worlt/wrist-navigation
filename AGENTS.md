@@ -6,6 +6,8 @@
 
 ## 开始工作
 
+2026-11-20兼容Preview已发布（最新）：v0.5.0-preview.1/id452823680，Pre-release、不设Latest；tag指c3c25e78b73aa646ddbdc3242d8d9eebe01f6946，修复CI44757089234全部8组成功，7附件匿名SHA/大小全匹配，正式Latestv0.4.8/id443781004及旧附件保持。只推mine实验分支preview/band9-band10-compat，main/origin及原main未提交候选保留。手机040/code25/手环050/code24原签名debug；诊断入口仅手机，无手环排查模式。无9 Pro实机/日志，本轮两机均未传包/安装/真机验收，不写双机可用已证实。156Node/129Android、Lint0错3既有警告、10工具链/audit0/704签名/162证明、双RPK编译/原签名/native-wire→JVM与公开7附件通过。详见HANDOVER顶部/docs/band9-band10-compatibility.md/docs/releases/v0.5.0-preview.1.md。下面准备是历史。
+
 2026-11-20兼容实验分支：用户无9 Pro设备/日志，明确先试修复，诊断UI仅在手机，手环无排查模式；从ad80126隔离原main未提交候选。手机040/code25+手环050/code24防御性兼容/手机主动读有界内部诊断，156Node/129Android、Lint0错3既有警告、10工具链/audit0/704签名/162证明、双RPK实际编译/原签名/native-wire→JVM/七附件通过；独立审查P2已先红后绿修复并复核。发布须只推mine实验分支，通过既有8组CI后新Pre-release，不设Latest；现有v0.4.8基线id443781004。没有传包/安装/本轮两机真机验收，不写已双机兼容。详见HANDOVER顶部与docs/band9-band10-compatibility.md；原main候选不自动纳入。
 
 2026-11-18 v0.4.9-preview.1已发布（最新）：维护4b6b5ac/交付记录dd9726e分步推mine/main，tag指dd9726ea6ea59a7295d44123816f13d9f64d20e9，Pre-release449974357/本地20:54:34；两次CI44304981188/44306028472各8组全通过。审查第三方picomatch安全fork4.0.7-a非官方，审计0/704签名/162证明/10安全工具链/2004分支测试，原aiot-toolkit2.0.5不降级。七附件匿名公开逐字节匹配，正式Latestv0.4.8及六旧附件保持。手机036/code21、手环048/code22原签名，RPK重建代码资源一致，仅时间戳/签名变，旧候选保留。JVM公开元数据策略通过，真实在线检查因匿名API403限流失败，非手机/真机网络验收；未传/安装/真机，大TTF/息屏/耗电待测。详见HANDOVER顶部。以下准备/暂停是历史。
