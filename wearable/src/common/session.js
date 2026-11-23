@@ -20,7 +20,7 @@ function createSession(options) {
   let started = false, lastDiagnosticQuery = '', diagnosticQueryAt = -1;
   const reminders = createReminders();
   const journeys = createJourneyReminders();
-  let alive = true, connection = null, generation = 0;
+  let alive = true, connection = null, generation = 0, sendEpoch = 0;
   let latest = null, receivedAt = 0, connected = false, connectionError = '';
   let sendShape = 0, lastSend = '尚未发送';
   let listeners = [];
@@ -75,6 +75,7 @@ function createSession(options) {
   }
   function linkLost(data) {
     diagnostic.record('link-close', data);
+    sendEpoch++;
     const transition = linkEstablished;
     linkEstablished = false;
     if (transition) { lossRevision++; haptics.cancel(); interruption = 'disconnect'; }
@@ -87,36 +88,50 @@ function createSession(options) {
   }
   function send(message) {
     if (!alive || !connection) return;
-    const revision = generation;
-    diagnostic.increment('tx');
-    try {
-      const payload = JSON.stringify(message);
-      const request = sendShape === 0 ? { data: payload } : { data: { data: payload } };
+    const revision = generation, epoch = sendEpoch;
+    const optional = message.type === 'display' || message.type === 'app-version' || message.type === 'band-diagnostics';
+    let payload;
+    try { payload = JSON.stringify(message); }
+    catch (error) { failedEncoding(error); return; }
+    function failedEncoding(error) {
+      diagnostic.increment('txfail'); diagnostic.record('send-fail', error);
+      if (!optional) fail('发送失败', error);
+    }
+    function attempt(shape) {
+      // Capture the attempted format, not the global preference: several frames
+      // can be awaiting native callbacks when the first 202 negotiates a format.
+      let settled = false;
+      const request = shape === 0 ? { data: payload } : { data: { data: payload } };
+      diagnostic.increment('tx');
       request.success = () => {
-        if (!alive || revision !== generation) return;
-        if (message.type !== 'display') lastSend = '已发送 ' + (message.type || '') + (sendShape === 0 ? '' : '（嵌套）');
-        // The packet handler notifies after dispatching ACK; display reports must not recurse into paint.
+        if (settled || !alive || revision !== generation || epoch !== sendEpoch) return;
+        settled = true;
+        // Only a successful nested send selects it for later frames. A late
+        // success of an older string attempt must not undo that negotiation.
+        if (shape === 1) sendShape = 1;
+        if (message.type !== 'display') lastSend = '已发送 ' + (message.type || '') + (shape === 0 ? '' : '（嵌套）');
         if (message.type !== 'ack' && message.type !== 'display') notify();
       };
       request.fail = (data, code) => {
-        if (!alive || revision !== generation) return;
-        diagnostic.increment('txfail');
-        diagnostic.record('send-fail', data, code);
-        if (message.type === 'display') return;
-        if (Number(code) === 202 && sendShape === 0) {
-          diagnostic.record('send-202', data, code);
-          sendShape = 1;
-          lastSend = '字符串格式被拒，改用嵌套格式';
-          send(message);
-          return;
+        if (settled || !alive || revision !== generation || epoch !== sendEpoch) return;
+        settled = true;
+        const errorCode = code === undefined || code === null ? data && data.code : code;
+        diagnostic.increment('txfail'); diagnostic.record('send-fail', data, errorCode);
+        if (Number(errorCode) === 202) {
+          diagnostic.record('send-202', data, errorCode);
+          if (shape === 0) { attempt(1); return; }
+          // Invalid parameters are not proof of physical link loss. In
+          // particular an ACK failure must not blank a valid inbound route.
+          lastSend = '手机回传失败 202（封包参数被拒）'; notify(); return;
         }
-        if (message.type === 'display' || message.type === 'app-version' || message.type === 'band-diagnostics') return;
-        lastSend = '发送失败 ' + (code === undefined ? '' : code);
-        fail('发送失败', data, code);
+        if (optional) return;
+        lastSend = '发送失败 ' + (errorCode === undefined ? '' : errorCode);
+        fail('发送失败', data, errorCode);
       };
-      connection.send(request);
-    } catch (error) { diagnostic.increment('txfail'); diagnostic.record('send-fail', error);
-      if (message.type !== 'display' && message.type !== 'app-version' && message.type !== 'band-diagnostics') fail('发送失败', error); }
+      try { connection.send(request); }
+      catch (error) { request.fail(error); }
+    }
+    attempt(sendShape);
   }
   function sendReady() {
     lastReadyAt = now();

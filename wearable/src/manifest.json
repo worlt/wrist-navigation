@@ -2,8 +2,8 @@
   "package": "io.github.mi9pro.navigation",
   "name": "腕上导航",
   "icon": "/common/icon.png",
-  "versionName": "0.5.0",
-  "versionCode": 24,
+  "versionName": "0.5.1",
+  "versionCode": 25,
   "minAPILevel": 1,
   "deviceTypeList": [
     "watch"

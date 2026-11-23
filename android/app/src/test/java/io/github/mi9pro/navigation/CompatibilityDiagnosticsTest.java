@@ -31,4 +31,15 @@ public class CompatibilityDiagnosticsTest {
         var state=new CompatibilityDiagnostics();state.request("q-1",100);assertTrue(state.accept(report("q-1"),101));state.request("q-2",200);
         assertTrue(state.text(200).contains("历史"));state.failed("q-2");assertTrue(state.text(201).contains("发送失败"));assertTrue(state.text(201).contains("历史"));
     }
+    @Test public void reconnectKeepsReceiveEvidenceAndMarksOldReportHistorical() throws Exception {
+        var state=new CompatibilityDiagnostics();state.request("q-1",100);assertTrue(state.accept(report("q-1"),101));
+        state.received(true);state.decoded();state.received(false);state.rejected("非当前设备");
+        state.request("q-2",200);state.reset();
+        assertFalse(state.accept(report("q-2"),201));
+        String text=state.text(202);
+        assertTrue(text.contains("收到 2 / 匹配设备 1 / 已解包 1 / 拒收 1"));
+        assertTrue(text.contains("非当前设备"));assertTrue(text.contains("历史读取"));
+        state.connected();assertTrue(state.text(203).contains("当前连接尚未读取"));
+        assertTrue(state.text(203).contains("收到 2"));
+    }
 }

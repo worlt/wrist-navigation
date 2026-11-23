@@ -13,7 +13,10 @@ final class CompatibilityDiagnostics {
     private boolean currentReport;
     private long received, matched, decoded, rejected;
     private String rejection = "无";
-    void reset() { pending=""; status="连接已重置，请重新读取"; report=""; deadline=receivedAt=0; currentReport=false; received=matched=decoded=rejected=0; rejection="无"; }
+    // Reconnect cancels the pending request, not the evidence already received.
+    // Counters are process-wide; a prior report can only be shown as historical.
+    void reset() { pending=""; status="连接已重置，请重新读取"; deadline=0; currentReport=false; }
+    void connected() { pending=""; status="当前连接尚未读取手环内部诊断"; deadline=0; currentReport=false; }
     boolean waiting(long now) { return !pending.isEmpty() && now < deadline; }
     void request(String id, long now) { pending=id; deadline=now+5000; status="正在读取手环内部诊断（最多5秒）"; currentReport=false; }
     void failed(String id) { if (pending.equals(id)) { pending=""; status="诊断查询发送失败；基础导航不受此查询影响"; } }
@@ -51,7 +54,7 @@ final class CompatibilityDiagnostics {
     }
     String text(long now) {
         if(!pending.isEmpty() && now>=deadline){pending="";status="读取超时：手环未运行、未连接、旧版不支持或回程失败；不能据此认定原因";}
-        return status+"\n手机接收计数：收到 "+received+" / 当前设备 "+matched+" / 已解包 "+decoded+" / 拒收 "+rejected
+        return status+"\n手机接收计数（本次进程累计，含重连前）：收到 "+received+" / 匹配设备 "+matched+" / 已解包 "+decoded+" / 拒收 "+rejected
           +"\n最近拒收分类："+rejection
           +(report.isEmpty()?"": "\n\n"+(currentReport?"本次读取":"历史读取（不是本次结果）")+" · "+Math.max(0,(now-receivedAt)/1000)+"秒前\n"+report);
     }

@@ -1,5 +1,14 @@
 # 腕上导航维护交接
 
+## 2026-11-23 · 9 Pro 202 回程修复，Pre-release准备（最新）
+
+用户首次提供9 Pro失败截图：手机040解析出方向/距离，SDK提交成功无ACK；手环发送失败202。未读到手环版本/code，不能断定具体安装包或固件回调形态。根因候选由测试证实为：首参数data.code/同步异常202遗漏、全局sendShape提前改变导致异步ACK降级遗漏、display提前忽略202，以及参数失败冒充断连。逐次尝试有界重试、成功后选格式、失效/已完成/断连前回调保护；ACK参数错误保留有效导航，真实onclose/1006保持。手机重连保留进程累计计数/拒收/历史报告，取消旧读取，新连接明确尚未读取。不改通知解析/布局/签名身份/设备或协议校验，未盲删系统接口。
+
+手机0.4.1/code26、手环0.5.1/code25，仍在preview/band9-band10-compat，原main不动。新7项发送回归与诊断证据测试先红后绿；旧050编译RPK在新202回调配置下失败。最终163Node/130Android全通过，Lint0错误3既有警告，10项工具链；双RPK真实编译/原签名、5种native收发配置及最终native-wire→JVM全通过，APK嵌入版本与同证书验证通过。静态站点已生成且一致，未部署；公开文件策略/本地7附件SHA门禁通过，旧v0.5.0-preview.1七附件哈希保持。本轮没有重新做在线npm审计/签名或云端CI，不套用历史结果。详见docs/band9pro-send-202.md与兼容指南。
+
+交付outputs/releases/v0.5.1-preview.1/：NAV-PHONE-041.apk、NAV-BAND-051-NOFONT.rpk（建议先试）/NAV-BAND-051.rpk（二选一）、update.json、TESTING.txt、许可、SHA256SUMS.txt。完整字体版仍有大TTF警告。手机040可接收051的v1协议，核心修复在手环；建议更新041以保留诊断证据。用户随后要求推送新Pre-release，准备仅推mine兼容实验分支，8组CI全通过后才标记并发布v0.5.1-preview.1、make_latest=false；尚未完成发布/传包/安装/9或10Pro本轮实测，不宣称全部实机根因证实或兼容恢复；正式Latest和历史Preview附件不变。证据.local/fix051-*。
+
+
 ## 2026-11-20 · 9 Pro / 10 Pro 兼容 Preview 已发布（最新）
 
 已于2026-11-20 22:56:10（Asia/Shanghai）发布 GitHub Pre-release `v0.5.0-preview.1`（id 452823680），不是 Latest；标签提交 `c3c25e78b73aa646ddbdc3242d8d9eebe01f6946`，CI44757089234全部8组成功。七附件匿名公开下载与本地大小/SHA-256全部匹配。正式Latest `v0.4.8`（id443781004）及原附件ID/大小/摘要保持。手机040/code25、手环050/code24，仍为原签名debug；没有传设备、安装或本轮双机真机验收。

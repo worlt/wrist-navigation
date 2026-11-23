@@ -353,6 +353,7 @@ public final class WearBridge {
     private void connected(String selected, long generation, boolean reused) {
         if (generation != connectGeneration) return;
         nodeId = selected;
+        if (!reused) compatibility.connected();
         discovering = false;
         statusText = "互联已就绪，等待导航数据";
         event(reused ? "message listener reused" : "message listener registered");

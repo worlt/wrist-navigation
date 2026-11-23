@@ -7,7 +7,7 @@ import org.json.*;
 public final class VerifyCompatibilityWire {
     public static void main(String[] args) throws Exception {
         JSONObject root = new JSONObject(Files.readString(Path.of(args[0])));
-        for (String profile : new String[]{"normal", "nested"}) {
+        for (String profile : new String[]{"normal", "nested", "nested-code", "nested-throw", "nested-async"}) {
             JSONArray wires=root.getJSONArray(profile);boolean ack=false,version=false,diagnostic=false;
             for(int i=0;i<wires.length();i++) {
                 byte[] bytes=wires.getString(i).getBytes(java.nio.charset.StandardCharsets.UTF_8);

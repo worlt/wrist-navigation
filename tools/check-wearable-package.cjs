@@ -425,11 +425,17 @@ console.log('Compiled installed-version ready/query report passed.');
 // Exercise the exact send.data object serialized by native interconnect, not a mock-unwrapped payload.
 const nativeWires = {};
 const originalSend = connection.send, originalCheck = connection.getReadyState;
-for (const profile of ['normal', 'nested']) {
-  const wires = nativeWires[profile] = [];
+for (const profile of ['normal', 'nested', 'nested-code', 'nested-throw', 'nested-async']) {
+  const wires = nativeWires[profile] = [], pendingSends = [];
   connection.getReadyState = cb => cb.success({status:'1'});
   connection.send = cb => {
-    if (profile === 'nested' && typeof cb.data === 'string') { cb.fail({},202); return; }
+    if (profile !== 'normal' && typeof cb.data === 'string') {
+      if (profile === 'nested-code') cb.fail({code:'202'});
+      else if (profile === 'nested-throw') throw Object.assign(new TypeError('invalid args'), {code:202});
+      else if (profile === 'nested-async') pendingSends.push(cb);
+      else cb.fail({},202);
+      return;
+    }
     wires.push(typeof cb.data === 'string' ? cb.data : JSON.stringify(cb.data));
     if (cb.success) cb.success();
   };
@@ -440,6 +446,11 @@ for (const profile of ['normal', 'nested']) {
   connection.onmessage({data:JSON.stringify({v:1,type:'version-query',requestId:'compiled-version-'+profile})});
   connection.onmessage({data:JSON.stringify(realtimeFrame(1,200))});
   connection.onmessage({data:JSON.stringify({v:1,type:'diagnostics-query',requestId:'compiled-diag-'+profile})});
+  // Each delayed string failure retries its own frame, even after another
+  // frame has successfully selected the nested format.
+  for (const cb of pendingSends) cb.fail({code:202});
+  assert.equal(nativeApp.navigationSession.peek().connected,true);
+  assert.equal(nativeApp.navigationSession.peek().connectionError,'');
   const frames=wires.map(wire=>{const outer=JSON.parse(wire);return outer.v ? outer : JSON.parse(outer.data);});
   assert.ok(frames.some(p=>p.type==='ack'&&p.seq===1&&p.session==='realtime-package'));
   const report=frames.find(p=>p.type==='band-diagnostics');assert.ok(report);assert.equal(report.schema,1);
