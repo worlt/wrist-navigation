@@ -1,5 +1,14 @@
 # 腕上导航维护交接
 
+## 2026-11-23 · v0.5.1-preview.1 已公开发布（最新）
+
+用户要求把202回程修复推送新Pre-release给9 Pro反馈用户测试。已仅推mine/preview/band9-band10-compat，修复提交 `36cc7f7dc1c85d32b887b2f00c53dc9162a0305c`，annotated tag v0.5.1-preview.1 指向该提交。Source checks 45098716805 的Linux/Windows × Node22/24四组源码+四组工具链全部8组成功，含依赖审计/registry签名/证明；未跳过门禁或修改依赖。
+
+已于 2026-11-23T02:13:44Z 公开发布 [v0.5.1-preview.1](https://github.com/worlt/wrist-navigation/releases/tag/v0.5.1-preview.1)（id 454913140），draft:false/prerelease:true/make_latest:false。手机041/code26、手环051/code25，原配对签名debug构建；建议先无字体版。七附件匿名下载的大小/SHA-256全部匹配；正式Latest v0.4.8/id443781004与发布前七个历史Release的ID/状态/附件ID大小摘要保持。只上传明确七附件，不发布.local或签名。证据.local/release051/publication-verified.json、ci-result.json、baseline.json。
+
+本地163Node/130Android、Lint0错误3既有警告、双RPK实际编译/5种native回调/native-wire→JVM/同证书/站点一致通过。用户202现象已提供截图，具体回调/全部固件根因未证实；没有设备传输/安装/本轮9或10Pro实测，不写兼容已恢复。完整TTF/后台/息屏/耗电待测。网站仅生成未部署，未推main或origin。交付outputs/releases/v0.5.1-preview.1/；复测步骤见公开Release与docs/band9-band10-compatibility.md。下面准备/本地候选状态均为历史。
+
+
 ## 2026-11-23 · 9 Pro 202 回程修复，Pre-release准备（最新）
 
 用户首次提供9 Pro失败截图：手机040解析出方向/距离，SDK提交成功无ACK；手环发送失败202。未读到手环版本/code，不能断定具体安装包或固件回调形态。根因候选由测试证实为：首参数data.code/同步异常202遗漏、全局sendShape提前改变导致异步ACK降级遗漏、display提前忽略202，以及参数失败冒充断连。逐次尝试有界重试、成功后选格式、失效/已完成/断连前回调保护；ACK参数错误保留有效导航，真实onclose/1006保持。手机重连保留进程累计计数/拒收/历史报告，取消旧读取，新连接明确尚未读取。不改通知解析/布局/签名身份/设备或协议校验，未盲删系统接口。

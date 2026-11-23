@@ -6,6 +6,8 @@
 
 ## 开始工作
 
+2026-11-23发布最新：v0.5.1-preview.1/id454913140已公开Pre-release，不设Latest；tag指36cc7f7dc1c85d32b887b2f00c53dc9162a0305c，CI45098716805全部8组成功（含audit/registry签名证明），7附件匿名SHA/大小全匹配；正式Latestv0.4.8及此前7个Release状态/附件保持。仅推mine兼容分支，不动main/origin。手机041/code26/手环051/code25原签名debug，建议先无字体；163Node/130Android、Lint0错3既有警告、双RPK编译/5种native配置/wire→JVM/同证书通过。本轮未传设备/安装/两机实测，不声称202完整实机根因或已恢复兼容；站点未部署。详见HANDOVER顶部/docs/releases/v0.5.1-preview.1.md；以下最新标记均为历史。
+
 2026-11-23最新：收到9 Pro的202失败截图（不是完整日志/版本证据）；修复首参数/同步异常202、异步格式竞态、参数失败误断连、断连前旧发送回调及重连诊断证据清零。手机041/code26+手环051/code25本地原签名候选，163Node/130Android、Lint0错3既有警告、10工具链、双RPK编译/5种native配置/最终wire→JVM/同证书/7附件SHA/站点一致通过。未推送/发布/传包/安装/两机实测，不写已恢复兼容；此前Preview/Latest不动。见HANDOVER顶部/docs/band9pro-send-202.md；下面最新标记均为历史。
 
 2026-11-20兼容Preview已发布（最新）：v0.5.0-preview.1/id452823680，Pre-release、不设Latest；tag指c3c25e78b73aa646ddbdc3242d8d9eebe01f6946，修复CI44757089234全部8组成功，7附件匿名SHA/大小全匹配，正式Latestv0.4.8/id443781004及旧附件保持。只推mine实验分支preview/band9-band10-compat，main/origin及原main未提交候选保留。手机040/code25/手环050/code24原签名debug；诊断入口仅手机，无手环排查模式。无9 Pro实机/日志，本轮两机均未传包/安装/真机验收，不写双机可用已证实。156Node/129Android、Lint0错3既有警告、10工具链/audit0/704签名/162证明、双RPK编译/原签名/native-wire→JVM与公开7附件通过。详见HANDOVER顶部/docs/band9-band10-compatibility.md/docs/releases/v0.5.0-preview.1.md。下面准备是历史。

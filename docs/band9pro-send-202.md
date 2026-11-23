@@ -1,6 +1,6 @@
 # 9 Pro 发送失败 202：修复与验证
 
-日期：2026-11-23。手机 **0.4.1/code26**、手环 **0.5.1/code25**，本地候选目录 `outputs/releases/v0.5.1-preview.1/`。用户已要求新建Pre-release，当前发布准备；公开发布结果见HANDOVER顶部。没有设备传输或安装，现有Preview / 正式Latest保持不变。
+日期：2026-11-23。手机 **0.4.1/code26**、手环 **0.5.1/code25**，交付目录 `outputs/releases/v0.5.1-preview.1/`。已公开发布[新的Pre-release](https://github.com/worlt/wrist-navigation/releases/tag/v0.5.1-preview.1)，不是Latest；8组CI与七附件匿名下载SHA-256核对通过。没有设备传输或安装，现有Preview / 正式Latest保持不变。
 
 ## 反馈能证明什么
 

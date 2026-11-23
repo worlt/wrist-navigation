@@ -3,7 +3,7 @@
 
 把 Android 高德地图的导航通知同步到小米手环 10 Pro，在手腕上查看转向和完整指引。
 
-> **本兼容实验分支已发布 [v0.5.0-preview.1（Pre-release）](https://github.com/worlt/wrist-navigation/releases/tag/v0.5.0-preview.1)，不设为 Latest。** 手机040/code25 + 手环050/code24，推荐先无字体版。诊断入口只在手机；[用户定位/反馈指南](docs/band9-band10-compatibility.md)。现已收到9 Pro的202失败截图；新增手机041/code26 + 手环051/code25本地修复候选尚未发布，见[修复说明](docs/band9pro-send-202.md)。两机本轮均未真机验收。
+> **本兼容实验分支已发布 [v0.5.1-preview.1（Pre-release）](https://github.com/worlt/wrist-navigation/releases/tag/v0.5.1-preview.1)，不设为Latest。** 手机041/code26 + 手环051/code25，针对9 Pro的202回程反馈修复，推荐先无字体版。8组CI与七附件匿名下载SHA-256全通过；诊断入口只在手机，见[反馈指南](docs/band9-band10-compatibility.md)和[发布说明](docs/releases/v0.5.1-preview.1.md)。本轮两机均未真机验收。
 
 个人开发的实验性项目，与高德、小米或 AstroBox 无隶属关系。**当前发布 v0.4.8（Latest），配套手机 0.3.2 / 手环 0.4.6；已有手环 0.4.6 只需更新手机。** 正式 Release / Latest 仅代表分发状态，**本版新联动、双振事件、后台及耗电尚未真机验收**；此前红米 K80 Ultra（K80U）/小米手环 10 Pro 的试用和基础振动反馈不等于本版全部通过。其他手机未测试，9 Pro 自 0.3.3 起未回归。详见 [项目与使用声明](DISCLAIMER.md)、[发布介绍](docs/releases/v0.4.8.md) 和下文测试状态。
 
@@ -15,7 +15,7 @@
 
 ## 本分支：9 Pro / 10 Pro 兼容试验
 
-分支 `preview/band9-band10-compat`，已发布手机0.4.0/code25 + 手环0.5.0/code24；2026-11-23新增手机0.4.1/code26 + 手环0.5.1/code25本地候选，针对用户202反馈修复回程降级。新增诊断入口仅在手机，手环不增加排查模式。推荐先试无字体版。尚无9 Pro实机证据，两机本轮均未真机验收；正式Latest不变。安装/闪退/接收问题的定位步骤及可复制反馈模板见[兼容试验指南](docs/band9-band10-compatibility.md)，版本内容见[Preview说明](docs/releases/v0.5.0-preview.1.md)。
+分支 `preview/band9-band10-compat`，本轮已发布手机0.4.1/code26 + 手环0.5.1/code25（v0.5.1-preview.1），针对用户202反馈修复回程降级；此前v0.5.0-preview.1附件保留。新增诊断入口仅在手机，手环不增加排查模式。推荐先试无字体版。尚无9 Pro实机证据，两机本轮均未真机验收；正式Latest不变。安装/闪退/接收问题的定位步骤及可复制反馈模板见[兼容试验指南](docs/band9-band10-compatibility.md)，版本内容见[Preview说明](docs/releases/v0.5.1-preview.1.md)。
 
 ## 来源与原作者
 
