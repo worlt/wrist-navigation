@@ -81,4 +81,16 @@ public class UpdateCheckerTest {
         assertTrue(band.checker.status().contains("手环") || band.checker.status().contains("版本"));
     }
 
+    @Test public void presentationStateTracksChecksFailuresAndChannelReset() {
+        var h = new Harness(); assertEquals(UpdateChecker.CheckState.NOT_CHECKED, h.checker.checkState());
+        h.checker.check(true); assertEquals(UpdateChecker.CheckState.CHECKING, h.checker.checkState());
+        h.result.version = h.version(false, BuildConfig.VERSION_CODE); h.finish();
+        assertEquals(UpdateChecker.CheckState.COMPLETE, h.checker.checkState());
+        assertNotNull(h.checker.latestVersion()); assertNull(h.checker.available());
+        h.result.complete = false; h.checker.check(true); h.finish();
+        assertEquals(UpdateChecker.CheckState.INCOMPLETE, h.checker.checkState());
+        assertNotNull(h.checker.latestVersion());
+        h.checker.setExperimental(true); assertEquals(UpdateChecker.CheckState.CHECKING, h.checker.checkState());
+        h.finish(); assertEquals(UpdateChecker.CheckState.INCOMPLETE, h.checker.checkState());
+    }
 }

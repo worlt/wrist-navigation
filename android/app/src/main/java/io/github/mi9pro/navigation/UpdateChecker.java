@@ -22,6 +22,8 @@ final class UpdateChecker {
     private int generation;
     private UpdateFeed.Version candidate;
     private String status = "尚未检查";
+    enum CheckState { NOT_CHECKED, CHECKING, COMPLETE, INCOMPLETE }
+    private CheckState checkState = CheckState.NOT_CHECKED;
 
     UpdateChecker(Context context) { this(context, false); }
     UpdateChecker(Context context, boolean band) {
@@ -54,6 +56,7 @@ final class UpdateChecker {
     boolean automatic() { return preferences.getBoolean("automatic", true); }
     boolean experimental() { return preferences.getBoolean("experimental", false); }
     boolean running() { return running; }
+    CheckState checkState() { return running ? CheckState.CHECKING : checkState; }
     UpdateFeed.Version available() { return UpdatePolicy.available(candidate, installedCode, experimental(), band) ? candidate : null; }
     String status() { return running ? "正在检查 GitHub 更新…" : status; }
     void setListener(Runnable value) { listener = value; }
@@ -66,6 +69,7 @@ final class UpdateChecker {
         preferences.edit().putBoolean("experimental", value).apply();
         generation++;
         loadCache(); status = "更新渠道已切换，尚未检查";
+        checkState = CheckState.NOT_CHECKED;
         notifyUi(); check(true);
     }
     private String channel(boolean experimental) { return experimental ? "preview" : "stable"; }
@@ -94,6 +98,7 @@ final class UpdateChecker {
             main.execute(() -> {
                 running = false;
                 if (request == generation) {
+                    checkState = result.complete ? CheckState.COMPLETE : CheckState.INCOMPLETE;
                     if (result.complete) candidate = result.version;
                     else candidate = UpdatePolicy.newer(candidate, result.version, preview, band);
                     saveCache(preview);

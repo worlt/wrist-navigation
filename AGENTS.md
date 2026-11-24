@@ -5,6 +5,7 @@
 2026-09-22 开源准备后用户接入手机：已只读核对手机 0.2.1/code 6，恢复原签名 `outputs/releases/v0.2.4/NAV-PHONE-021.apk` 并核对手机/电脑/历史 SHA-256 一致，APK 签名与手环 0.2.4 原证书匹配。它是历史 debug 构建，不是 unsigned 或新 release 构建。随后按用户要求将 `NAV-BAND-024.rpk` 传至手机 `/sdcard/Download/` 并核对两端 SHA-256 和大小一致；没有点击安装界面。用户自行安装后反馈“已经ok”，记录为 0.2.4 已安装、基本使用正常（用户确认），不扩展为全部功能或长时稳定性验收通过。最新记录优先看 HANDOVER.md 顶部。
 
 ## 开始工作
+2026-11-24最新UI候选：用户要求更新界面清晰/版本对照/详情折叠，手机042/code27原签名，手环051保持。138Android/166Node、Lint0错3旧警告、实际APK嵌入版本/原证书/原051七附件哈希通过；独立两面板、GitHub本端所选渠道版本（同/更高已装也显示）、缓存待确认/未知、详情与检查设置折叠、小屏/大字体纵排和动态滚动。无ADB/原生UI验收，静态参考非实机；未推送/新Release/传安装，不改原main未提交候选。交付outputs/candidates/update-ui-20261124/，详见HANDOVER顶部/docs/update-ui-042.md。正式Latest048已补元数据，旧Preview/标签保持。
 
 2026-11-23发布最新：v0.5.1-preview.1/id454913140已公开Pre-release，不设Latest；tag指36cc7f7dc1c85d32b887b2f00c53dc9162a0305c，CI45098716805全部8组成功（含audit/registry签名证明），7附件匿名SHA/大小全匹配；正式Latestv0.4.8及此前7个Release状态/附件保持。仅推mine兼容分支，不动main/origin。手机041/code26/手环051/code25原签名debug，建议先无字体；163Node/130Android、Lint0错3既有警告、双RPK编译/5种native配置/wire→JVM/同证书通过。本轮未传设备/安装/两机实测，不声称202完整实机根因或已恢复兼容；站点未部署。详见HANDOVER顶部/docs/releases/v0.5.1-preview.1.md；以下最新标记均为历史。
 

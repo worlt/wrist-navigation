@@ -1,5 +1,17 @@
 # 腕上导航维护交接
 
+## 2026-11-24 · 软件更新 UI042 原签名候选（最新）
+
+用户要求两端分清、GitHub版本号可见、详情折叠、整体舒适。仅手机0.4.2/code27：独立设备面板、当前/GitHub所选渠道版本对照（同版本/更高已装也显示）、完整/缓存待确认/未知状态、默认独立折叠详情、下方折叠检查设置、小屏大字体纵排与展开后动态滚动高度。新增UpdatePresentation纯展示helper与UpdateChecker结果状态，不改联网/选版本/导航/协议/手环。手环051/code25及原签名保持；原main未提交候选不纳入。
+
+6项Java/3项Node展示与结构回归先红后绿；最终138Android/166Node、Lint0错误3既有警告、原签名APK实际构建/嵌入042与041同证书通过；原051七附件哈希门禁保持。交付outputs/candidates/update-ui-20261124/NAV-PHONE-042.apk（933346字节，SHA256 eb017cbe89594106ee92a7fae7388d73c49b678c70685a0b0aa7f021b87db257），附许可/TESTING/SHA。参考图仅静态布局/Java文案，非手机运行截图；浏览器本地预览安全阻止后未绕过，用静态绘图。无ADB设备，未传/安装/原生UI折叠滚动/字体/读屏验收；未推源码/新Release/网站或云端CI。新手机042尚未发布，检查显示线上041且无需降级正常。详见SPEC-update-ui.md、docs/update-ui-042.md与docs/images/update-ui-042-{dark,light}.png；证据.local/update-ui-20261124/。
+
+## 2026-11-24 · 正式 Latest update.json 已补齐（最新）
+
+用户要求修复双端「部分Release未提供update.json」。只给正式Latest v0.4.8/id443781004增加update.json/id785450128（479字节，SHA256 3967457d6ccd93128031daaf606f470518fc6b7c3eddb17ef675c103bead7ebe），手机032/code17、手环046/code20由原APK与两RPK内嵌版本核对。三个Preview原本都有元数据，更早旧正式版当前检查不读取，无需改它们。全8个Release原状态/原附件ID大小摘要、所有远程标签refs、原六附件再次公开下载字节保持；原SHA256SUMS.txt不改且不包含新增文件，增补哈希另记。未重打包/替换安装包、未改生产代码/签名/依赖、未推源码或新跑云端CI。
+
+真实公开快照复现修复前四组complete=false/missingMetadata=true；补充后快照及现有GitHubUpdateClient匿名JVM联网的手机/手环×正式/Preview四组均complete=true/missingMetadata=false，按用户phone26/band25无更新，不降级。Android132（新增2回归）/Node163通过。上传初次列表有约60秒GitHub缓存，最终已同步。用户只需分别手动检查，不需重装；未操作手机UI/设备，电脑联网不等于手机实测。详见docs/update-metadata-backfill-20261124.md及公开元数据副本docs/releases/v0.4.8.update.json；证据.local/update-metadata-20261124/。
+
 ## 2026-11-23 · v0.5.1-preview.1 已公开发布（最新）
 
 用户要求把202回程修复推送新Pre-release给9 Pro反馈用户测试。已仅推mine/preview/band9-band10-compat，修复提交 `36cc7f7dc1c85d32b887b2f00c53dc9162a0305c`，annotated tag v0.5.1-preview.1 指向该提交。Source checks 45098716805 的Linux/Windows × Node22/24四组源码+四组工具链全部8组成功，含依赖审计/registry签名/证明；未跳过门禁或修改依赖。

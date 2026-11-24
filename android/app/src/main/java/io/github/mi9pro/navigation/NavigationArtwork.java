@@ -42,6 +42,10 @@ final class NavigationArtwork extends View {
             canvas.scale(width / 24, height / 24);
             pen.setStrokeWidth(1.7f);
             switch (kind) {
+                case "phone":
+                    rounded(canvas, 6, 2, 18, 22, 3); line(canvas, 10, 18, 14, 18); break;
+                case "band":
+                    rounded(canvas, 6, 5, 18, 19, 5); line(canvas, 9, 2, 15, 2); line(canvas, 9, 22, 15, 22); break;
                 case "settings":
                     canvas.drawCircle(12, 12, 7, pen); canvas.drawCircle(12, 12, 2.5f, pen);
                     for (int i = 0; i < 8; i++) {

@@ -45,7 +45,14 @@ public final class MainActivity extends Activity {
     private LinearLayout updateNotice, bandUpdateNotice;
     private TextView updateNoticeTitle, updateNoticeDetail, bandNoticeTitle, bandNoticeDetail;
     private TextView homeUpdateCheck, homeBandUpdateCheck;
-    private final TextView[] updateStatus = new TextView[2], updateDownload = new TextView[2], sheetUpdateCheck = new TextView[2];
+    private static final class UpdateCardViews {
+        TextView current, latest, source, channel, status, statusDetail, check, detailsTitle, tag, pairing, notes;
+        LinearLayout detailsToggle, detailsBody;
+        View chevron;
+        boolean expanded;
+        String detailTag;
+    }
+    private final UpdateCardViews[] updateCards = new UpdateCardViews[2];
     private final Runnable refreshUpdates = this::renderUpdates;
     private TextView status, syncDetail, connectionDetail, action;
     private Switch sync;
@@ -426,12 +433,32 @@ public final class MainActivity extends Activity {
     }
 
     private void updateSettings() {
-        LinearLayout options = sheetContent("软件更新", "手机与手环分别检查、分别选择 Preview");
+        LinearLayout options = sheetContent("软件更新", "手机与手环，版本和更新各自独立");
         updateSection(options, updates, false);
-        divider(options, 0);
         updateSection(options, bandUpdates, true);
-        options.addView(entry("link", "查看 GitHub 发布页", "手机 APK / 手环 RPK；手环两版二选一", view -> openRelease(UpdateFeed.WEB + "/releases")), space(-1, -2, 12));
-        options.addView(label("只读取公开版本信息，不上传导航或诊断。手环版本由当前连接的应用报告；旧版或未连接时版本未知。不会自动下载安装，升级前核对发布页配套要求。", 12, muted, false), space(-1, -2, 12));
+
+        LinearLayout settings = column();
+        settings.setPadding(dp(16), 0, dp(16), 0);
+        settings.setBackground(shape(background, 18));
+        LinearLayout settingsBody = column();
+        settingsBody.setVisibility(View.GONE);
+        TextView settingsTitle = label("检查设置", 14, ink, true);
+        View settingsArrow = new NavigationArtwork(this, "chevron", muted);
+        LinearLayout settingsToggle = disclosure(settingsTitle, settingsArrow);
+        settingsToggle.setContentDescription("检查设置，已收起；自动检查和 Preview");
+        settingsToggle.setOnClickListener(view -> {
+            boolean expanded = settingsBody.getVisibility() != View.VISIBLE;
+            settingsBody.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            settingsTitle.setText(expanded ? "检查设置 · 收起" : "检查设置");
+            disclosureState(settingsToggle, settingsArrow, expanded, "检查设置");
+        });
+        settings.addView(settingsToggle);
+        updatePreferences(settingsBody, updates, false);
+        divider(settingsBody, 0);
+        updatePreferences(settingsBody, bandUpdates, true);
+        settings.addView(settingsBody);
+        options.addView(settings, space(-1, -2, 14));
+        options.addView(label("仅检查 GitHub 公开信息，不上传导航或诊断。\n不会自动下载或安装，升级前请核对双端配套。", 12, muted, false), space(-1, -2, 14));
         showSheet(options);
         bridge.requestBandVersion();
         renderUpdates();
@@ -440,28 +467,150 @@ public final class MainActivity extends Activity {
     private void updateSection(LinearLayout options, UpdateChecker checker, boolean band) {
         int index = band ? 1 : 0;
         String device = band ? "手环" : "手机";
-        options.addView(label(device + "更新", 18, ink, true), space(-1, -2, 18));
-        preference(options, "自动检查" + device + "更新", "每天打开时检查，可关闭后手动检查", checker.automatic(), checker::setAutomatic);
-        CheckBox preview = new CheckBox(this);
-        preview.setText(band ? R.string.receive_band_preview_updates : R.string.receive_phone_preview_updates);
-        preview.setTextSize(16); preview.setTextColor(ink); preview.setMinimumHeight(dp(56));
-        preview.setButtonTintList(new ColorStateList(new int[][] {{android.R.attr.state_checked}, {} }, new int[] {accent, muted}));
-        preview.setChecked(checker.experimental());
-        preview.setOnCheckedChangeListener((view, checked) -> checker.setExperimental(checked));
-        options.addView(preview, space(-1, -2, 4));
-        options.addView(label("默认不勾选；仅影响" + device + "，包含 GitHub Pre-release，可能不稳定", 12, muted, false), space(-1, -2, 2));
-        updateStatus[index] = label(checker.status(), 13, muted, false);
-        options.addView(updateStatus[index], space(-1, -2, 14));
-        sheetUpdateCheck[index] = filledButton("检查" + device + "更新", view -> {
+        UpdateCardViews card = new UpdateCardViews();
+        updateCards[index] = card;
+        LinearLayout panel = column();
+        panel.setPadding(dp(18), dp(16), dp(18), dp(8));
+        panel.setBackground(shape(background, 20));
+        Configuration configuration = getResources().getConfiguration();
+        boolean horizontal = configuration.screenWidthDp >= 360 && configuration.fontScale <= 1.25f;
+        LinearLayout header = row();
+        header.addView(new NavigationArtwork(this, band ? "band" : "phone", muted), new LinearLayout.LayoutParams(dp(22), dp(22)));
+        LinearLayout.LayoutParams titleSize = new LinearLayout.LayoutParams(0, -2, 1);
+        titleSize.setMarginStart(dp(8));
+        header.addView(label(device + "更新", 18, ink, true), titleSize);
+        card.channel = label("", 11, muted, false);
+        card.channel.setPadding(dp(8), dp(5), dp(8), dp(5));
+        card.channel.setBackground(shape(surface, 8));
+        if (horizontal) header.addView(card.channel);
+        panel.addView(header);
+        if (!horizontal) panel.addView(card.channel, space(-2, -2, 8));
+        LinearLayout versions = horizontal ? row() : column();
+        versions.setGravity(Gravity.TOP);
+        LinearLayout current = column(), latest = column();
+        current.addView(label("当前安装", 12, muted, false));
+        card.current = label("", 24, ink, true);
+        current.addView(card.current, space(-1, -2, 6));
+        latest.addView(label("GitHub 最新版本", 12, muted, false));
+        card.latest = label("尚未获取", 24, ink, true);
+        latest.addView(card.latest, space(-1, -2, 6));
+        card.source = label("检查后显示版本", 11, muted, false);
+        latest.addView(card.source, space(-1, -2, 5));
+        versions.addView(current, new LinearLayout.LayoutParams(horizontal ? 0 : -1, -2, horizontal ? 1 : 0));
+        LinearLayout.LayoutParams latestSize = new LinearLayout.LayoutParams(horizontal ? 0 : -1, -2, horizontal ? 1 : 0);
+        if (horizontal) latestSize.setMarginStart(dp(14)); else latestSize.topMargin = dp(14);
+        versions.addView(latest, latestSize);
+        panel.addView(versions, space(-1, -2, 16));
+
+        card.status = label("", 14, ink, true);
+        card.status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        LinearLayout statusArea = column();
+        statusArea.addView(card.status);
+        card.statusDetail = label("", 12, muted, false);
+        statusArea.addView(card.statusDetail, space(-1, -2, 5));
+        LinearLayout actions = row();
+        card.check = filledButton("检查" + device + "更新", view -> {
             if (band) bridge.requestBandVersion();
             checker.check(true);
         });
-        options.addView(sheetUpdateCheck[index], space(-1, -2, 12));
-        updateDownload[index] = filledButton("查看" + device + "版本与下载", view -> {
-            UpdateFeed.Version version = band ? checker.latestVersion() : checker.available();
-            if (version != null) openRelease(version.releaseUrl());
+        card.check.setTextSize(14);
+        card.check.setMinimumHeight(dp(48));
+        card.check.setPadding(dp(10), dp(14), dp(10), dp(14));
+        actions.addView(card.check, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView release = filledButton("GitHub 发布页", view -> {
+            UpdateFeed.Version version = checker.latestVersion();
+            openRelease(version == null ? UpdateFeed.WEB + "/releases" : version.releaseUrl());
         });
-        options.addView(updateDownload[index], space(-1, -2, 10));
+        release.setTextColor(ink); release.setTextSize(14);
+        release.setMinimumHeight(dp(48));
+        release.setPadding(dp(10), dp(14), dp(10), dp(14));
+        release.setBackground(ripple(surface, 14));
+        LinearLayout.LayoutParams releaseSize = new LinearLayout.LayoutParams(0, -2, 1);
+        releaseSize.setMarginStart(dp(10));
+        actions.addView(release, releaseSize);
+        card.detailsTitle = label("版本详情", 12, muted, false);
+        card.chevron = new NavigationArtwork(this, "chevron", muted);
+        card.detailsToggle = disclosure(card.detailsTitle, card.chevron);
+        card.detailsBody = column();
+        card.detailsBody.setVisibility(View.GONE);
+        card.detailsBody.setPadding(dp(12), dp(12), dp(12), dp(14));
+        card.detailsBody.setBackground(shape(surface, 12));
+        card.tag = label("", 12, muted, false);
+        card.pairing = label("", 13, ink, true);
+        card.notes = label("", 13, ink, false);
+        card.notes.setTextIsSelectable(true);
+        card.notes.setLineSpacing(dp(5), 1f);
+        card.detailsBody.addView(card.tag);
+        card.detailsBody.addView(card.pairing, space(-1, -2, 8));
+        card.detailsBody.addView(card.notes, space(-1, -2, 12));
+        card.detailsToggle.setOnClickListener(view -> {
+            card.expanded = !card.expanded;
+            renderUpdateDisclosure(card, device);
+        });
+        LinearLayout summary = horizontal ? row() : column();
+        summary.addView(statusArea, new LinearLayout.LayoutParams(horizontal ? 0 : -1, -2, horizontal ? 1 : 0));
+        LinearLayout.LayoutParams disclosureSize = new LinearLayout.LayoutParams(horizontal ? dp(90) : -1, -2);
+        if (horizontal) disclosureSize.setMarginStart(dp(8));
+        summary.addView(card.detailsToggle, disclosureSize);
+        panel.addView(summary, space(-1, -2, 10));
+        panel.addView(actions, space(-1, -2, 8));
+        panel.addView(card.detailsBody, space(-1, -2, 12));
+        options.addView(panel, space(-1, -2, 16));
+    }
+
+    private void updatePreferences(LinearLayout parent, UpdateChecker checker, boolean band) {
+        String device = band ? "手环" : "手机";
+        parent.addView(label(device + "更新设置", 14, ink, true), space(-1, -2, 8));
+        LinearLayout automatic = row();
+        LinearLayout copy = column();
+        copy.addView(label("自动检查", 14, ink, false));
+        copy.addView(label("每天打开时检查一次", 12, muted, false), space(-1, -2, 4));
+        automatic.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+        Switch toggle = toggle("自动检查" + device + "更新", checker.automatic());
+        toggle.setOnCheckedChangeListener((button, value) -> checker.setAutomatic(value));
+        automatic.addView(toggle, new LinearLayout.LayoutParams(dp(62), dp(48)));
+        parent.addView(automatic, space(-1, -2, 6));
+        CheckBox preview = new CheckBox(this);
+        preview.setText(band ? R.string.receive_band_preview_updates : R.string.receive_phone_preview_updates);
+        preview.setTextSize(14); preview.setTextColor(ink); preview.setMinimumHeight(dp(48));
+        preview.setButtonTintList(new ColorStateList(new int[][] {{android.R.attr.state_checked}, {} }, new int[] {dark ? accent : accentInk, muted}));
+        preview.setChecked(checker.experimental());
+        preview.setOnCheckedChangeListener((view, checked) -> checker.setExperimental(checked));
+        parent.addView(preview, space(-1, -2, 2));
+        TextView hint = label("仅影响" + device + "；预发布可能不稳定，默认关闭", 12, muted, false);
+        LinearLayout.LayoutParams hintSize = space(-1, -2, 0);
+        hintSize.bottomMargin = dp(14);
+        parent.addView(hint, hintSize);
+    }
+
+    private LinearLayout disclosure(TextView title, View chevron) {
+        LinearLayout toggle = row();
+        toggle.setMinimumHeight(dp(48));
+        toggle.setPadding(0, dp(10), 0, dp(10));
+        toggle.setBackground(ripple(background, 12));
+        toggle.setFocusable(true);
+        toggle.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        chevron.setRotation(90);
+        toggle.addView(chevron, new LinearLayout.LayoutParams(dp(16), dp(16)));
+        toggle.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override public void onInitializeAccessibilityNodeInfo(View host, android.view.accessibility.AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName("android.widget.Button");
+            }
+        });
+        return toggle;
+    }
+
+    private void disclosureState(LinearLayout toggle, View chevron, boolean expanded, String title) {
+        chevron.setRotation(expanded ? 270 : 90);
+        toggle.setContentDescription(title + (expanded ? "，已展开，点击收起" : "，已收起，点击展开"));
+        if (Build.VERSION.SDK_INT >= 30) toggle.setStateDescription(expanded ? "已展开" : "已收起");
+    }
+
+    private void renderUpdateDisclosure(UpdateCardViews card, String device) {
+        card.detailsBody.setVisibility(card.expanded ? View.VISIBLE : View.GONE);
+        setText(card.detailsTitle, "版本详情");
+        disclosureState(card.detailsToggle, card.chevron, card.expanded, device + "版本详情");
     }
 
     private void checkButtonState(TextView button, UpdateChecker checker, String text) {
@@ -482,7 +631,6 @@ public final class MainActivity extends Activity {
     private void renderUpdateSection(UpdateChecker checker, boolean band) {
         int index = band ? 1 : 0;
         String device = band ? "手环" : "手机";
-        checkButtonState(sheetUpdateCheck[index], checker, "检查" + device + "更新");
         UpdateFeed.Version newer = checker.available();
         LinearLayout notice = band ? bandUpdateNotice : updateNotice;
         notice.setVisibility(newer == null ? View.GONE : View.VISIBLE);
@@ -491,19 +639,36 @@ public final class MainActivity extends Activity {
                 + (band ? newer.bandVersion : newer.phoneVersion));
             setText(band ? bandNoticeDetail : updateNoticeDetail, "点此查看" + device + "更新说明与下载；核对配套要求");
         }
-        UpdateFeed.Version listed = band ? checker.latestVersion() : newer;
-        if (updateStatus[index] != null) {
-            String current = band ? (bridge.bandVersionCode() > 0 ? bridge.bandVersionName() : "未知；请连接并打开支持版本报告的手环应用") : BuildConfig.VERSION_NAME;
-            String text = "当前" + device + "版本：" + current + "\n" + checker.status();
-            if (band && bridge.bandVersionCode() == 0) text += "\n手环版本未知，发布版本仅供查看，不能判断是否需要升级。";
-            if (listed != null) text += "\n" + (listed.experimental ? "Preview 实验版" : "正式版")
-                + " · " + device + " " + (band ? listed.bandVersion : listed.phoneVersion)
-                + "\n此发布配套手机 " + listed.phoneVersion + " / 手环 " + listed.bandVersion
-                + (listed.notes.isEmpty() ? "" : "\n\n" + listed.notes);
-            setText(updateStatus[index], text);
+        UpdateCardViews card = updateCards[index];
+        if (card == null) return;
+        checkButtonState(card.check, checker, "检查" + device + "更新");
+        UpdateFeed.Version listed = checker.latestVersion();
+        int installed = band ? bridge.bandVersionCode() : BuildConfig.VERSION_CODE;
+        UpdateChecker.CheckState state = checker.checkState();
+        setText(card.current, band ? installed > 0 ? bridge.bandVersionName() : "未知" : BuildConfig.VERSION_NAME);
+        setText(card.latest, UpdatePresentation.version(listed, band));
+        setText(card.source, UpdatePresentation.source(listed, state));
+        setText(card.channel, checker.experimental() ? "正式 + Preview" : "仅正式版");
+        setText(card.status, UpdatePresentation.status(listed, installed, band, checker.experimental(), state));
+        int statusColor = ink;
+        if (state == UpdateChecker.CheckState.INCOMPLETE) statusColor = color(dark ? "#EAC98F" : "#805511");
+        else if (newer != null && state == UpdateChecker.CheckState.COMPLETE) statusColor = dark ? accent : accentInk;
+        card.status.setTextColor(statusColor);
+        String detail = UpdatePresentation.detail(listed, installed, band, checker.experimental(), state, checker.status());
+        setText(card.statusDetail, detail);
+        card.statusDetail.setVisibility(detail.isEmpty() ? View.GONE : View.VISIBLE);
+        card.detailsToggle.setVisibility(listed == null ? View.GONE : View.VISIBLE);
+        String tag = listed == null ? null : listed.tag;
+        if (!java.util.Objects.equals(card.detailTag, tag)) {
+            card.detailTag = tag;
+            card.expanded = false;
         }
-        // Unknown installed band: allow viewing published packages, never label it an upgrade.
-        if (updateDownload[index] != null) updateDownload[index].setVisibility(listed == null ? View.GONE : View.VISIBLE);
+        if (listed != null) {
+            setText(card.tag, "发布标签：" + listed.tag);
+            setText(card.pairing, "此发布配套\n手机 " + listed.phoneVersion + "  /  手环 " + listed.bandVersion);
+            setText(card.notes, UpdatePresentation.notes(listed));
+        }
+        renderUpdateDisclosure(card, device);
     }
 
     private void openRelease(String url) {
@@ -573,12 +738,16 @@ public final class MainActivity extends Activity {
         window.setLayout(Math.min(getResources().getDisplayMetrics().widthPixels, dp(600)), -2);
         systemBarIcons(window);
         int maxHeight = Math.round(getResources().getDisplayMetrics().heightPixels * 0.85f);
-        shell.post(() -> {
-            if (dialog.isShowing() && shell.getHeight() > maxHeight) {
-                scrolling.setLayoutParams(new LinearLayout.LayoutParams(-1,
-                    maxHeight - dp(16) - shell.getPaddingBottom()));
-            }
-        });
+        Runnable resize = () -> {
+            if (!dialog.isShowing() || body.getMeasuredHeight() == 0) return;
+            int height = Math.min(body.getMeasuredHeight(),
+                Math.max(dp(48), maxHeight - dp(16) - shell.getPaddingBottom()));
+            if (scrolling.getLayoutParams().height != height)
+                scrolling.setLayoutParams(new LinearLayout.LayoutParams(-1, height));
+        };
+        body.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resize.run());
+        shell.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resize.run());
+        shell.post(resize);
         sheet = dialog;
     }
 

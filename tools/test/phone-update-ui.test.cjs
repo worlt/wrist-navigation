@@ -19,6 +19,29 @@ test('each update section has its own persistent native Preview checkbox', () =>
 test('independent running states and unknown band version are explicit', () => {
   assert.match(source, /checkButtonState\(homeUpdateCheck, updates,/);
   assert.match(source, /checkButtonState\(homeBandUpdateCheck, bandUpdates,/);
-  assert.match(source, /手环版本未知/);
+  const presentation = fs.readFileSync(path.join(__dirname, '../../android/app/src/main/java/io/github/mi9pro/navigation/UpdatePresentation.java'), 'utf8');
+  assert.match(presentation, /手环版本未知/);
   assert.match(source, /bridge\.bandVersionCode\(\)/);
+});
+
+test('version panels distinguish installed and GitHub versions even without an upgrade', () => {
+  assert.match(source, /class UpdateCardViews/);
+  assert.match(source, /"当前安装"/);
+  assert.match(source, /"GitHub 最新版本"/);
+  assert.match(source, /UpdateFeed\.Version listed = checker\.latestVersion\(\)/);
+  assert.match(source, /UpdatePresentation\.version\(listed, band\)/);
+  assert.match(source, /screenWidthDp >= 360/);
+  assert.match(source, /fontScale <= 1\.25f/);
+});
+test('release details and secondary settings are independently collapsed by default', () => {
+  assert.match(source, /card\.detailsBody\.setVisibility\(View\.GONE\)/);
+  assert.match(source, /card\.expanded = !card\.expanded/);
+  assert.match(source, /setStateDescription/);
+  assert.match(source, /settingsBody\.setVisibility\(View\.GONE\)/);
+  assert.match(source, /UpdatePresentation\.notes\(listed\)/);
+  assert.doesNotMatch(source, /text \+=.*listed\.notes/);
+});
+test('expanding a sheet recalculates its scrollable height', () => {
+  assert.match(source, /body\.addOnLayoutChangeListener/);
+  assert.match(source, /Math\.min\(body\.getMeasuredHeight\(\),/);
 });
