@@ -443,6 +443,8 @@ public final class WearBridge {
                 lastAckAt = System.currentTimeMillis();
                 diagnostics.ack(sequence, lastAckAt);
                 long exit = appLink.exitId(SystemClock.elapsedRealtime());
+                long open = appLink.openId(SystemClock.elapsedRealtime());
+                if (open != 0 && (session + ":" + open).equals(packet.optString("phoneOpenId"))) appLink.ackOpen(open);
                 if (exit != 0 && (session + ":" + exit).equals(packet.optString("phoneExitId"))) {
                     appLink.ackExit(exit);
                     statusText = "手环已收到退出请求";
@@ -451,7 +453,7 @@ public final class WearBridge {
                 event("ack sequence=" + sequence);
                 // ACK is stronger than a delayed SDK success. Flush a foreground cancellation
                 // now, rather than waiting behind the obsolete close frame's callback.
-                if (packet.has("phoneExitId")) sendPolicy.reset();
+                if (packet.has("phoneExitId") || packet.has("phoneOpenId")) sendPolicy.reset();
                 sendLatest();
             }
         } catch (Exception ignored) { compatibility.rejected("JSON或封包格式"); /* Never log peer contents. */ }
@@ -463,9 +465,11 @@ public final class WearBridge {
         if (nodeId == null || sendFlight.pending()) return;
         long exit = appLink.exitId(SystemClock.elapsedRealtime());
         // Do not send a normal snapshot immediately after the exit ACK: that would cancel
-        // the band's 300 ms exit grace. Also do not reopen a manually restarted band.
+        // the band's exit/vibration grace. Also do not reopen a manually restarted band.
         if (appLink.blocksNavigationLaunch() && exit == 0) return;
         String phoneExitId = exit == 0 ? "" : session + ":" + exit;
+        long open = exit == 0 ? appLink.openId(SystemClock.elapsedRealtime()) : 0;
+        String phoneOpenId = open == 0 ? "" : session + ":" + open;
         // Before the first permission grant, do not emit a misleading live state.
         NavigationParser.Result outgoing = exit != 0 ? state("paused", "手机应用已退出") :
                 (enabled() ? latest : state("paused", "手机已暂停同步"));
@@ -475,7 +479,7 @@ public final class WearBridge {
         String fingerprint = outgoing.fingerprint() + "\n" + keepScreenOnEnabled()
                 + "\n" + actionId + "\n" + allowVibration + "\n" + cyclingReminders()
                 + "\n" + navigationLifecycle.id() + "\n" + navigationLifecycle.ended()
-                + "\n" + vibrationEnabled() + "\n" + phoneExitId;
+                + "\n" + vibrationEnabled() + "\n" + phoneExitId + "\n" + phoneOpenId;
         long delay = sendPolicy.delay(fingerprint, "active".equals(outgoing.status), SystemClock.elapsedRealtime());
         if (delay != 0) {
             // Heartbeats require a fresh notification read; only defer short update bursts here.
@@ -495,6 +499,7 @@ public final class WearBridge {
                 // The user preference remains meaningful when sync is paused or the link drops.
                 .put("reminderEnabled", vibrationEnabled());
             if (exit != 0) packet.put("phoneExitId", phoneExitId);
+            if (open != 0) packet.put("phoneOpenId", phoneOpenId);
             if (actionId != null) packet.put("actionId", actionId);
             if (navigationLifecycle.id() != null) {
                 packet.put("navigationId", navigationLifecycle.id());

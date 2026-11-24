@@ -6,7 +6,7 @@ final class PhoneAppLinkPolicy {
     static final int MAX_ATTEMPTS = 3;
     private boolean foreground, exited, openEnabled, closeEnabled, pending, opened;
     private int attempts;
-    private long token, exit, exitUntil, retryAt;
+    private long token, exit, exitUntil, retryAt, openReminder, openUntil;
 
     PhoneAppLinkPolicy(boolean openEnabled, boolean closeEnabled) {
         this.openEnabled = openEnabled;
@@ -44,7 +44,9 @@ final class PhoneAppLinkPolicy {
     }
     boolean completeLaunch(long request, boolean success, long now) {
         if (!pending || request != token) return false;
-        pending = false; opened = success; retryAt = now + RETRY_MS; return true;
+        pending = false; opened = success; retryAt = now + RETRY_MS;
+        if (success) { openReminder = request; openUntil = now + EXIT_WINDOW_MS; }
+        return true;
     }
     void disconnected(long now) {
         if (pending) { pending = false; token++; retryAt = now + RETRY_MS; }
@@ -59,7 +61,12 @@ final class PhoneAppLinkPolicy {
         // Only compensate actual launch success, never a timeout or manual band launch.
         exit = ++token; exitUntil = now + EXIT_WINDOW_MS;
     }
+    long openId(long now) {
+        if (openReminder != 0 && now >= openUntil) openReminder = 0;
+        return openReminder;
+    }
+    void ackOpen(long id) { if (id != 0 && openReminder == id) openReminder = 0; }
     void ackExit(long id) { if (id != 0 && exit == id) clearExit(); }
     private void clearExit() { exit = 0; exitUntil = 0; }
-    private void resetLaunch() { pending = opened = false; attempts = 0; retryAt = 0; token++; }
+    private void resetLaunch() { openReminder = openUntil = 0; pending = opened = false; attempts = 0; retryAt = 0; token++; }
 }

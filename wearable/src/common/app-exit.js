@@ -10,7 +10,7 @@ function createAppExit(options) {
     if (timer !== null) unschedule(timer);
     timer = null; pending = '';
   }
-  function consume(packet) {
+  function consume(packet, delay) {
     if (!alive) return false;
     const id = packet && packet.phoneExitId;
     if (!id) { if (pending) handled = pending; cancel(); closing = false; return false; }
@@ -23,7 +23,7 @@ function createAppExit(options) {
       pending = ''; handled = id;
       try { options.load('@system.app').terminate(); }
       catch (error) { closing = false; if (options.onError) options.onError(error); }
-    }, EXIT_DELAY_MS);
+    }, Number.isFinite(delay) ? Math.max(EXIT_DELAY_MS, Math.min(2700, delay)) : EXIT_DELAY_MS);
     return true;
   }
   return { consume, isClosing: () => closing,

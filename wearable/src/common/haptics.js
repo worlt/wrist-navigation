@@ -71,7 +71,7 @@ function createHaptics(options) {
     return true;
   }
   return {
-    peek: () => ({ profile: selected, enabled, ready, status }),
+    peek: () => ({ profile: selected, enabled, ready, status, duration: profile(selected).spacing * 2 }),
     load() {
       const started = revision;
       try {

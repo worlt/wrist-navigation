@@ -22,7 +22,8 @@ module.exports = function phonePreviewModel() {
     for (const name of ['phone', 'band']) {
       const device = model[name]; device.generation++; device.state = scene === 'offline' ? 'incomplete' : 'complete';
       device.unknown = name === 'band' && scene === 'unknown';
-      device.latest = scene === 'update' ? name === 'phone' ? '0.4.3' : '0.5.2' : device.current;
+      const parts = device.current.split('.').map(Number); parts[2]++;
+      device.latest = scene === 'update' ? parts.join('.') : device.current;
       device.latestCode = device.code + (scene === 'update' ? 1 : 0);
       device.expanded = false;
     }

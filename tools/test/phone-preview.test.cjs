@@ -36,3 +36,13 @@ test('narrow phone preview grid allows its children to shrink below the 390px mo
  assert.match(html,/grid-template-columns:minmax\(0,1fr\)/);
  assert.match(html,/\.phone\{margin:auto;min-width:0\}/);
 });
+
+test('fictional update versions advance from current sources, never reuse the installed version label',()=>{
+ const model=preview.create({phone:{versionName:'0.4.3',versionCode:28},band:{versionName:'0.5.2',versionCode:26}});
+ preview.scenario(model,'update');assert.equal(preview.view(model,'phone').latest,'0.4.4');assert.equal(preview.view(model,'band').latest,'0.5.3');
+});
+
+test('phone bridge emits and ACK-clears explicit bounded link reminders independently of navigation',()=>{
+ const source=fs.readFileSync(path.resolve(__dirname,'../../android/app/src/main/java/io/github/mi9pro/navigation/WearBridge.java'),'utf8');
+ assert.match(source,/appLink\.openId/);assert.match(source,/packet\.put\("phoneOpenId", phoneOpenId\)/);assert.match(source,/appLink\.ackOpen/);
+});

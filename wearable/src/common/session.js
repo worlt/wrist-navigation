@@ -30,6 +30,29 @@ function createSession(options) {
   // Official interconnect: onclose, ready-state=2 or error code 1006 prove link loss.
   // https://iot.mi.com/vela/quickapp/zh/features/network/interconnect.html
   let linkEstablished = false, lossRevision = 0, interruption = '';
+  let activeLink = null, pendingLink = null;
+  const handledLinks = [];
+  function claimLink(kind, packet) {
+    const id = kind === 'exit' ? packet.phoneExitId : packet.phoneOpenId;
+    const key = kind + ':' + packet.session + ':' + id;
+    if (handledLinks.indexOf(key) >= 0) return null;
+    handledLinks.push(key); if (handledLinks.length > 32) handledLinks.shift();
+    return { kind, id, session: packet.session, at: now() };
+  }
+  function linkReminderAllowed(event) {
+    return alive && activeLink === event && latest && latest.session === event.session &&
+      latest.reminderEnabled === true && now() - event.at >= 0 && now() - event.at < 10000 &&
+      (event.kind === 'exit' ? appExit.isClosing() && latest.phoneExitId === event.id : !appExit.isClosing());
+  }
+  function flushLinkReminder() {
+    const event = pendingLink;
+    if (!event || !haptics.peek().ready) return;
+    pendingLink = null;
+    if (!linkReminderAllowed(event) || !haptics.peek().enabled) return;
+    // A slow preference read must not start a pair that native termination would cut off.
+    if (event.kind === 'exit' && now() + haptics.peek().duration + 300 > event.deadline) return;
+    haptics.play(() => linkReminderAllowed(event));
+  }
   const haptics = createHaptics({ load, now, schedule: options.schedule,
     unschedule: options.unschedule, changed: notify, onError: diagnostic.record });
   const appExit = createAppExit({ load, schedule: options.schedule, unschedule: options.unschedule,
@@ -48,6 +71,7 @@ function createSession(options) {
   }
   function notify() {
     if (!alive) return;
+    flushLinkReminder();
     const state = peek();
     for (const listener of listeners.slice()) {
       try { listener(state); } catch (error) { /* One closed/failed UI must not interrupt ACK. */ }
@@ -62,7 +86,7 @@ function createSession(options) {
     diagnostic.record(stage === '互联初始化失败' ? 'link-init' : stage === '连接检查失败' ? 'ready-fail' : 'link-error', data, code);
     connected = false; eventRevision++;
     lastReadyAt = lastCheckAt = -1;
-    if (interruption !== 'disconnect') haptics.cancel();
+    if (interruption !== 'disconnect' && !(interruption === 'exit' && appExit.isClosing())) haptics.cancel();
     connectionError = presentation.errorText(stage, data, code);
     notify();
   }
@@ -78,7 +102,7 @@ function createSession(options) {
     sendEpoch++;
     const transition = linkEstablished;
     linkEstablished = false;
-    if (transition) { lossRevision++; haptics.cancel(); interruption = 'disconnect'; }
+    if (transition) { lossRevision++; if (!appExit.isClosing()) { haptics.cancel(); interruption = 'disconnect'; } }
     fail('连接断开', data);
     const token = lossRevision, lostAt = now();
     if (transition && !appExit.isClosing() && latest && latest.reminderEnabled === true) {
@@ -211,31 +235,43 @@ function createSession(options) {
           linkReady();
           latest = packet; receivedAt = now(); connectionError = ''; eventRevision++;
           if (packet.phoneExitId) {
-            haptics.cancel(); interruption = '';
+            const event = claimLink('exit', packet);
+            if (event) { haptics.cancel(); interruption = 'exit'; activeLink = event; pendingLink = event; }
             reminders.consume(packet, false); journeys.consume(packet, false);
-            appExit.consume(packet);
+            const preference = haptics.peek();
+            const delay = packet.reminderEnabled === true && (!preference.ready || preference.enabled) ? preference.duration + 300 : 300;
+            if (event) event.deadline = now() + delay;
+            appExit.consume(packet, delay);
             send({ v: 1, type: 'ack', session: packet.session, seq: packet.seq, phoneExitId: packet.phoneExitId });
             notify();
             return;
           }
           appExit.consume(packet);
+          if (interruption === 'exit') { haptics.cancel(); activeLink = pendingLink = null; interruption = ''; }
+          const opening = packet.phoneOpenId ? claimLink('open', packet) : null;
+          if (opening) { haptics.cancel(); interruption = 'open'; activeLink = opening; pendingLink = opening; }
+          const openingAlive = activeLink && activeLink.kind === 'open' && linkReminderAllowed(activeLink);
           const paused = packet.status === 'paused' && packet.reminderEnabled === true;
           const pauseTransition = packet.status === 'paused' && previous &&
             previous.session === packet.session && previous.status !== 'paused';
           if (interruption === 'pause' && !paused) { haptics.cancel(); interruption = ''; }
           const ending = packet.navigationEnded && (packet.status === 'ended' || packet.status === 'idle');
           if ((!ending && packet.status !== 'active' && !paused) || (!packet.vibrationEnabled && !paused) ||
-              (previousSession && previousSession !== packet.session)) haptics.cancel();
+              (previousSession && previousSession !== packet.session)) {
+            if (!openingAlive) { haptics.cancel(); activeLink = pendingLink = null; if (interruption === 'open') interruption = ''; }
+          }
           if (pauseTransition) { haptics.cancel(); interruption = 'pause'; }
           const preferences = haptics.peek();
           const eligible = preferences.ready && preferences.enabled;
           const turn = reminders.consume(packet, eligible);
           const journey = journeys.consume(packet, eligible);
-          const reminder = journey || turn;
+          const reminder = opening ? null : journey || turn;
           if (journey === 'end') haptics.cancel();
-          send({ v: 1, type: 'ack', session: packet.session, seq: packet.seq });
+          const ack = { v: 1, type: 'ack', session: packet.session, seq: packet.seq };
+          if (packet.phoneOpenId) ack.phoneOpenId = packet.phoneOpenId;
+          send(ack);
           notify();
-          if (pauseTransition && paused && current() && connected) {
+          if (!opening && pauseTransition && paused && current() && connected) {
             haptics.play(() => current() && connected && latest && latest.session === packet.session &&
               latest.status === 'paused' && latest.reminderEnabled === true &&
               now() - receivedAt >= 0 && now() - receivedAt < protocol.EXPIRY_MS);

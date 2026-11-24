@@ -122,4 +122,24 @@ public class PhoneAppLinkPolicyTest {
         assertEquals(0, p.exitId(3)); p.requestExit(4); p.setCloseEnabled(false); p.reassertExit(5);
         assertEquals(0, p.exitId(5));
     }
+
+    @Test public void successfulPhoneLaunchExposesABoundedAckedOpenReminder() {
+        PhoneAppLinkPolicy p=new PhoneAppLinkPolicy(true,true);p.setForeground(true,0);
+        long request=p.claimLaunch(0);assertEquals(0,p.openId(0));
+        assertTrue(p.completeLaunch(request,true,10));assertEquals(request,p.openId(11));
+        p.ackOpen(request+1);assertEquals(request,p.openId(12));p.ackOpen(request);assertEquals(0,p.openId(13));
+    }
+    @Test public void failedStaleOrHiddenLaunchNeverPublishesAnOpenReminder() {
+        PhoneAppLinkPolicy p=new PhoneAppLinkPolicy(true,true);p.setForeground(true,0);
+        long request=p.claimLaunch(0);p.completeLaunch(request,false,1);assertEquals(0,p.openId(2));
+        request=p.claimLaunch(5001);p.setForeground(false,5002);
+        assertFalse(p.completeLaunch(request,true,5003));assertEquals(0,p.openId(5004));
+    }
+    @Test public void openReminderExpiresAndIsClearedByHideOrSwitch() {
+        PhoneAppLinkPolicy p=new PhoneAppLinkPolicy(true,true);p.setForeground(true,0);
+        long request=p.claimLaunch(0);p.completeLaunch(request,true,1);
+        assertEquals(request,p.openId(10000));assertEquals(0,p.openId(10001));
+        p.setForeground(false,10002);p.setForeground(true,10003);request=p.claimLaunch(10003);
+        p.completeLaunch(request,true,10004);p.setOpenEnabled(false);assertEquals(0,p.openId(10005));
+    }
 }

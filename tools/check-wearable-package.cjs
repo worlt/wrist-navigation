@@ -361,18 +361,32 @@ const exitFrame = (seq, phoneExitId) => ({ v: 1, type: 'navigation', session: 'e
   status: 'paused', title: '', rawText: '', instruction: '手机应用已退出', maneuver: 'unknown', distance: '',
   keepScreenOn: false, vibrationEnabled: false, reminderEnabled: true, ...(phoneExitId ? { phoneExitId } : {}) });
 const exitDeliver = (seq, id) => connection.onmessage({ data: JSON.stringify(exitFrame(seq, id)) });
+application.navigationSession.setHapticEnabled(true);
+application.navigationSession.selectHaptic('noticeable');
 const quietExit = vibrations.length;
 exitDeliver(1, 'close-1'); assert.equal(sent.at(-1).phoneExitId, 'close-1');
-hapticClock.advance(200); exitDeliver(2, 'close-1'); hapticClock.advance(99);
-assert.equal(terminations.length, 0); hapticClock.advance(1);
-assert.deepEqual(terminations, ['close-1']); assert.equal(vibrations.length, quietExit);
-exitDeliver(3, 'close-2'); hapticClock.advance(200); exitDeliver(4); hapticClock.advance(1000);
+assert.equal(vibrations.length, quietExit + 1, 'compiled exit starts a pair after ACK');
+hapticClock.advance(200); exitDeliver(2, 'close-1'); hapticClock.advance(1000);
+assert.equal(vibrations.length, quietExit + 2); assert.equal(terminations.length, 0);
+hapticClock.advance(1500); assert.deepEqual(terminations, ['close-1']);
+exitDeliver(3, 'close-2'); hapticClock.advance(200); exitDeliver(4); hapticClock.advance(3000);
 assert.equal(terminations.length, 1, 'compiled foreground update cancels exit');
-appApiMissing = true; exitDeliver(5, 'close-3'); hapticClock.advance(300);
+assert.equal(vibrations.length, quietExit + 3, 'compiled reentry cancels the exit second pulse');
+appApiMissing = true; exitDeliver(5, 'close-3'); hapticClock.advance(2700);
 assert.match(application.navigationSession.peek().connectionError, /退出应用失败/);
 assert.equal(terminations.length, 1); appApiMissing = false;
-exitDeliver(6, 'close-4'); application.onDestroy(); hapticClock.advance(1000);
+exitDeliver(6, 'close-4'); application.onDestroy(); hapticClock.advance(3000);
 assert.equal(terminations.length, 1, 'compiled App destroy cancels exit timer');
+application.onCreate(); application.navigationSession.retry();
+application.navigationSession.setHapticEnabled(true);
+application.navigationSession.selectHaptic('gentle');
+const beforeOpen = vibrations.length;
+const openFrame = { ...exitFrame(1), session:'open-package', status:'idle', phoneOpenId:'open-1' };
+connection.onmessage({data:JSON.stringify(openFrame)});
+assert.equal(sent.at(-1).phoneOpenId,'open-1');assert.equal(vibrations.length,beforeOpen+1);
+connection.onmessage({data:JSON.stringify({...openFrame,seq:2})});hapticClock.advance(700);
+assert.equal(vibrations.length,beforeOpen+2,'compiled idle phone entry is one pair despite repeated snapshots');
+application.onDestroy();
 // Verify latency-related behavior in the actual compiled package, including the no-font build.
 application.onCreate(); page.onInit(); page.onReady(); page.onShow();
 const realtimeFrame = (seq, meters) => ({ v: 1, type: 'navigation', session: 'realtime-package', seq,

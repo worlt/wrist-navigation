@@ -7,7 +7,7 @@ const packet = (seq, extra = {}) => ({ v: 1, type: 'navigation', session: 'phone
 function launch(options = {}) {
   const time = require('./helpers/clock')();
   let instances = 0, apkReads = 0;
-  const sent = [], vibrations = [], pending = [], exits = [];
+  const sent = [], vibrations = [], pending = [], exits = [], storageReads = [];
   const connection = {
     getApkStatus() { apkReads++; return 'CONNECTED'; },
     getReadyState(callbacks) { if (options.stateThrows) throw Error('state unavailable'); if (options.pending) pending.push(callbacks); else callbacks.success({ status: 1 }); },
@@ -20,13 +20,13 @@ function launch(options = {}) {
   };
   const session = createSession({ ...time, version: options.version, load(name) {
     if (name === '@system.app') return { terminate() { assert.equal(sent.at(-1).type, 'ack'); exits.push(sent.at(-1).phoneExitId); } };
-    if (name === '@system.storage') return { get: cb => cb.success(''), set: cb => cb.success() };
+    if (name === '@system.storage') return { get: cb => options.pendingStorage ? storageReads.push(cb) : cb.success(''), set: cb => cb.success() };
     if (name === '@system.interconnect') return { instance() { instances++; return connection; } };
     if (name === '@system.vibrator') { if (options.missingVibrator) throw Error('missing API');
       return { vibrate(request) { assert.equal(sent.at(-1).type, 'ack'); vibrations.push(request.mode); } }; }
     throw Error('unexpected API '+name);
   } });
-  return { session, connection, sent, vibrations, pending, exits, instances: () => instances, apkReads: () => apkReads,
+  return { session, connection, sent, vibrations, pending, exits, storageReads, instances: () => instances, apkReads: () => apkReads,
     deliver(message) { connection.onmessage({ data: JSON.stringify(message) }); if (!options.manualTime) time.advance(2400); }, advance: time.advance };
 }
 test('application handles turns and near reminders without any page subscriber', () => {
@@ -212,9 +212,9 @@ test('switching off or resuming cancels a pause pair, muted pause is consumed', 
   }
 });
 
-test('explicit phone exit ACK precedes native termination and does not vibrate', () => {
+test('muted phone exit ACK precedes native termination and does not vibrate', () => {
   const a = launch({ manualTime: true }); a.session.retry();
-  a.deliver(packet(1, { phoneExitId: 'exit-1', reminderEnabled: true }));
+  a.deliver(packet(1, { phoneExitId: 'exit-1', reminderEnabled: false }));
   assert.equal(a.sent.at(-1).phoneExitId, 'exit-1'); assert.equal(a.exits.length, 0);
   a.connection.onclose({}); a.advance(300);
   assert.deepEqual(a.exits, ['exit-1']); assert.equal(a.vibrations.length, 0);
@@ -234,7 +234,8 @@ test('an exit ACK failing synchronously cannot produce a disconnect vibration', 
   const before = a.vibrations.length;
   a.connection.send = callbacks => callbacks.fail({ code: 1006 }, 1006);
   a.deliver(packet(2, { phoneExitId: 'exit-1', reminderEnabled: true })); a.advance(3000);
-  assert.equal(a.vibrations.length, before);
+  assert.equal(a.vibrations.length, before + 2);
+  assert.equal(a.exits.length, 1);
 });
 
 
@@ -285,4 +286,75 @@ test('ArrayBuffer version query reports version but optional send failure keeps 
   app.connection.send = callbacks => callbacks.fail('probe unavailable', 201);
   app.connection.onmessage({ data: query });
   assert.equal(app.session.peek().connected, true); assert.equal(app.session.peek().latest.seq, 1);
+});
+
+
+test('phone entry command vibrates while idle, ACKs the id and never replays', () => {
+  const a=launch({manualTime:true});a.session.retry();
+  const open={status:'idle',vibrationEnabled:false,reminderEnabled:true,phoneOpenId:'open-1'};
+  a.deliver(packet(1,open));assert.equal(a.sent.at(-1).phoneOpenId,'open-1');assert.equal(a.vibrations.length,1);
+  a.deliver(packet(2,open));a.advance(1200);assert.equal(a.vibrations.length,2);
+  a.deliver(packet(3,open));a.advance(3000);assert.equal(a.vibrations.length,2);
+});
+test('phone entry pair merges with a navigation start and survives clearing its ACKed id',()=>{
+ const a=launch({manualTime:true});a.session.retry();
+ a.deliver(packet(1,{phoneOpenId:'open-1',reminderEnabled:true,navigationId:'route',navigationEnded:false}));
+ a.deliver(packet(2,{reminderEnabled:true,navigationId:'route',navigationEnded:false}));a.advance(3000);
+ assert.equal(a.vibrations.length,2);
+});
+test('phone exit completes its pair before termination even after transport loss',()=>{
+ const a=launch({manualTime:true});a.session.retry();
+ a.deliver(packet(1,{status:'paused',vibrationEnabled:false,phoneExitId:'exit-pair',reminderEnabled:true}));
+ assert.equal(a.sent.at(-1).phoneExitId,'exit-pair');assert.equal(a.vibrations.length,1);
+ a.connection.onclose({});a.advance(1200);assert.equal(a.vibrations.length,2);assert.equal(a.exits.length,0);
+ a.advance(1500);assert.deepEqual(a.exits,['exit-pair']);
+});
+test('duplicate exit commands do not interrupt or replay the closing pair',()=>{
+ const a=launch({manualTime:true});a.session.retry();
+ const close={status:'paused',vibrationEnabled:false,phoneExitId:'exit-pair',reminderEnabled:true};
+ a.deliver(packet(1,close));a.advance(200);a.deliver(packet(2,close));a.advance(2500);
+ assert.equal(a.vibrations.length,2);assert.deepEqual(a.exits,['exit-pair']);
+});
+test('reentry cancels exit vibration and termination; muted events stay silent',()=>{
+ const a=launch({manualTime:true});a.session.retry();
+ a.deliver(packet(1,{phoneExitId:'exit-pair',reminderEnabled:true}));a.advance(200);
+ a.deliver(packet(2,{status:'idle',vibrationEnabled:false,reminderEnabled:true}));a.advance(3000);
+ assert.equal(a.vibrations.length,1);assert.equal(a.exits.length,0);
+ for(const mute of ['phone','band']){
+  const b=launch({manualTime:true});b.session.retry();if(mute==='band')b.session.setHapticEnabled(false);
+  b.deliver(packet(1,{status:'idle',vibrationEnabled:false,phoneOpenId:'open',reminderEnabled:mute!=='phone'}));
+  b.deliver(packet(2,{status:'paused',vibrationEnabled:false,phoneExitId:'exit',reminderEnabled:mute!=='phone'}));
+  b.advance(3000);assert.equal(b.vibrations.length,0,mute);assert.equal(b.exits.length,1,mute);
+ }
+});
+test('unavailable vibrator never blocks phone entry ACK or native exit',()=>{
+ const a=launch({manualTime:true,missingVibrator:true});a.session.retry();
+ a.deliver(packet(1,{status:'idle',vibrationEnabled:false,phoneOpenId:'open',reminderEnabled:true}));
+ a.deliver(packet(2,{status:'paused',vibrationEnabled:false,phoneExitId:'exit',reminderEnabled:true}));
+ a.advance(3000);assert.equal(a.vibrations.length,0);assert.equal(a.exits.length,1);
+});
+test('protocol rejects malformed or conflicting phone link ids',()=>{
+ const p=require('../src/common/protocol');
+ assert.ok(p.decode(JSON.stringify(packet(1,{phoneOpenId:'open'}))));
+ for(const id of ['',42,'x'.repeat(81)])assert.equal(p.decode(JSON.stringify(packet(1,{phoneOpenId:id}))),null);
+ assert.equal(p.decode(JSON.stringify(packet(1,{phoneOpenId:'open',phoneExitId:'close'}))),null);
+});
+
+
+test('entry waits for loaded haptic preferences without replaying muted stored settings',()=>{
+ for(const enabled of [true,false]){
+  const a=launch({manualTime:true,pendingStorage:true});a.session.retry();
+  a.deliver(packet(1,{status:'idle',vibrationEnabled:false,phoneOpenId:'open',reminderEnabled:true}));
+  assert.equal(a.vibrations.length,0);a.advance(100);
+  a.storageReads[0].success(JSON.stringify({profile:'gentle',enabled}));a.advance(700);
+  assert.equal(a.vibrations.length,enabled?2:0);
+ }
+});
+test('a slow preference read cannot start an exit pair too late or replay an expired entry',()=>{
+ const a=launch({manualTime:true,pendingStorage:true});a.session.retry();
+ a.deliver(packet(1,{phoneExitId:'close',reminderEnabled:true}));a.advance(2500);
+ a.storageReads[0].success('gentle');a.advance(1000);assert.equal(a.vibrations.length,0);assert.equal(a.exits.length,1);
+ const b=launch({manualTime:true,pendingStorage:true});b.session.retry();
+ b.deliver(packet(1,{status:'idle',vibrationEnabled:false,phoneOpenId:'open',reminderEnabled:true}));b.advance(10000);
+ b.storageReads[0].success('gentle');b.advance(700);assert.equal(b.vibrations.length,0);
 });

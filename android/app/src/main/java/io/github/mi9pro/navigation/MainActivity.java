@@ -422,7 +422,7 @@ public final class MainActivity extends Activity {
         divider(options, 0);
         preference(options, "导航时手环常亮", "关闭后可减少屏幕耗电", bridge.keepScreenOnEnabled(), bridge::setKeepScreenOnEnabled);
         divider(options, 0);
-        preference(options, "手环振动提醒", "开始、结束、转向、临近、暂停和断连；震感在手环设置", bridge.vibrationEnabled(), bridge::setVibrationEnabled);
+        preference(options, "手环振动提醒", "随手机打开/退出、开始、结束、转向、临近、暂停和断连；震感在手环设置", bridge.vibrationEnabled(), bridge::setVibrationEnabled);
         divider(options, 0);
         preference(options, "骑行临近提醒", "开启：100 米内；关闭：步行 30 米内", bridge.cyclingReminders(), bridge::setCyclingReminders);
         divider(options, 0);

@@ -27,6 +27,8 @@ function decode(input) {
   if (message.displayDiagnostics !== undefined && typeof message.displayDiagnostics !== 'boolean') return null;
   if (message.keepScreenOn !== undefined && typeof message.keepScreenOn !== 'boolean') return null;
   if (message.phoneExitId !== undefined && (typeof message.phoneExitId !== 'string' || !message.phoneExitId || message.phoneExitId.length > 80)) return null;
+  if (message.phoneOpenId !== undefined && (typeof message.phoneOpenId !== 'string' || !message.phoneOpenId || message.phoneOpenId.length > 80)) return null;
+  if (message.phoneOpenId !== undefined && message.phoneExitId !== undefined) return null;
   // Optional v1 extensions: old phones keep rendering normally but never trigger haptics.
   if (message.actionId !== undefined && (typeof message.actionId !== 'string' || !message.actionId || message.actionId.length > 80)) return null;
   if (message.mode !== undefined && message.mode !== 'walk' && message.mode !== 'cycle') return null;
