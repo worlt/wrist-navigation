@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "applicationId": "io.github.mi9pro.navigation",
+  "releaseTag": "v0.5.2",
+  "phone": {
+    "versionName": "0.4.3",
+    "versionCode": 28,
+    "asset": "NAV-PHONE-043.apk"
+  },
+  "band": {
+    "versionName": "0.5.2",
+    "versionCode": 26,
+    "fullAsset": "NAV-BAND-052.rpk",
+    "noFontAsset": "NAV-BAND-052-NOFONT.rpk"
+  },
+  "notes": "配套手机0.4.3/code28、手环0.5.2/code26，首次/旧版需双端更新，两个RPK二选一。更新页独立卡片、当前/GitHub版本对照和折叠详情；修复随手机打开与正常返回退出的双振提醒，尊重双端振动开关，去重并先ACK后提醒，退出留出双振时间。仅小米15+9Pro、K80Ultra+10Pro两组有用户真机正常反馈；其他米系未逐型号验证，其他品牌不一定能用，不保证可用。杀后台可能来不及发送退出通知，手环不能保证跟随退出。反馈不代表每个新版/全部功能/固件均已验收，本轮新双振尚待真机确认。"
+}
