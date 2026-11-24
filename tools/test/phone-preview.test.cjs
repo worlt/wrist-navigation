@@ -24,7 +24,7 @@ test('bad or unavailable browser storage never breaks preview and only known set
  const restored=preview.create(config,{getItem:()=>text});assert.equal(restored.phone.preview,true);assert.equal(restored.band.preview,false);
 });
 test('phone page is bundled offline with visible verification limits and linked by all pages',()=>{
- const root=path.resolve(__dirname,'../..');const html=fs.readFileSync(path.join(root,'outputs/previews/phone-preview.html'),'utf8');
+ const root=path.resolve(__dirname,'../..');const html=require('../preview-phone.cjs').renderPhone();
  for(const term of ['虚构','小米 15','K80 Ultra','其他品牌','杀掉','后台','返回','Gu-Mie','MIT','OFL'])assert.ok(html.includes(term),term);
  assert.doesNotMatch(html,/\bfetch\s*\(|XMLHttpRequest|https?:\/\/[^" ]+\.js/);
  for(const file of ['site/index.html','site/preview.html','site/settings.html'])assert.match(fs.readFileSync(path.join(root,file),'utf8'),/href="phone.html"/);
