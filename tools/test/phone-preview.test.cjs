@@ -35,6 +35,7 @@ test('narrow phone preview grid allows its children to shrink below the 390px mo
  const html=fs.readFileSync(path.resolve(__dirname,'../phone-preview.html'),'utf8');
  assert.match(html,/grid-template-columns:minmax\(0,1fr\)/);
  assert.match(html,/\.phone\{margin:auto;min-width:0\}/);
+ assert.equal(require('../preview-phone.cjs').normalizeSource('a\r\nb'),'a\nb');
 });
 
 test('fictional update versions advance from current sources, never reuse the installed version label',()=>{
