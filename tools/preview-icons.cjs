@@ -95,7 +95,7 @@ footer{font-size:12px;color:var(--muted);margin-top:26px;line-height:1.8}
 @media(max-width:760px){body{padding:20px 16px 40px}.toolbar{padding:14px;gap:16px}.control{flex-wrap:wrap;gap:8px}.colors{flex-wrap:wrap}.roundabouts .comparison{grid-template-columns:repeat(auto-fit,minmax(var(--cell-size),1fr))}h1{font-size:23px}}
 ` + '</style></head><body><header><h1>腕上导航 · 箭头图标总览</h1>' +
 '<p class="intro">线条与实心，上下对照。调整颜色、粗细和大小，查看手环实际使用的箭头；环岛中央的数字表示第几个出口。</p></header>' +
-'<nav aria-label="预览页面"><a href="preview.html">交互预览</a><a href="settings.html">设置原型</a><a href="index.html" aria-current="page">图标总览</a></nav>' +
+'<nav aria-label="预览页面"><a href="preview.html">交互预览</a><a href="settings.html">设置原型</a><a href="index.html" aria-current="page">图标总览</a><a href="phone.html">手机模拟</a></nav>' +
 '<main><div class="toolbar" aria-label="箭头预览设置"><div class="control"><span class="control-title">箭头颜色</span><div class="colors">' +
 settings.COLOR_OPTIONS.map(colour => '<button class="color" type="button" data-colour="' + colour.id + '" aria-pressed="' +
   (colour.id===settings.DEFAULTS.arrowColor) + '"><span class="swatch" aria-hidden="true" style="--swatch:' + colour.value + '"></span>' +

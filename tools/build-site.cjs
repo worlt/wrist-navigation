@@ -1,4 +1,4 @@
-// Bundle the three preview pages into a static folder that any file host can
+// Bundle the four preview pages into a static folder that any file host can
 // serve (Vercel, Netlify, GitHub Pages). Run: npm run site
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9,7 +9,7 @@ const site = path.join(root, 'site');
 const { noticeFiles } = require('./preview-notices.cjs');
 const { pages, checkSite } = require('./check-site.cjs');
 
-for (const script of ['preview-wearable.cjs', 'preview-settings.cjs', 'preview-icons.cjs']) {
+for (const script of ['preview-wearable.cjs', 'preview-settings.cjs', 'preview-icons.cjs', 'preview-phone.cjs']) {
   execFileSync(process.execPath, [path.join(__dirname, script)], { stdio: 'inherit' });
 }
 

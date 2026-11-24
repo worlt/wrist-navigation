@@ -71,7 +71,7 @@ button.selected{background:#25382c;color:#fff}
 ${styles}
 @media(max-width:600px){body{padding:16px}h1{font-size:24px}main{gap:24px}}
 </style><h1>腕上导航 · ${manifest.versionName} 本地交互调试</h1>
-<nav class="site-nav"><a href="preview.html" aria-current="page">交互预览</a><a href="settings.html">设置原型</a><a href="index.html">图标总览</a></nav>
+<nav class="site-nav"><a href="preview.html" aria-current="page">交互预览</a><a href="settings.html">设置原型</a><a href="index.html">图标总览</a><a href="phone.html">手机模拟</a></nav>
 <p class="intro">下面每个手环对应一种状态或一个设置页，点里面的齿轮、加减、返回即可执行与安装包相同的页面代码，各手环互不影响。设置保存在当前浏览器，“恢复全部预览默认值”会清空所有手环的本地设置。<br>336 × 480；浏览器模拟通信、存储与亮屏接口，不是 Vela 模拟器或真机验收。</p>
 <div class="controls" aria-label="模拟状态">
 <button id="reset">恢复全部预览默认值</button></div>

@@ -13,19 +13,20 @@ const routes = new Map([
   ['/icons', 'wearable-icons.html'],
   ['/icons.html', 'wearable-icons.html'],
   ['/settings', 'wearable-settings-preview.html'],
-  ['/settings.html', 'wearable-settings-preview.html']
+  ['/settings.html', 'wearable-settings-preview.html'],
+  ['/phone.html', 'phone-preview.html'], ['/phone', 'phone-preview.html']
 ]);
 function generate(script) { execFileSync(process.execPath, [path.join(__dirname, script)], { stdio: 'inherit' }); }
 generate('preview-wearable.cjs');
 generate('preview-settings.cjs');
-generate('preview-icons.cjs');
+generate('preview-icons.cjs'); generate('preview-phone.cjs');
 let revision = 0;
 let timer;
-const inputs = ['tools/preview-notices.cjs', ...require('./preview-notices.cjs').noticeFiles, 'wearable/src/common/geometry.js', 'wearable/src/common/arrow-artwork.json', 'wearable/src/pages/index/index.ux', 'wearable/src/common/presentation.js', 'wearable/src/common/protocol.js', 'wearable/src/common/settings.js', 'wearable/src/common/font-coverage.js', 'wearable/src/manifest.json', 'tools/preview-wearable.cjs', 'tools/preview-runtime.js', 'tools/preview-settings.cjs', 'tools/preview-settings.html', 'tools/preview-preferences.cjs', 'tools/preview-icons.cjs'];
+const inputs = ['tools/preview-notices.cjs', ...require('./preview-notices.cjs').noticeFiles, 'wearable/src/common/geometry.js', 'wearable/src/common/arrow-artwork.json', 'wearable/src/pages/index/index.ux', 'wearable/src/common/presentation.js', 'wearable/src/common/protocol.js', 'wearable/src/common/settings.js', 'wearable/src/common/font-coverage.js', 'wearable/src/manifest.json', 'tools/preview-wearable.cjs', 'tools/preview-runtime.js', 'tools/preview-settings.cjs', 'tools/preview-settings.html', 'tools/preview-preferences.cjs', 'tools/preview-icons.cjs', 'tools/preview-phone.cjs', 'tools/phone-preview-model.cjs', 'tools/phone-preview-runtime.js', 'tools/phone-preview.html', 'android/app/build.gradle'];
 const watchers = inputs.map(file => fs.watch(path.join(root, file), () => {
   clearTimeout(timer);
   timer = setTimeout(() => {
-    try { generate('preview-wearable.cjs'); generate('preview-settings.cjs'); generate('preview-icons.cjs'); revision++; }
+    try { generate('preview-wearable.cjs'); generate('preview-settings.cjs'); generate('preview-icons.cjs'); generate('preview-phone.cjs'); revision++; }
     catch (error) { console.error('预览生成失败；保留上次结果。', error.message); }
   }, 150);
 }));
@@ -48,6 +49,7 @@ server.on('error', error => { console.error(error.message); watchers.forEach(wat
 server.listen(port, '127.0.0.1', () => {
   console.log(`源码预览 http://127.0.0.1:${port}/`);
   console.log(`显示设置 http://127.0.0.1:${port}/settings`);
+  console.log(`手机模拟 http://127.0.0.1:${port}/phone.html`);
   console.log(`图标总览 http://127.0.0.1:${port}/icons`);
   console.log('修改手环页面后自动刷新；Ctrl+C 停止。浏览器预览不等于真机验收。');
 });

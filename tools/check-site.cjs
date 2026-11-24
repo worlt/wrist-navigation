@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { noticeFiles } = require('./preview-notices.cjs');
-const pages = [['wearable-icons.html', 'index.html'], ['wearable-source.html', 'preview.html'], ['wearable-settings-preview.html', 'settings.html']];
+const pages = [['wearable-icons.html', 'index.html'], ['wearable-source.html', 'preview.html'], ['wearable-settings-preview.html', 'settings.html'], ['phone-preview.html', 'phone.html']];
 function checkSite(root = path.resolve(__dirname, '..')) {
   const directory = path.join(root, 'site');
   const expected = new Map(pages.map(([from, to]) => [to, path.join(root, 'outputs/previews', from)]));

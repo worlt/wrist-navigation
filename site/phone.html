@@ -1,0 +1,528 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>腕上导航 · 手机页面模拟</title><style>
+*{box-sizing:border-box}[hidden]{display:none!important}:root{color-scheme:light}body{margin:0;padding:28px 24px 48px;background:#F0F3ED;color:#25382C;font:14px/1.6 system-ui,"Microsoft YaHei",sans-serif}.shell{max-width:1060px;margin:auto}a{color:inherit}.site-nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}.site-nav a{padding:8px 12px;border-radius:10px;text-decoration:none;border:1px solid #CFD9CA}.site-nav a[aria-current]{background:#25382C;color:white}.heading h1{font-size:28px;margin:0 0 6px}.heading p{color:#607464;margin:0}.workspace{display:grid;grid-template-columns:390px 1fr;gap:42px;align-items:start;margin-top:26px}.phone{--bg:#111713;--surface:#202922;--ink:#ECF2E9;--muted:#A7B5A8;--line:#344036;width:390px;max-width:100%;border:7px solid #28312A;border-radius:36px;background:var(--bg);color:var(--ink);overflow:hidden}.phone[data-theme=light]{--bg:#F4F6F0;--surface:#FFF;--ink:#202C24;--muted:#707D72;--line:#E9EDE5}.device-bar{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px}.phone-stage{height:738px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}.page{padding:14px 20px 24px}.page h1{font-size:24px;line-height:1.4;margin:0}.subtitle{font-size:12px;color:var(--muted);margin:5px 0 0}.top{display:flex;align-items:center;justify-content:space-between}.close{border:0;background:transparent;color:var(--ink);font:26px system-ui;width:48px;height:48px}button{font:inherit;cursor:pointer}button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #719847;outline-offset:3px}.hero{text-align:center;padding:20px 0}.hero svg{width:200px;height:90px;stroke:#C5EE91;stroke-width:3;fill:none}.home-card{background:var(--surface);border-radius:20px;padding:16px;margin-top:14px}.home-card h2{font-size:17px;margin:0}.home-card p{font-size:12px;color:var(--muted);margin:4px 0}.home-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.pill{font-size:11px;border-radius:8px;background:var(--bg);padding:5px 8px;color:var(--muted)}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.button{border:0;border-radius:14px;padding:12px 8px;min-height:48px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}.primary{background:#C5EE91;color:#233A27}.full{width:100%}.panel{margin-top:16px;background:var(--bg);border-radius:20px;padding:16px 16px 8px}.updates{background:var(--surface);border-radius:24px 24px 0 0}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px}.panel-head h2{font-size:18px;margin:0}.badge{font-size:10px;background:var(--surface);color:var(--muted);padding:5px 7px;border-radius:8px}.versions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.caption{font-size:11px;color:var(--muted)}.version{font-size:24px;font-weight:600;line-height:1.4;margin-top:4px;overflow-wrap:anywhere}.source{font-size:10px;color:var(--muted);margin-top:4px}.summary-row{display:flex;align-items:center;gap:8px;margin-top:10px}.status-area{flex:1;min-width:0}.status{font-size:13px;font-weight:600}.status-detail{font-size:11px;color:var(--muted);margin-top:4px}.disclosure{background:none;color:var(--muted);border:0;min-height:48px;min-width:86px;padding:8px 0;font-size:12px}.disclosure::after{content:'⌄';display:inline-block;margin-left:8px}.disclosure[aria-expanded=true]::after{transform:rotate(180deg)}.details-body{background:var(--surface);border-radius:12px;padding:12px;margin-top:12px;font-size:12px;white-space:normal}.details-body p{margin:6px 0}.details-body strong{font-weight:600}.settings{margin-top:14px;padding:0 14px;background:var(--bg);border-radius:16px}summary{cursor:pointer;min-height:48px;padding:12px 0;font-size:13px}.settings h3{font-size:13px;margin:4px 0}.setting{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;font-size:12px}.setting input{accent-color:#799B53;width:20px;height:20px}.setting small{display:block;font-size:10px;color:var(--muted)}.settings .hint{font-size:10px;color:var(--muted);padding-bottom:12px}.settings hr{border:0;border-top:1px solid var(--line)}.privacy{font-size:11px;color:var(--muted);margin:14px 0 0}.controls{padding:4px 0}.controls h2{font-size:20px;margin:0 0 14px}.tabs{display:flex;gap:8px;margin-bottom:20px}.tabs button{padding:10px 16px;min-height:44px;border:1px solid #C8D4C5;background:transparent;border-radius:10px;color:#25382C}.tabs button[aria-pressed=true]{background:#25382C;color:white}.controls label{display:block;margin-top:14px;font-weight:600}.controls select{font:inherit;display:block;width:100%;margin-top:6px;padding:10px 12px;border:1px solid #C8D4C5;border-radius:10px;background:white;color:#25382C}.notice{margin-top:24px;padding:16px 18px;background:#E3EBDD;border-radius:16px}.notice h3{font-size:15px;margin:0 0 6px}.notice p{font-size:13px;margin:6px 0}.notice .actions button{border:1px solid #B4C7AC;background:transparent;min-height:44px;border-radius:10px}.notice ul{padding-left:20px;margin:8px 0}.note{font-size:12px;color:#607464}.project-notices{margin-top:30px}@media(max-width:760px){body{padding:20px 12px 32px}.workspace{grid-template-columns:minmax(0,1fr);gap:24px}.phone{margin:auto;min-width:0}.controls{max-width:480px;width:100%;min-width:0;margin:auto}.heading h1{font-size:24px}}@media(max-width:360px){.versions{grid-template-columns:1fr}.summary-row{align-items:flex-start;flex-direction:column}.panel-head{flex-wrap:wrap}.page{padding-left:14px;padding-right:14px}.phone-stage{height:670px}}
+</style></head><body><div class="shell"><nav class="site-nav" aria-label="预览导航"><a href="index.html">图标总览</a><a href="preview.html">手环交互</a><a href="settings.html">手环设置</a><a href="phone.html" aria-current="page">手机模拟</a></nav><header class="heading"><h1>手机界面，先在这里看一遍。</h1><p>首页与软件更新的离线模拟。虚构设备状态，不连接手机或手环，不进行真实检查或安装。</p></header><main class="workspace"><section class="phone" id="phone-frame" data-theme="dark" aria-label="手机界面模拟"><div class="device-bar"><span>10:41</span><span>离线模拟 · 非真机截图</span></div><div class="phone-stage" id="phone-stage"><div class="page" data-screen="home"><div class="top"><h1>腕上导航</h1><span class="pill">手机 0.4.2</span></div><p class="subtitle">让已有的高德指引，抬腕就能看见。</p><div class="hero" aria-hidden="true"><svg viewBox="0 0 220 100"><rect x="28" y="5" width="56" height="90" rx="12"/><path d="M46 82h20M100 49h20M113 42l8 7-8 7"/><rect x="146" y="22" width="49" height="61" rx="17"/><path d="M159 10h22M159 94h22"/></svg><p class="subtitle">模拟手机已连接手环 0.5.1</p></div><div class="home-card"><div class="home-row"><div><h2>同步导航</h2><p>模拟已开启 · 仅展示界面</p></div><span class="pill">已连接</span></div></div><div class="home-card"><h2>连接与权限</h2><p>通知使用权、运动健康与后台运行设置</p><h2 style="margin-top:16px">导航偏好</h2><p>打开联动 / 返回退出联动，默认关闭</p></div><div class="actions"><button class="button primary" data-action="open-updates" data-target="phone">检查手机更新</button><button class="button primary" data-action="open-updates" data-target="band">检查手环更新</button></div><button class="button full" style="margin-top:12px" data-action="open-updates">查看软件更新界面</button><p class="privacy">模拟页面不请求授权、不启动导航、不操作设备。</p></div><div class="page updates" data-screen="updates" hidden><div class="top"><h1>软件更新</h1><button class="close" data-action="close-updates" aria-label="返回手机首页">×</button></div><p class="subtitle">手机与手环，版本和更新各自独立</p>
+<section class="panel" data-device="phone"><div class="panel-head"><h2>手机更新</h2><span class="badge" data-field="channel">正式版</span></div><div class="versions"><div><div class="caption">当前安装</div><div class="version" data-field="current"></div></div><div><div class="caption">GitHub 最新版本</div><div class="version" data-field="latest"></div><div class="source" data-field="source"></div></div></div><div class="summary-row"><div class="status-area"><div class="status" data-field="status" aria-live="polite"></div><div class="status-detail" data-field="detail"></div></div><button class="disclosure" data-action="details" aria-expanded="false" aria-controls="phone-details">版本详情</button></div><div class="actions"><button class="button primary" data-action="check">检查手机更新</button><a class="button" href="https://github.com/worlt/wrist-navigation/releases" target="_blank" rel="noopener noreferrer">GitHub 发布页</a></div><div class="details-body" id="phone-details" hidden><div class="caption">模拟配套信息，不代表线上最新状态</div><p><strong>手机 0.4.2 / 手环 0.5.1</strong></p><p>软件更新页分开显示当前版本与 GitHub 版本；详情默认折叠，设置各自独立。保留缓存时会提示待确认，不误报需要降级。</p><p>手环完整版和无字体版二选一。安装前请阅读真实发布正文并核对 SHA256SUMS.txt。</p></div></section><section class="panel" data-device="band"><div class="panel-head"><h2>手环更新</h2><span class="badge" data-field="channel">正式版</span></div><div class="versions"><div><div class="caption">当前安装</div><div class="version" data-field="current"></div></div><div><div class="caption">GitHub 最新版本</div><div class="version" data-field="latest"></div><div class="source" data-field="source"></div></div></div><div class="summary-row"><div class="status-area"><div class="status" data-field="status" aria-live="polite"></div><div class="status-detail" data-field="detail"></div></div><button class="disclosure" data-action="details" aria-expanded="false" aria-controls="band-details">版本详情</button></div><div class="actions"><button class="button primary" data-action="check">检查手环更新</button><a class="button" href="https://github.com/worlt/wrist-navigation/releases" target="_blank" rel="noopener noreferrer">GitHub 发布页</a></div><div class="details-body" id="band-details" hidden><div class="caption">模拟配套信息，不代表线上最新状态</div><p><strong>手机 0.4.2 / 手环 0.5.1</strong></p><p>软件更新页分开显示当前版本与 GitHub 版本；详情默认折叠，设置各自独立。保留缓存时会提示待确认，不误报需要降级。</p><p>手环完整版和无字体版二选一。安装前请阅读真实发布正文并核对 SHA256SUMS.txt。</p></div></section>
+<details class="settings"><summary id="settings-summary">检查设置</summary><h3>手机更新设置</h3><label class="setting"><span>自动检查<small>每天打开时检查一次（模拟）</small></span><input type="checkbox" data-name="phone" data-setting="auto" aria-label="自动检查手机更新"></label><label class="setting"><span>接收手机 Preview 更新提示</span><input type="checkbox" data-name="phone" data-setting="preview"></label><div class="hint">仅影响手机；预发布可能不稳定，默认关闭</div><hr><h3>手环更新设置</h3><label class="setting"><span>自动检查<small>每天打开时检查一次（模拟）</small></span><input type="checkbox" data-name="band" data-setting="auto" aria-label="自动检查手环更新"></label><label class="setting"><span>接收手环 Preview 更新提示</span><input type="checkbox" data-name="band" data-setting="preview"></label><div class="hint">仅影响手环；预发布可能不稳定，默认关闭</div></details><p class="privacy">离线模拟不会访问 GitHub。真实应用只读取公开版本信息，不上传导航或诊断，不会自动下载或安装。</p></div></div></section><aside class="controls"><h2>切换页面与状态</h2><div class="tabs"><button data-action="screen" data-target="home" aria-pressed="true">手机首页</button><button data-action="screen" data-target="updates" aria-pressed="false">软件更新</button></div><label for="theme">页面主题</label><select id="theme"><option value="dark">深色</option><option value="light">浅色</option></select><label for="scene">模拟场景</label><select id="scene"><option value="same">当前版本相同，无需更新</option><option value="update">有新版本（虚构，非真实发布）</option><option value="unknown">手环版本未知</option><option value="offline">网络失败，版本待确认</option></select><p class="note">点击模拟“检查更新”只改变本地状态。Preview、自动检查独立保存在当前浏览器；详情可分别展开。</p><section class="notice"><h3>真机测试范围与品牌兼容</h3><p>仅在 <strong>小米 15 + 小米手环 9 Pro</strong>、<strong>K80 Ultra + 小米手环 10 Pro</strong> 两组组合获得用户真机测试正常反馈。</p><p>其他米系手机通常预期能运行，但未经逐型号验证。<strong>其他品牌手机不一定能用，不保证可用</strong>；可能受运动健康互联、通知样式或后台策略影响。</p><p>这不代表本模拟页、所有功能、每次新版或所有固件均已通过真机验收。</p></section><section class="notice"><h3>为什么杀后台后手环没有退出？</h3><p>开启“退出手机应用时退出手环”后，直接杀掉/清理手机后台，进程可能没来得及把退出通知发到手环，所以手环无法跟随退出。</p><p>如果从手机主页面正常按返回键或返回手势退出，开启退出联动时有用户正常使用反馈。只关闭设置弹层不触发手环退出。</p><div class="actions"><button data-action="kill">模拟杀后台</button><button data-action="return">模拟返回退出</button></div><p id="exit-result" aria-live="polite">模拟仅解释流程，不实际关闭任何应用。</p></section></aside></main><style>.project-notices{max-width:1400px;margin:32px auto 0;padding:18px 0;border-top:1px solid #b8c8ba;font:13px/1.8 system-ui,sans-serif;color:#354f3d;overflow-wrap:anywhere}.project-notices p{margin:8px 0}.project-notices a{color:inherit;text-decoration:underline}.project-notices summary{cursor:pointer;padding:4px 0}.project-notices details{margin:8px 0;padding:0;border:0}.project-notices pre{white-space:pre-wrap;font:12px/1.7 monospace;max-height:320px;overflow:auto;background:#fff;padding:12px}</style><footer class="project-notices" aria-label="演示与许可声明"><p><strong>演示与许可声明</strong></p><p>虚构数据，仅供界面演示；不连接手机或手环，不能用于真实导航。浏览器效果不等于真机验证，演示可能先于已发布安装包。</p><p><strong>真机与品牌范围：</strong>仅在小米 15 + 小米手环 9 Pro、K80 Ultra + 小米手环 10 Pro 两组组合获得用户真机测试正常反馈。其他米系手机通常预期能运行，但未经逐型号验证；其他品牌手机不一定能用，不保证可用。可能受运动健康互联、通知样式或后台策略影响。 不代表全部功能、所有固件或每次新版均已实测；手机模拟不是真机截图。</p><p><strong>退出联动限制：</strong>开启“退出手机应用时退出手环”后，直接杀掉或清理手机后台时，进程可能来不及向手环发送退出通知，因此手环无法跟随退出；从手机主页面正常按返回键或返回手势退出，有用户正常反馈。只关闭设置弹层不触发手环退出。强停、断连、系统回收同样不保证退出。</p><p>预览设置保存在当前浏览器。访问线上站点会连接 Vercel；托管方可能处理 IP、浏览器信息和请求日志，详见下方隐私说明。</p><p>本项目基于 <a href="https://github.com/Gu-Mie/wrist-navigation">Gu-Mie/wrist-navigation</a> 修改，由 <a href="https://github.com/worlt/wrist-navigation">worlt 维护此 fork</a>。与高德、小米、AstroBox 无隶属关系，Vercel 提供托管，不表示上述品牌背书。</p><p>代码与文档采用 MIT；内置字体为站酷小薇体、霞鹜文楷轻便版、站酷庆科黄油体的改名子集，字体保留 OFL 1.1，真机加载效果待验证。</p><details><summary>版权、字体完整许可与隐私说明</summary><details><summary>LICENSE</summary><pre>MIT License
+
+Copyright (c) 2026 Gu-Mie and contributors
+Copyright (c) 2026 worlt and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></details><details><summary>PRIVACY.md</summary><pre># 隐私与权限说明
+
+本说明依据手机0.3.6、手环0.4.8本地候选及网页源码整理，更新时间2026-11-18；更新检查、诊断和厂商行为尚待真机验证。代码检查不能代替第三方平台隐私承诺或完整设备测试。
+
+## 处理哪些信息
+
+Android 通知使用权是系统级能力；应用收到通知回调后只处理包名为 `com.autonavi.minimap` 的高德通知。通知中的标题、导航指引和原文用于解析、手机预览及手环显示，可能包含距离或道路名称。无法识别时保留原文，不补造路线。
+
+应用通过小米 XMS SDK 与小米运动健康连接的手环通信。发送内容包含导航状态、标题/原文、解析字段、时间、会话、序号及本次导航标识、结束标记和独立振动偏好；导航标识只用于提醒去重，不含位置坐标。启用手机退出联动时增加一次性退出请求标识（phoneExitId），由会话和进出计数构成，只在进程内用于退出请求去重和确认，不包含路线内容；两个联动偏好保存在手机私有设置中，不新增权限。当前手机 / 手环源码没有项目自建的导航后端、广告或统计上报代码；小米 SDK、运动健康、高德和安装工具的数据处理由各自产品决定，不能据此承诺第三方完全离线或不收集数据。
+
+手机设置保存在应用私有 SharedPreferences，导航状态和最近的诊断事件在进程内维护；手环显示设置与提醒震感通过 `system.storage` 分别保存；振动偏好仅存总开关与轻柔/明显档位，不新增路线历史。手环 App 在内存中保留一条最新导航消息，以及转向、临近两类各最多 32 条指令标识，以及开始、结束两类各最多 32 条导航标识用于去重；离开或关闭导航页面不会清除这些应用级状态。新的有效手机导航会话会重置提醒去重记录；App 销毁后停止处理，重建不保证保留这些内存状态。浏览器预览使用虚构数据，设置保存在当前浏览器。源码没有自行持久化完整路线历史；操作系统、第三方组件以及用户手动导出的日志仍可能留有数据。
+
+## GitHub 更新检查
+
+手机0.3.6将「软件更新」拆为手机、手环两组，各自自动检查、手动按钮与独立Preview勾选。自动检查默认开启，仅在打开应用时按每渠道24小时尝试一次，可关闭或手动检查；手机与手环「接收 Preview 更新提示」各自默认不勾选，可选择包含GitHub Pre-release。查询固定公开仓库 `worlt/wrist-navigation` 的Release和 `update.json` 附件，不使用GitHub账号、令牌，不上传高德通知、路线、诊断、手机型号或设备标识。开关、检查时间和公开版本元数据缓存仅保存在应用私有设置中。
+
+检查与点击发布页会向GitHub及其下载域发出网络请求，平台可处理IP地址、请求路径、时间及固定应用User-Agent，适用 [GitHub隐私声明](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)。不承诺第三方零日志；无法访问/限流不影响导航。不自动下载安装；已装手环版本来自当前已授权连接中手环应用的包名/name/code报告，只在手机内存判断，不发给GitHub，断连清空；旧版/未连接明确未知。下载和覆盖安装由用户在外部工具完成。关闭自动检查不会取消已经发出的请求；切换实验渠道可能触发一次主动检查，手动点击仍会联网。具体边界见 [双端更新提示说明](docs/phone-band-updates-036.md)。
+
+## 在线演示与托管
+
+[Vercel 演示站](https://wrist-navigation.vercel.app/) 只使用虚构场景，不接收高德通知，不读取设备位置，也不连接手机或手环。交互预览和设置原型将偏好保存在浏览器 `localStorage`；源码未将这些偏好上传。源码预览的“恢复全部预览默认值”可清除该页模拟设置；清除站点数据可删除此域名下的全部本地偏好。
+
+访问站点会向 Vercel 发出网络请求，托管方可能处理 IP 地址、浏览器 / 设备信息、访问路径及时间等请求数据，适用其 [隐私政策](https://vercel.com/legal/privacy-policy)。本项目未接入分析 SDK；仅核对公开页面与生成代码，未审计托管账户的日志、分析或保留期限设置，因此不承诺“零日志”或“完全离线”。点击 GitHub、字体来源等外部链接后，适用目标站点的规则。
+
+网站展示的联系邮箱是项目公开联络方式。不要在公开反馈中填入真实路线、住址、设备凭据或完整日志。
+
+## 为什么需要权限
+
+| 权限/能力 | 用途 |
+| --- | --- |
+| 网络（INTERNET） | 读取GitHub公开版本信息；不发送导航或诊断 |
+| 通知使用权 | 获取高德导航通知；可在系统设置中撤销 |
+| 蓝牙/附近设备、互联授权 | 通过小米运动健康发现并连接手环 |
+| 发送通知、前台服务 | 显示后台同步状态和停止入口 |
+| 唤醒锁、电池优化设置 | 活动导航期间尽量保持同步；受手机省电策略影响 |
+| 开机完成/应用更新广播 | 尝试恢复此前开启的同步，真机重启恢复仍待验证 |
+| 手环亮屏控制 | 导航页在前台且指引有效时保持点亮 |
+| 手环振动 | 收到导航开始、确认结束、新转向、临近或暂停状态，以及确认连接断开时触发两次短振或长振；手机开关控制导航提醒，手环总开关控制全部提醒和试振 |
+
+关闭手机应用中的同步开关可停止转发；通知使用权和其他权限也可从系统设置撤销。手环离开导航页、断连或消息过期后释放常亮，但离开导航页本身不会关闭应用级接收与振动提醒。要停止后续提醒，可关闭手环振动总开关、手机导航偏好中的手环振动开关或关闭同步；恢复开关不会补振已消费的提醒。
+
+断连提醒仅使用手环最后收到的手机振动偏好；断连后手机修改开关需恢复通信才会传达，手环本地总开关可立即关闭全部提醒。
+
+手动试振无需导航，在手环总开关开启时按当前档位振两下；离开设置或隐藏页面会取消尚未发出的试振，不影响正常导航提醒。
+
+当前 Android 清单没有申请 VIBRATE 权限，也没有新增手机振动；高德自身的手机提醒不由本项目控制。此次优化未新增定位、音频或下载能力，不借用这些能力保活。手环 App 仍运行且收到有效实时消息时才尝试振动，后台、熄屏和回表盘后的运行、收消息及振动仍取决于固件与互联，需真机测试。
+
+手机0.3.2首页诊断默认折叠，内存中有界保留高德通知字段、解析、提交发送和确认状态，不自动写文件、路线日志或上传。用户点击「复制当前诊断」后才写入系统剪贴板，包含手机型号、Android版本、应用版本、采集时间与通知文字；分享前需移除真实路线。
+
+## 兼容试验诊断（手机0.4.0 / 手环0.5.0）
+
+手环没有新增排查模式或诊断界面。内部只在内存保留最近16条阶段、错误类型与数值代码、有界计数，不保存原始封包、路线或错误message/stack，进程结束后丢失。手机用户点击“读取手环诊断”才发起一次查询，接收限定当前授权设备、当前请求和5秒时限；旧报告标为历史，不自动重试或上传。
+
+“复制兼容诊断（无路线）”只包含手机型号/系统/应用版本、手环应用版本、协议/收发计数和白名单阶段，不含通知和路线。用户点击后才写剪贴板，由用户决定是否分享。原“复制当前诊断”仍包含通知原文，分享前需脱敏。手机不能读取手环安装器和固件崩溃日志，无法启动时需用户工具日志或照片，不能以超时冒充已定位原因。详见[兼容反馈指南](docs/band9-band10-compatibility.md)。
+
+## 分享反馈前
+
+应用预览和自行采集的通知可能含有出行信息。公开 Issue、PR 或截图前，请移除路线、住址、账号、设备标识及 AuthKey。`tools/capture-amap.ps1` 会二次过滤其他应用通知，但过滤后的高德通知依然可能敏感，只应保存在被忽略的 `.local/`。
+
+## 联系方式
+
+对本说明或数据处理有疑问，请联系本仓库维护者（GitHub：worlt）：[2516930419@qq.com](mailto:2516930419@qq.com)。与原项目 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 相关的问题也可联系原作者 Gu-Mie：[2858005527@qq.com](mailto:2858005527@qq.com)（原作者）。
+
+手机的打开/退出联动默认关闭，可在「导航偏好」独立控制。启用退出联动不关闭手机后台同步服务；手环收到请求后先确认接收再退出快应用，关闭退出开关或手机重入可取消尚未执行的请求。断连、强杀/强停和系统回收时不能保证退出；确认接收不等于固件实际退出已验证。
+</pre></details><details><summary>THIRD_PARTY_NOTICES.md</summary><pre># 第三方代码、资源与工具
+
+项目根目录的 [MIT 许可证](LICENSE) 适用于原创代码和文档。以下内容保留各自许可，不因本项目开源而重新授权。
+
+## 随源码提供的字体
+
+| 文件/家族 | 上游 | 许可与版权声明 |
+| --- | --- | --- |
+| `BandSong.ttf` / BandSong | [ZCOOL XiaoWei](https://github.com/google/fonts/tree/main/ofl/zcoolxiaowei) | [SIL OFL 1.1 与原作者声明](wearable/src/common/fonts/BandSong-OFL.txt) |
+| `BandKai.ttf` / BandKai | [LXGW WenKai Lite v1.522](https://github.com/lxgw/LxgwWenKai-Lite/releases/tag/v1.522) | [SIL OFL 1.1、保留字体名称及附加许可](wearable/src/common/fonts/BandKai-OFL.txt) |
+| `BandRound.ttf` / BandRound | [ZCOOL QingKe HuangYou](https://github.com/google/fonts/tree/main/ofl/zcoolqingkehuangyou) | [SIL OFL 1.1 与原作者声明](wearable/src/common/fonts/BandRound-OFL.txt) |
+
+这些文件由 `tools/prepare-band-fonts.py` 制作子集并改名，保留原始版权与许可记录；上游哈希及修改范围见 [字体实现记录](docs/display-settings-024.md)。完整许可随字体和 RPK 一同提供。未分发电脑自带的宋体、楷体或圆体字库。
+
+OFL 允许按条款使用、嵌入、修改及随商业或非商业软件分发字体，要求保留版权与许可，字体不得单独出售；字体本身继续适用 OFL，不改用本项目 MIT。当前子集家族名为 BandSong / BandKai / BandRound，TTF 名称表已核对。许可条件、网页原型与真机支持的区别见 [字体使用与验证](docs/fonts.md)。
+
+源码预览内嵌这些字体。各独立 HTML 的“演示与许可声明”提供完整版权及许可，静态站点 `site/licenses/` 同时附原文。部署或复制站点时必须保留这些声明，不能只带走 TTF 或图片。
+
+## Gradle Wrapper
+
+`android/gradlew`、`android/gradlew.bat`、`android/gradle/wrapper/gradle-wrapper.jar` 来自 Gradle 8.9，保留原作者版权及 Apache-2.0 许可，完整文本见 [Apache-2.0](licenses/Apache-2.0.txt) 和 [Gradle 上游 LICENSE](licenses/Gradle-LICENSE.txt)。来源为 [Gradle v8.9.0](https://github.com/gradle/gradle/tree/v8.9.0)。
+
+## 单独下载的依赖
+
+- 小米 `xms-wearable-lib_1.4_release.aar`：从小米官方示例包单独获取并校验哈希，源码仓库不分发该 AAR；获取入口见 [开发文档](docs/development.md)。手机 APK 内含此互联组件，其权利归原权利人所有，不适用本项目 MIT 许可。已检查的官方文档与示例包未提供可确认的独立再分发条款，本项目不据此声称已取得额外授权或该 SDK 可以任意再分发。
+- `aiot-toolkit` 2.0.5 及依赖：由 `wearable/package-lock.json` 锁定，仅构建时安装；许可见各依赖包。`node_modules/` 不随源码提交。
+- 构建依赖 picomatch 通过 npm alias 固定为 [`@ryotsu/picomatch` 4.0.7-a](https://github.com/ryotsu-kankichi/secured-picomatch/tree/3ab5a7627d480259e3d9ca67fbc14c125d374f0e)：这是 Jon Schlinkert 的 picomatch 4.0.7 的第三方安全修复分支（贡献者 ryotsu-kankichi），**不是原项目官方发布**，沿用 MIT 与原版权。只用于构建，不打入 APK/RPK；审查、来源证明与回归记录见 [依赖修复](docs/picomatch-maintenance-20261118.md)。
+- 手机 0.3.0（与此前 0.2.5 相同声明依赖）的运行时依赖解析包含 AndroidX Annotation / annotation-jvm 1.8.2（Android Open Source Project）、Kotlin stdlib / stdlib-common 1.7.10（JetBrains 与 Kotlin 贡献者）、JetBrains annotations 13.0。对应 POM 均声明 Apache-2.0；APK 的 DEX 中可见 AndroidX、Kotlin 和 JetBrains 注解类。完整 [Apache-2.0 文本](licenses/Apache-2.0.txt) 随 v0.4.6 的 THIRD_PARTY_NOTICES.txt 一起分发；这些组件保留各自权利，不改用项目 MIT。
+- Android Gradle Plugin 8.7.3、Gradle 和 JUnit 4.13.2 为构建 / 测试工具，按各自许可使用。上述清单来自当前构建配置、缓存的依赖 POM 和 APK 类目录核对，不表示已独立审计小米 SDK 的全部内部实现。
+
+## 图片与名称
+
+导航图标由仓库内绘图脚本生成；`docs/images/` 的图片是使用虚构数据的浏览器预览截图，不代表真机效果。新箭头总览由维护者提供，旧 0.2.4 截图保留作历史参考，来源见 [截图记录](docs/images/README.md)。截图中浏览器或扩展的浮动控件不是本项目功能或品牌授权证明。历史 AI 概念图及提示词已归档到维护者本地，不属于当前公开源码的必要资源。
+
+高德、小米、AstroBox 等名称仅用于说明兼容对象与安装流程，不表示官方合作或背书。仓库不分发运动健康、高德或 AstroBox 的安装包及其提取内容。
+
+Vercel 是演示站的第三方托管平台，不是本项目的共同开发者或背书方，其服务条款与隐私规则独立适用。
+</pre></details><details><summary>DISCLAIMER.md</summary><pre># 项目与使用声明
+
+## 项目定位与来源
+
+腕上导航将 Android 高德地图的导航通知同步至小米手环 10 Pro，由手机高德负责路线规划；手环仅显示已有指引，不独立定位、计算路线或保证信息实时送达。项目用于学习、研究与技术交流；这是用途介绍，不为 MIT 增加“仅非商业”等限制。
+
+本项目是 [Gu-Mie/wrist-navigation](https://github.com/Gu-Mie/wrist-navigation) 的修改版。原作者 Gu-Mie，当前 fork 维护者 worlt；保留双方及贡献者的版权。与高德、小米、AstroBox 或 Vercel 无隶属、合作或背书关系，相关名称仅说明兼容对象和工具。
+
+## Release 状态与验证边界
+
+v0.5.2作为正式Latest分发，配套手机0.4.2/code27与手环0.5.1/code25。**正式Release/Latest是分发状态，不代表厂商认证或全部功能/所有设备稳定性认证。** APK/RPK仍沿用原配对签名的debug构建；手环051原包不变。
+
+仅在小米 15 + 小米手环 9 Pro、K80 Ultra + 小米手环 10 Pro 两组组合获得用户真机测试正常反馈。其他米系手机通常预期能运行，但未经逐型号验证；其他品牌手机不一定能用，不保证可用。可能受运动健康互联、通知样式或后台策略影响。 这两组是用户真机反馈，不能扩展为全部功能、所有固件或手机042新UI已实测。SDK提交、ACK、屏幕实际显示/振动/退出是不同证据。字体、后台/息屏、长期连接与耗电仍需按具体设备验证。
+
+两个联动开关独立保存且默认关闭。回桌面/切高德保持后台同步，开启退出联动时仅主页面正常返回退出请求关闭手环；只关闭设置弹层不退出手环。开启“退出手机应用时退出手环”后，直接杀掉或清理手机后台时，进程可能来不及向手环发送退出通知，因此手环无法跟随退出；从手机主页面正常按返回键或返回手势退出，有用户正常反馈。只关闭设置弹层不触发手环退出。强停、断连、系统回收同样不保证退出。
+
+## 安全使用
+
+请先在安全、静止的位置核对双端安装与显示，不要在驾驶、骑行或过街时操作手机或手环。通知可能滞后、缺失或误解析，振动可能延迟或不发生；不能用作避险、紧急服务或安全关键导航。应以实际道路状况、交通规则及手机高德指引为准。独立路线摘要（剩余时间/路程/全程里程）未实现。
+
+## 隐私与分发
+
+项目未实现自建服务器、分析/广告 SDK 或主动上传路线接口。通知仅处理 `com.autonavi.minimap`；路线和原文仍属于敏感信息，反馈前替换为虚构数据并裁去账号、设备标识。小米/高德及演示托管方的数据处理不受本项目控制，详见 [PRIVACY.md](PRIVACY.md)。源码、APK/RPK、截图与日志须分别检查，未检出凭据不等于绝无泄露。
+
+## 许可及联系
+
+原创代码按 [MIT](LICENSE) 提供，包含按许可条件使用、修改和分发的权利及按现状提供/无担保条款。字体按 SIL OFL 1.1，Apache/Gradle 等按各自许可；小米 SDK 权利归原权利人，本项目不声称取得超出其条款的额外授权。完整文本随 Release 的 `THIRD_PARTY_NOTICES.txt` 提供，介绍见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+普通问题通过仓库 Issue 反馈；安全问题私下联系维护者，见 [SECURITY.md](SECURITY.md)，不要发送真实凭据或用户路线。
+</pre></details><details><summary>BandSong-OFL.txt</summary><pre>Copyright 2018 The ZCOOL XiaoWei Project Authors (https://github.com/googlefonts/zcool-xiaowei/)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details><details><summary>BandKai-OFL.txt</summary><pre>Copyright 2021-2026 LXGW (https://github.com/lxgw/LxgwWenKai-Lite), with Reserved Font Name '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩' and 'LXGW'. [ADDITIONAL PERMISSION] The Reserved Font Names '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩' and 'LXGW' may continue to be used in Modified Versions recompiled from the Original Version, without modifications to the font source code; or in Modified Versions subsetted or converted to other formats (e.g., WOFF/WOFF2) solely for web font delivery, provided such Modified Versions are not made available as installable desktop fonts (e.g., on mainstream platforms like Google Fonts, or third-party non-commercial platforms recognized by the author @lxgw; other web font platforms please contact the author @lxgw for confirmation).
+Copyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+https://openfontlicense.org
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details><details><summary>BandRound-OFL.txt</summary><pre>Copyright 2018 The ZCOOL QingKe HuangYou Project Authors (https://www.github.com/googlefonts/zcool-qingke-huangyou)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details></details></footer></div><script>const phoneConfig={"phone":{"versionName":"0.4.2","versionCode":27},"band":{"versionName":"0.5.1","versionCode":25}};const phonePreviewModel=function phonePreviewModel() {
+  const key = 'wrist.phone.preview.v1';
+  function create(config, storage) {
+    const device = part => ({ current: part.versionName, code: part.versionCode, latest: part.versionName,
+      latestCode: part.versionCode, auto: true, preview: false, expanded: false, state: 'complete', generation: 0 });
+    const model = { phone: device(config.phone), band: device(config.band), scene: 'same' };
+    try {
+      const saved = JSON.parse(storage?.getItem(key) || 'null');
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) for (const name of ['phone', 'band']) {
+        for (const setting of ['auto', 'preview']) if (typeof saved[name]?.[setting] === 'boolean') model[name][setting] = saved[name][setting];
+      }
+    } catch { /* Storage is optional; it cannot prevent an offline preview. */ }
+    return model;
+  }
+  function save(model, storage) {
+    try { storage?.setItem(key, JSON.stringify(Object.fromEntries(['phone', 'band'].map(name => [name, { auto: model[name].auto, preview: model[name].preview }])))); } catch { }
+  }
+  function scenario(model, scene) {
+    if (!['same', 'update', 'unknown', 'offline'].includes(scene)) scene = 'same';
+    model.scene = scene;
+    for (const name of ['phone', 'band']) {
+      const device = model[name]; device.generation++; device.state = scene === 'offline' ? 'incomplete' : 'complete';
+      device.unknown = name === 'band' && scene === 'unknown';
+      device.latest = scene === 'update' ? name === 'phone' ? '0.4.3' : '0.5.2' : device.current;
+      device.latestCode = device.code + (scene === 'update' ? 1 : 0);
+      device.expanded = false;
+    }
+  }
+  function begin(model, name) { const device = model[name]; device.state = 'checking'; return ++device.generation; }
+  function finish(model, name, token) { const device = model[name]; if (device.generation !== token) return; device.state = model.scene === 'offline' ? 'incomplete' : 'complete'; }
+  function channel(model, name, checked) { const device = model[name]; device.generation++; device.preview = checked; device.state = model.scene === 'offline' ? 'incomplete' : 'complete'; }
+  function view(model, name) {
+    const d = model[name], channelName = d.preview ? '正式 + Preview' : '正式版';
+    let status = d.unknown ? '手环版本未知' : d.latestCode > d.code ? '有新版本可用' : '当前无需更新';
+    if (d.state === 'checking') status = '正在检查更新';
+    else if (d.state === 'incomplete') status = '版本信息待确认';
+    const detail = d.state === 'checking' ? '模拟检查中，不会访问 GitHub。' : d.state === 'incomplete' ? '模拟网络失败，已有版本待确认。' : d.unknown ? '连接并打开手环应用后，才能判断是否需要升级。' : d.latestCode > d.code ? '核对双端配套后，再手动更新。' : '';
+    return { current: d.unknown ? '未知' : d.current, latest: d.latest, status, detail,
+      source: channelName + (model.scene === 'update' ? ' · 虚构新版本' : ' · 模拟数据') + (d.state === 'incomplete' ? ' · 待确认' : d.state === 'checking' ? ' · 确认中' : ''),
+      channel: channelName, checking: d.state === 'checking', expanded: d.expanded, auto: d.auto, preview: d.preview };
+  }
+  return { create, save, scenario, begin, finish, channel, view };
+};
+(() => {
+  let storage; try { storage = window.localStorage; } catch { }
+  const model = phonePreviewModel().create(phoneConfig, storage), api = phonePreviewModel();
+  const root = document.getElementById('phone-stage');
+  const screens = [...document.querySelectorAll('[data-screen]')];
+  const set = (name, field, text) => { document.querySelector(`[data-device="${name}"] [data-field="${field}"]`).textContent = text; };
+  function render() {
+    for (const name of ['phone', 'band']) {
+      const value = api.view(model, name), panel = document.querySelector(`[data-device="${name}"]`);
+      for (const field of ['current', 'latest', 'source', 'status', 'detail', 'channel']) set(name, field, value[field]);
+      panel.querySelector('[data-field="detail"]').hidden = !value.detail;
+      panel.querySelector('[data-action="check"]').disabled = value.checking;
+      panel.querySelector('[data-action="check"]').textContent = value.checking ? '正在检查…' : '检查' + (name === 'phone' ? '手机' : '手环') + '更新';
+      const toggle = panel.querySelector('[data-action="details"]');
+      toggle.setAttribute('aria-expanded', String(value.expanded));
+      panel.querySelector('.details-body').hidden = !value.expanded;
+      for (const setting of ['auto', 'preview']) document.querySelector(`[data-setting="${setting}"][data-name="${name}"]`).checked = value[setting];
+    }
+    document.getElementById('settings-summary').textContent = model.phone.preview || model.band.preview ? '检查设置 · 已选择 Preview' : '检查设置';
+  }
+  function screen(name) {
+    screens.forEach(element => { element.hidden = element.dataset.screen !== name; });
+    document.querySelectorAll('[data-action="screen"]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.target === name)));
+    root.scrollTop = 0;
+  }
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-action]'); if (!button) return;
+    const name = button.closest('[data-device]')?.dataset.device;
+    if (button.dataset.action === 'screen') screen(button.dataset.target);
+    if (button.dataset.action === 'open-updates') { screen('updates'); if (button.dataset.target) document.querySelector(`[data-device="${button.dataset.target}"]`).scrollIntoView({ block: 'nearest', behavior: 'auto' }); }
+    if (button.dataset.action === 'close-updates') screen('home');
+    if (button.dataset.action === 'details') { model[name].expanded = !model[name].expanded; render(); }
+    if (button.dataset.action === 'check') { const token = api.begin(model, name); render(); setTimeout(() => { api.finish(model, name, token); render(); }, 650); }
+    if (button.dataset.action === 'kill') document.getElementById('exit-result').textContent = '模拟强杀：手机可能没来得及发送退出通知，手环无法跟随退出。';
+    if (button.dataset.action === 'return') document.getElementById('exit-result').textContent = '模拟正常返回：开启退出联动时，手机有机会发送退出通知，手环可跟随退出。';
+  });
+  document.addEventListener('change', event => {
+    const input = event.target;
+    if (input.id === 'theme') document.getElementById('phone-frame').dataset.theme = input.value;
+    if (input.id === 'scene') { api.scenario(model, input.value); render(); }
+    if (input.dataset.setting) {
+      const name = input.dataset.name;
+      if (input.dataset.setting === 'preview') api.channel(model, name, input.checked); else model[name].auto = input.checked;
+      api.save(model, storage); render();
+    }
+  });
+  screen('home'); render();
+})();
+</script></body></html>
