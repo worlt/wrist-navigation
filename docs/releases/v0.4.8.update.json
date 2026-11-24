@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "applicationId": "io.github.mi9pro.navigation",
+  "releaseTag": "v0.4.8",
+  "phone": {
+    "versionName": "0.3.2",
+    "versionCode": 17,
+    "asset": "NAV-PHONE-032.apk"
+  },
+  "band": {
+    "versionName": "0.4.6",
+    "versionCode": 20,
+    "fullAsset": "NAV-BAND-046.rpk",
+    "noFontAsset": "NAV-BAND-046-NOFONT.rpk"
+  },
+  "notes": "正式版；此发布配套手机 0.3.2 / 手环 0.4.6。仅补充更新元数据，原安装包保持不变。"
+}
